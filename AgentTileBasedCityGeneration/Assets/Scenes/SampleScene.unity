@@ -185,7 +185,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 5
+  orthographic size: 50
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -210,7 +210,7 @@ Transform:
   m_GameObject: {fileID: 519420028}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 9.3, y: 5.4, z: -10}
+  m_LocalPosition: {x: 90.1, y: 49.9, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -265,6 +265,7 @@ MonoBehaviour:
   tileRepresentationPrefab: {fileID: -3792084569173840562, guid: c31b85090e13a43bcbebfaadbd466347, type: 3}
   <Width>k__BackingField: 200
   <Height>k__BackingField: 100
+  <Speed>k__BackingField: 1
 --- !u!4 &1399478003
 Transform:
   m_ObjectHideFlags: 0
