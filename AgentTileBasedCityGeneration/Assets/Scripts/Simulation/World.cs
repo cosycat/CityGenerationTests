@@ -50,6 +50,7 @@ namespace Simulation {
         private void InitializeAgents() {
             Agents.Add(new PropertyDeveloperAgent(LandUsage.Residential, new RangeInt(1, 4), Tiles[20, 20]));
             Agents.Add(new PropertyDeveloperAgent(LandUsage.Commercial, new RangeInt(1, 6), Tiles[30, 20]));
+            Agents.Add(new PropertyDeveloperAgent(LandUsage.Industrial, new RangeInt(1, 6), Tiles[30, 20]));
         }
 
         private void Update() {
