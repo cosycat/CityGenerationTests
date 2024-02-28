@@ -3,20 +3,15 @@ using UnityEngine;
 
 namespace Simulation {
     
-    [RequireComponent(typeof(SpriteRenderer))]
-    public class TileRepresentation : MonoBehaviour {
-        private Tile Tile { get; set; }
-        private SpriteRenderer SpriteRenderer { get; set; }
+    public class TileRepresentation : Representation<Tile> {
 
-        public void Initialize(Tile tile) {
-            Tile = tile;
+        protected override void OnInitialize(Tile tile) {
             tile.TileChanged += OnTileChanged;
-            SpriteRenderer = GetComponent<SpriteRenderer>();
             OnTileChanged(tile);
         }
 
-        private void OnTileChanged(Tile obj) {
-            switch (Tile.UsageType) {
+        private void OnTileChanged(Tile tile) {
+            switch (tile.UsageType) {
                 case LandUsage.None:
                     SpriteRenderer.color = new Color(0.11f, 0.62f, 0.1f);
                     break;

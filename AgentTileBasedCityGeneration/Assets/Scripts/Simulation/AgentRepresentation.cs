@@ -2,14 +2,11 @@ using UnityEngine;
 
 namespace Simulation {
     
-    [RequireComponent(typeof(SpriteRenderer))]
-    public class AgentRepresentation : MonoBehaviour {
+    public class AgentRepresentation : Representation<Agent> {
         private Agent Agent { get; set; }
-        private SpriteRenderer SpriteRenderer { get; set; }
 
-        public void Initialize(Agent agent) {
+        protected override void OnInitialize(Agent agent) {
             Agent = agent;
-            SpriteRenderer = GetComponent<SpriteRenderer>();
             SpriteRenderer.color = Agent.UsageType switch {
                 LandUsage.None => new Color(0.11f, 0.62f, 0.1f),
                 LandUsage.Road => Color.gray,

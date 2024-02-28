@@ -30,7 +30,7 @@ namespace Simulation {
         }
 
         private void Prospect(List<ISite> devSites) {
-            Debug.Assert(!devSites.Exists(site => site == null || (site as Tile)?.Parcel != null), $"devSites: {string.Join(", ", devSites)}");
+            Debug.Assert(!devSites.Exists(site => site is null or Tile { Parcel: null, IsRoadAdjacent: false }), $"devSites: {string.Join(", ", devSites)}");
             if (devSites.Count > 0) { // TODO check for recent relocation or commit
                 // move locally
                 CurrSite = devSites.OrderBy(site => site.CalcValue()).First();
