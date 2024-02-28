@@ -8,6 +8,9 @@ namespace Simulation {
         public static World Instance { get; private set; }
     
         [SerializeField] private TileRepresentation tileRepresentationPrefab;
+        private GameObject _tilesContainer;
+        [SerializeField] private AgentRepresentation agentRepresentationPrefab;
+        private GameObject _agentsContainer;
     
         [field: SerializeField] public int Width { get; private set; } = 100;
         [field: SerializeField] public int Height { get; private set; } = 100;
@@ -30,15 +33,17 @@ namespace Simulation {
             }
             Instance = this;
         
+            _tilesContainer = new GameObject("Tiles");
+            _tilesContainer.transform.SetParent(transform);
             Tiles = new Tile[Width, Height];
             for (int x = 0; x < Width; x++) {
                 for (int y = 0; y < Height; y++) {
                     Tiles[x, y] = new Tile(this, x + y < 20 || Math.Abs(x - y) < 2, new Vector2Int(x, y));
                     var tileRepresentation = Instantiate(tileRepresentationPrefab, new Vector3(x, y), Quaternion.identity);
-                    tileRepresentation.transform.SetParent(transform);
+                    tileRepresentation.transform.SetParent(_tilesContainer.transform);
                     tileRepresentation.name = $"Tile {x}, {y}";
                     tileRepresentation.Initialize(Tiles[x, y]);
-                    if (x == 30) {
+                    if (x == 30 || y == 50) {
                         Tiles[x, y].Parcel = new Parcel(this, LandUsage.Road, new List<Tile> {Tiles[x, y]}, 0, 0);
                     }
                 }
@@ -48,9 +53,19 @@ namespace Simulation {
         }
 
         private void InitializeAgents() {
-            Agents.Add(new PropertyDeveloperAgent(LandUsage.Residential, new RangeInt(1, 4), Tiles[20, 20]));
-            Agents.Add(new PropertyDeveloperAgent(LandUsage.Commercial, new RangeInt(1, 6), Tiles[30, 20]));
-            Agents.Add(new PropertyDeveloperAgent(LandUsage.Industrial, new RangeInt(1, 6), Tiles[30, 20]));
+            _agentsContainer = new GameObject("Agents");
+            _agentsContainer.transform.SetParent(transform);
+            CreateNewAgent(new PropertyDeveloperAgent(LandUsage.Residential, new RangeInt(1, 4), Tiles[20, 20]));
+            CreateNewAgent(new PropertyDeveloperAgent(LandUsage.Commercial, new RangeInt(1, 6), Tiles[30, 20]));
+            CreateNewAgent(new PropertyDeveloperAgent(LandUsage.Industrial, new RangeInt(1, 6), Tiles[30, 40]));
+        }
+        
+        private void CreateNewAgent(Agent agent) {
+            Agents.Add(agent);
+            var agentRepresentation = Instantiate(agentRepresentationPrefab, new Vector3(agent.CurrSite.Position.x, agent.CurrSite.Position.y), Quaternion.identity);
+            agentRepresentation.transform.SetParent(_agentsContainer.transform);
+            agentRepresentation.name = $"Agent {agent.UsageType}";
+            agentRepresentation.Initialize(agent);
         }
 
         private void Update() {

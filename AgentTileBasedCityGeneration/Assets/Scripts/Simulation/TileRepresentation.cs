@@ -2,6 +2,8 @@ using System;
 using UnityEngine;
 
 namespace Simulation {
+    
+    [RequireComponent(typeof(SpriteRenderer))]
     public class TileRepresentation : MonoBehaviour {
         private Tile Tile { get; set; }
         private SpriteRenderer SpriteRenderer { get; set; }

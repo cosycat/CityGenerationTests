@@ -263,6 +263,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tileRepresentationPrefab: {fileID: -3792084569173840562, guid: c31b85090e13a43bcbebfaadbd466347, type: 3}
+  agentRepresentationPrefab: {fileID: 4059806507653866585, guid: e80b071f9acae4bb385d1feb4333118d, type: 3}
   <Width>k__BackingField: 200
   <Height>k__BackingField: 100
   <Speed>k__BackingField: 1

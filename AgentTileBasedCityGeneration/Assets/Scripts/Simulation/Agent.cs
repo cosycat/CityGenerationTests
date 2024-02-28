@@ -11,19 +11,15 @@ namespace Simulation {
         
         private List<ISite> DevSites { get; set; } = new();
         private List<Tile> DevTiles { get; set; } = new();
-        private readonly LandUsage _type;
         private readonly RangeInt _sizeRange;
-        public ISite CurrSite { get; private set; }
 
 
-        public PropertyDeveloperAgent(LandUsage type, RangeInt sizeRange, ISite startSite) {
-            _type = type;
+        public PropertyDeveloperAgent(LandUsage type, RangeInt sizeRange, ISite startSite) : base(type, startSite) {
             _sizeRange = sizeRange;
-            CurrSite = startSite;
         }
 
         protected internal override void UpdateTick() {
-            Debug.Assert(_type is LandUsage.Commercial or LandUsage.Industrial or LandUsage.Residential or LandUsage.Park);
+            Debug.Assert(UsageType is LandUsage.Commercial or LandUsage.Industrial or LandUsage.Residential or LandUsage.Park);
             Prospect(DevSites);
             foreach (var devSite in DevSites) {
                 var newDev = Build(devSite);
@@ -62,17 +58,17 @@ namespace Simulation {
                     // Build a new parcel
                     Debug.Assert(tile.UsageType == LandUsage.None && tile.Parcel == null);
                     // TODO bigger size
-                    var newParcel = new Parcel(tile.World, _type, new List<Tile> {tile}, 0, tile.World.Tick);
+                    var newParcel = new Parcel(tile.World, UsageType, new List<Tile> {tile}, 0, tile.World.Tick);
                     return newParcel;
                 }
                 // Expand or convert the parcel
                 case Parcel parcel: //when parcel.UsageType == _type:
                     var copy = new Parcel(parcel);
-                    if (parcel.UsageType == _type) {
+                    if (parcel.UsageType == UsageType) {
                         copy.Population += 1;
                         return copy;
                     }
-                    copy.UsageType = _type;
+                    copy.UsageType = UsageType;
                     return copy;
                 default:
                     throw new NotImplementedException();
@@ -107,13 +103,41 @@ namespace Simulation {
         }
 
         private bool IsDevelopableSite(ISite site) {
-            return site is Parcel parcel && Parcel.ConvertibleTo(_type).Contains(parcel.UsageType) ||
+            return site is Parcel parcel && Parcel.ConvertibleTo(UsageType).Contains(parcel.UsageType) ||
                    site is Tile && (site as Tile).UsageType == LandUsage.None && (site as Tile).IsRoadAdjacent;
         }
+        
+        
+        
     }
     
     
     public abstract class Agent {
+        private ISite _currSite;
+        public ISite CurrSite {
+            get => _currSite;
+            protected set {
+                _currSite = value;
+                OnSiteChanged(value);
+            }
+        }
+
+        public LandUsage UsageType { get; }
+
+        
+        protected Agent(LandUsage usageType, ISite currSite) {
+            UsageType = usageType;
+            CurrSite = currSite;
+        }
+
+        
         protected internal abstract void UpdateTick();
+
+        public event Action<ISite> SiteChanged;
+        
+        protected virtual void OnSiteChanged(ISite obj) {
+            SiteChanged?.Invoke(obj);
+        }
+        
     }
 }
