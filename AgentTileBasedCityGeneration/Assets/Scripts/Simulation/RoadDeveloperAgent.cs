@@ -1,4 +1,5 @@
-using System;
+using System.Collections.Generic;
+using JetBrains.Annotations;
 
 namespace Simulation {
     
@@ -10,45 +11,46 @@ namespace Simulation {
             MoveToNewLocation();
             if (LocationMeetsConstraint() && LocationNeedsRoad()) {
                 var newRoadSegment = BuildRoad();
-                if (IsValidRoad(newRoadSegment)) {
+                if (newRoadSegment != null && IsValidRoad(newRoadSegment)) {
                     Commit(newRoadSegment);
                 }
             }
         }
 
-        protected virtual void MoveToNewLocation() {
-            throw new NotImplementedException();
-        }
+        protected abstract void MoveToNewLocation();
         
         protected virtual bool LocationMeetsConstraint() {
-            throw new NotImplementedException();
-        }
-        
-        protected virtual bool LocationNeedsRoad() {
-            throw new NotImplementedException();
+            return true; // TODO
         }
 
-        protected abstract RoadSegment BuildRoad();
-        
-        protected virtual bool IsValidRoad(RoadSegment newRoadSegment) {
-            throw new NotImplementedException();
-        }
+        protected abstract bool LocationNeedsRoad();
+
+        [CanBeNull] protected abstract RoadSegment BuildRoad();
+
+        /// <summary>
+        /// After finding a new road segment, the extender checks again if the whole road is valid. 
+        /// </summary>
+        /// <param name="newRoadSegment"> The new road segment to be checked </param>
+        /// <returns> True if the road is valid, false otherwise </returns>
+        protected abstract bool IsValidRoad(RoadSegment newRoadSegment);
         
         protected virtual void Commit(RoadSegment newRoadSegment) {
-            throw new NotImplementedException();
+            foreach (var tile in newRoadSegment.Tiles) {
+                tile.MultiTileSite = newRoadSegment;
+            }
         }
         
     }
 
-    public class TertiaryRoadExtender : RoadDeveloperAgent {
+    public class RoadSegment : MultiTileSite {
         
-        public TertiaryRoadExtender(LandUsage usageType, ISite currSite) : base(usageType, currSite) {
-            
-        }
-
-
-        protected override RoadSegment BuildRoad() {
-            throw new NotImplementedException();
-        }
+        public RoadSegment(World world, LandUsage usageType, List<Tile> tiles, long tickCreated) : base(world, usageType, tiles, tickCreated) { }
+        public RoadSegment(MultiTileSite site) : base(site) { }
+        
+    }
+    
+    public enum RoadType {
+        Primary,
+        Tertiary,
     }
 }

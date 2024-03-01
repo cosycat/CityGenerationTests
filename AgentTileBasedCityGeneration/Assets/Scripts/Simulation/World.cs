@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace Simulation {
     public class World : MonoBehaviour {
@@ -39,7 +40,7 @@ namespace Simulation {
             Tiles = new Tile[Width, Height];
             for (int x = 0; x < Width; x++) {
                 for (int y = 0; y < Height; y++) {
-                    Tiles[x, y] = new Tile(this, x + y < 6 || Math.Abs(x - y) < 2, new Vector2Int(x, y));
+                    Tiles[x, y] = new Tile(this, x + y < 6 || Math.Abs(x - y) < 2, new Vector2Int(x, y), Random.Range(0f, 5f));
                     // Tiles[x, y] = new Tile(this, x + y == 0, new Vector2Int(x, y));
                     var tileRepresentation = Instantiate(tileRepresentationPrefab, new Vector3(x, y), Quaternion.identity);
                     tileRepresentation.transform.SetParent(_tilesContainer.transform);
@@ -57,7 +58,7 @@ namespace Simulation {
             // TODO remove this, just for testing, simple way to add roads
             foreach (var tile in Tiles) {
                 if (tile.Position.x == 5 || tile.Position.y == 30) {
-                    tile.Parcel = new Parcel(this, LandUsage.Road, new List<Tile> {tile}, 0, 0);
+                    tile.MultiTileSite = new Parcel(this, LandUsage.Road, new List<Tile> {tile}, 0, 0);
                 }
             }
             Debug.Log("Debug Roads Initialized.");
@@ -72,6 +73,8 @@ namespace Simulation {
             CreateNewAgent(new PropertyDeveloperAgent(LandUsage.Residential, new RangeInt(1, 4), Tiles[Width / 2, Height / 2]));
             CreateNewAgent(new PropertyDeveloperAgent(LandUsage.Commercial, new RangeInt(1, 6), Tiles[Width / 2, Height / 2]));
             CreateNewAgent(new PropertyDeveloperAgent(LandUsage.Industrial, new RangeInt(1, 6), Tiles[Width / 2, Height / 2]));
+            
+            CreateNewAgent(new TertiaryRoadExtender(LandUsage.Road, AllTiles.First(t => t.UsageType == LandUsage.Road)));
         }
         
         private void CreateNewAgent(Agent agent) {

@@ -2,13 +2,20 @@ using System;
 
 namespace Simulation {
     public abstract class Agent {
-        private ISite _currSite;
+        
+        public World World => CurrSite.World;
+        
+        private ISite _currSite; // TODO this should probably just be a tile
         public ISite CurrSite {
             get => _currSite;
             protected set {
                 _currSite = value;
                 OnSiteChanged(value);
             }
+        }
+        public Tile CurrTile {
+            get => CurrSite.CorrespondingTile;
+            set => CurrSite = value;
         }
 
         public LandUsage UsageType { get; }
@@ -29,13 +36,5 @@ namespace Simulation {
         }
         
     }
-
-    public enum RoadType {
-        Primary,
-        Tertiary,
-    }
-
-    public class RoadSegment {
-        
-    }
+    
 }

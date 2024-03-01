@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using UnityEngine;
 
 namespace Simulation {
@@ -12,9 +13,11 @@ namespace Simulation {
         public World World { get; }
         LandUsage UsageType { get; }
         Vector2Int Position { get; }
-        
+        abstract Tile CorrespondingTile { get; }
+
         public float CalcValue();
         
+        [Pure]
         public List<ISite> GetSitesInCircle(int radius) {
             var sites = new List<ISite>();
             for (int x = -radius; x <= radius; x++) {
@@ -24,11 +27,11 @@ namespace Simulation {
                     }
                     if (Vector2Int.Distance(Position, tile.Position) + 0.1f >= radius) continue;
 
-                    if (tile.Parcel == null) {
+                    if (tile.MultiTileSite == null) {
                         sites.Add(tile);
                     }
-                    else if (!sites.Contains(tile.Parcel)) {
-                        sites.Add(tile.Parcel);
+                    else if (!sites.Contains(tile.MultiTileSite)) {
+                        sites.Add(tile.MultiTileSite);
                     }
                 }
             }

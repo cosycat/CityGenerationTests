@@ -29,7 +29,7 @@ namespace Simulation {
         }
 
         private void Prospect(List<ISite> devSites) {
-            Debug.Assert(!devSites.Exists(site => site is null or Tile { Parcel: null, IsRoadAdjacent: false }), $"devSites: {string.Join(", ", devSites)}");
+            Debug.Assert(!devSites.Exists(site => site is null or Tile { MultiTileSite: null, IsRoadAdjacent: false }), $"devSites: {string.Join(", ", devSites)}");
             if (devSites.Count > 0) { // TODO check for recent relocation or commit
                 // move locally
                 CurrSite = devSites.OrderBy(site => site.CalcValue()).First();
@@ -59,7 +59,7 @@ namespace Simulation {
             switch (devSite) {
                 case Tile tile: {
                     // Build a new parcel
-                    Debug.Assert(tile.UsageType == LandUsage.None && tile.Parcel == null);
+                    Debug.Assert(tile.UsageType == LandUsage.None && tile.MultiTileSite == null);
                     // TODO bigger size
                     var newParcel = new Parcel(tile.World, UsageType, new List<Tile> {tile}, 0, tile.World.Tick);
                     return newParcel;
@@ -92,7 +92,7 @@ namespace Simulation {
                 case Tile: {
                     // Just add the new parcel to the world
                     foreach (var newDevTile in newDev.Tiles) {
-                        newDevTile.Parcel = newDev;
+                        newDevTile.MultiTileSite = newDev;
                     }
                     break;
                 }
