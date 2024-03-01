@@ -32,32 +32,46 @@ namespace Simulation {
                 return;
             }
             Instance = this;
-        
+
+            Debug.Log("Creating Tiles...");
             _tilesContainer = new GameObject("Tiles");
             _tilesContainer.transform.SetParent(transform);
             Tiles = new Tile[Width, Height];
             for (int x = 0; x < Width; x++) {
                 for (int y = 0; y < Height; y++) {
-                    Tiles[x, y] = new Tile(this, x + y < 20 || Math.Abs(x - y) < 2, new Vector2Int(x, y));
+                    Tiles[x, y] = new Tile(this, x + y < 6 || Math.Abs(x - y) < 2, new Vector2Int(x, y));
+                    // Tiles[x, y] = new Tile(this, x + y == 0, new Vector2Int(x, y));
                     var tileRepresentation = Instantiate(tileRepresentationPrefab, new Vector3(x, y), Quaternion.identity);
                     tileRepresentation.transform.SetParent(_tilesContainer.transform);
                     tileRepresentation.name = $"Tile {x}, {y}";
                     tileRepresentation.Initialize(Tiles[x, y]);
-                    if (x == 30 || y == 50) {
-                        Tiles[x, y].Parcel = new Parcel(this, LandUsage.Road, new List<Tile> {Tiles[x, y]}, 0, 0);
-                    }
                 }
             }
-            
+            Debug.Log($"{Width * Height} Tiles Created.");
+            Debug.Log("Initializing Tile distances...");
+            foreach (var tile in AllTiles) {
+                tile.InitializeCurrentTileUsageDistances();
+            }
+            Debug.Log("Tile distances initialized.");
+            Debug.Log("Initializing Debug Roads...");
+            // TODO remove this, just for testing, simple way to add roads
+            foreach (var tile in Tiles) {
+                if (tile.Position.x == 5 || tile.Position.y == 30) {
+                    tile.Parcel = new Parcel(this, LandUsage.Road, new List<Tile> {tile}, 0, 0);
+                }
+            }
+            Debug.Log("Debug Roads Initialized.");
+            Debug.Log("Initializing Agents...");
             InitializeAgents();
+            Debug.Log("Agents Initialized.");
         }
 
         private void InitializeAgents() {
             _agentsContainer = new GameObject("Agents");
             _agentsContainer.transform.SetParent(transform);
-            CreateNewAgent(new PropertyDeveloperAgent(LandUsage.Residential, new RangeInt(1, 4), Tiles[20, 20]));
-            CreateNewAgent(new PropertyDeveloperAgent(LandUsage.Commercial, new RangeInt(1, 6), Tiles[30, 20]));
-            CreateNewAgent(new PropertyDeveloperAgent(LandUsage.Industrial, new RangeInt(1, 6), Tiles[30, 40]));
+            CreateNewAgent(new PropertyDeveloperAgent(LandUsage.Residential, new RangeInt(1, 4), Tiles[Width / 2, Height / 2]));
+            CreateNewAgent(new PropertyDeveloperAgent(LandUsage.Commercial, new RangeInt(1, 6), Tiles[Width / 2, Height / 2]));
+            CreateNewAgent(new PropertyDeveloperAgent(LandUsage.Industrial, new RangeInt(1, 6), Tiles[Width / 2, Height / 2]));
         }
         
         private void CreateNewAgent(Agent agent) {

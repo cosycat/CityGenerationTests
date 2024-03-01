@@ -6,12 +6,12 @@ namespace Simulation {
     public class TileRepresentation : Representation<Tile> {
 
         protected override void OnInitialize(Tile tile) {
-            tile.TileChanged += OnTileChanged;
-            OnTileChanged(tile);
+            tile.TileUsageChanged += OnTileUsageChanged;
+            OnTileUsageChanged((LandUsage.None, tile.UsageType));
         }
 
-        private void OnTileChanged(Tile tile) {
-            switch (tile.UsageType) {
+        private void OnTileUsageChanged((LandUsage oldUsageType, LandUsage newUsageType) usageTypes) {
+            switch (usageTypes.newUsageType) {
                 case LandUsage.None:
                     SpriteRenderer.color = new Color(0.11f, 0.62f, 0.1f);
                     break;
