@@ -1,16 +1,22 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Simulation {
     
     public class TileRepresentation : Representation<Tile> {
+        
+        [SerializeField] private Tile tile;
+        [SerializeField] private LandUsage currentUsageType; // To see it in the inspector
 
         protected override void OnInitialize(Tile tile) {
             tile.TileUsageChanged += OnTileUsageChanged;
             OnTileUsageChanged((LandUsage.None, tile.UsageType));
+            this.tile = tile;
         }
 
         private void OnTileUsageChanged((LandUsage oldUsageType, LandUsage newUsageType) usageTypes) {
+            currentUsageType = usageTypes.newUsageType;
             switch (usageTypes.newUsageType) {
                 case LandUsage.None:
                     SpriteRenderer.color = new Color(0.11f, 0.62f, 0.1f);
