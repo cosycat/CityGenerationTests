@@ -88,7 +88,7 @@ namespace Simulation {
             Agents.Add(agent);
             var agentRepresentation = Instantiate(agentRepresentationPrefab, new Vector3(agent.CurrTile.Position.x, agent.CurrTile.Position.y), Quaternion.identity);
             agentRepresentation.transform.SetParent(_agentsContainer.transform);
-            agentRepresentation.name = $"Agent {agent.UsageType}";
+            agentRepresentation.name = $"Agent {agent.AgentUsageType}";
             agentRepresentation.Initialize(agent);
         }
 

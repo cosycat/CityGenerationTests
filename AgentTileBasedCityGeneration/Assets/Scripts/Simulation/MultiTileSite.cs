@@ -55,10 +55,14 @@ namespace Simulation {
             TickCreated = site.TickCreated;
             Tiles = site.Tiles;
         }
-
+        
         public float CalcValue() {
+            return CalcValueForType(UsageType);
+        }
+
+        public float CalcValueForType(LandUsage usage) {
             Debug.Assert(Tiles.Count > 0, $"This MultiTileSite {this} has no tiles.");
-            return Tiles.Average(tile => tile.CalcValue());
+            return Tiles.Average(tile => tile.CalcValueForType(usage));
         }
 
         public void TileWasRemoved(Tile tile) {
@@ -84,6 +88,19 @@ namespace Simulation {
             //     return;
             //     OnMultiTileSiteDestroyed(tile);
             // }
+        }
+        
+        public static List<LandUsage> ConvertibleTo(LandUsage type) {
+            return type switch {
+                LandUsage.Residential => new List<LandUsage> {LandUsage.Residential, LandUsage.Commercial},
+                LandUsage.Commercial => new List<LandUsage> {LandUsage.Commercial, LandUsage.Residential, LandUsage.Industrial},
+                LandUsage.Industrial => new List<LandUsage> {LandUsage.Industrial, LandUsage.Commercial},
+                LandUsage.Park => new List<LandUsage> {LandUsage.Park},
+                LandUsage.Road => new List<LandUsage> {LandUsage.Road},
+                LandUsage.Water => throw new Exception("A multi-tile site cannot have a usage type of Water."),
+                LandUsage.None => throw new Exception("A multi-tile site cannot have a usage type of None."),
+                _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
+            };
         }
 
         public event Action<(LandUsage oldUsageType, LandUsage newUsageType)> MultiTileUsageChanged;

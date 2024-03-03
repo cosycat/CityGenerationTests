@@ -123,10 +123,29 @@ namespace Simulation {
             return neighbors;
             
         }
-
+        
         public float CalcValue() {
-            var attributeValue = new Attribute(this).Calculate();
-            return attributeValue;
+            return CalcValueForType(UsageType);
+        }
+
+        public float CalcValueForType(LandUsage usage) {
+            switch (usage) {
+                case LandUsage.Residential:
+                case LandUsage.Commercial:
+                case LandUsage.Industrial:
+                case LandUsage.Park:
+                    var attributeValue = new Attribute(this).Calculate(usage);
+                    return attributeValue;
+                
+                case LandUsage.Road:
+                case LandUsage.Water:
+                case LandUsage.None:
+                    return 0f;
+                
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+            
         }
 
 
@@ -262,8 +281,8 @@ namespace Simulation {
         private float DistanceToPark => _tile.GetDistanceTo(LandUsage.Park);
         private float DistanceToCommercial => _tile.GetDistanceTo(LandUsage.Commercial);
         
-        public float Calculate() {
-            var weights = GetWeights();
+        public float Calculate(LandUsage usage) {
+            var weights = GetWeights(usage);
             var values = CalculateAttribute();
             Debug.Assert(weights.Count() == values.Count());
             return weights.Zip(values, (w, v) => w * v).Sum();
@@ -286,8 +305,8 @@ namespace Simulation {
             return values;
         }
 
-        private List<float> GetWeights() {
-            switch (_tile.UsageType) {
+        private List<float> GetWeights(LandUsage usage) {
+            switch (usage) {
                 case LandUsage.Residential:
                     return new List<float> { .3f, 0, 0, 0, .3f, .4f, 0, 0, 0, 0, 0, 0 };
                 case LandUsage.Commercial:
@@ -297,10 +316,13 @@ namespace Simulation {
                 case LandUsage.Park:
                     throw new NotImplementedException();
                 case LandUsage.Road:
-                    throw new NotImplementedException();
+                    Debug.LogWarning("Roads should not have attributes");
+                    return new List<float> { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
                 case LandUsage.Water:
+                    Debug.LogWarning("Water should not have attributes");
                     return new List<float> { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
                 case LandUsage.None:
+                    Debug.LogWarning("None should not have attributes");
                     return new List<float> { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
                 default:
                     throw new ArgumentOutOfRangeException();

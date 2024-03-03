@@ -18,7 +18,7 @@ namespace Simulation {
         }
 
         protected internal override void UpdateTick() {
-            Debug.Assert(UsageType is LandUsage.Commercial or LandUsage.Industrial or LandUsage.Residential or LandUsage.Park);
+            Debug.Assert(AgentUsageType is LandUsage.Commercial or LandUsage.Industrial or LandUsage.Residential or LandUsage.Park);
             Prospect(DevSites);
             foreach (var devSite in DevSites) {
                 var newDev = Build(devSite);
@@ -32,7 +32,7 @@ namespace Simulation {
             Debug.Assert(!devSites.Exists(site => site is null or Tile { MultiTileSite: null, IsRoadAdjacent: false }), $"devSites: {string.Join(", ", devSites)}");
             if (devSites.Count > 0) { // TODO check for recent relocation or commit
                 // move locally
-                CurrTile = devSites.OrderBy(site => site.CalcValue()).First().CorrespondingTile;
+                CurrTile = devSites.OrderBy(site => site.CalcValueForType(AgentUsageType)).First().CorrespondingTile;
             }
             else {
                 // move globally
@@ -42,16 +42,17 @@ namespace Simulation {
                     Debug.Log($"No developable sites found for {this}");
                     return;
                 }
-                var allDevSitesOrdered = allDevelopmentSites.OrderBy(site => site.CalcValue()).ToList();
+                var allDevSitesOrdered = allDevelopmentSites.OrderBy(site => site.CalcValueForType(AgentUsageType)).ToList();
                 Debug.Assert(allDevSitesOrdered.Count > 0, "No developable sites found");
                 CurrTile = allDevSitesOrdered[UnityEngine.Random.Range(0, allDevSitesOrdered.Count)];
                 DevTiles = new List<Tile>();
             }
+            // We take the best 90% of the tiles and add them to the list of tiles to develop
             DevSites = ((ISite)CurrTile).GetSitesInCircle(5)
                 .Where(IsDevelopableSite)
                 .ToList();
-            var allDevTiles = DevSites.OfType<Tile>().ToList();
-            DevTiles = allDevTiles.OrderBy(tile => tile.CalcValue()).Take((int)(allDevTiles.Count / 10f * 9)).Union(DevTiles).ToList();
+            var allDevTiles = DevSites.OfType<Tile>().ToList(); 
+            DevTiles = allDevTiles.OrderBy(tile => tile.CalcValueForType(AgentUsageType)).Take((int)(allDevTiles.Count / 10f * 9)).Union(DevTiles).ToList();
         }
 
         [CanBeNull]
@@ -61,17 +62,17 @@ namespace Simulation {
                     // Build a new parcel
                     Debug.Assert(tile.UsageType == LandUsage.None && tile.MultiTileSite == null);
                     // TODO bigger size
-                    var newParcel = new Parcel(tile.World, UsageType, new List<Tile> {tile}, 0, tile.World.Tick);
+                    var newParcel = new Parcel(tile.World, AgentUsageType, new List<Tile> {tile}, 0, tile.World.Tick);
                     return newParcel;
                 }
                 // Expand or convert the parcel
                 case Parcel parcel: //when parcel.UsageType == _type:
                     var copy = new Parcel(parcel);
-                    if (parcel.UsageType == UsageType) {
+                    if (parcel.UsageType == AgentUsageType) {
                         copy.Population += 1;
                         return copy;
                     }
-                    copy.UsageType = UsageType;
+                    copy.UsageType = AgentUsageType;
                     return copy;
                 default:
                     throw new NotImplementedException();
@@ -81,7 +82,7 @@ namespace Simulation {
         private bool Profitable([CanBeNull] Parcel newDev, ISite oldDev) {
             if (newDev == null) return false;
             if (oldDev is not Parcel oldParcel) return true;
-            var isProfitable = newDev.CalcValue() / oldParcel.CalcValue() >= 1 + ProfitabilityNeeded;
+            var isProfitable = newDev.CalcValueForType(AgentUsageType) / oldParcel.CalcValueForType(AgentUsageType) >= 1 + ProfitabilityNeeded;
             // TODO better implementation
             return isProfitable;
         }
@@ -107,8 +108,8 @@ namespace Simulation {
         }
 
         private bool IsDevelopableSite(ISite site) {
-            return site is Parcel parcel && Parcel.ConvertibleTo(UsageType).Contains(parcel.UsageType) ||
-                   site is Tile && (site as Tile).UsageType == LandUsage.None && (site as Tile).IsRoadAdjacent;
+            return site is Parcel parcel && MultiTileSite.ConvertibleTo(AgentUsageType).Contains(parcel.UsageType) ||
+                   site is Tile { UsageType: LandUsage.None, IsRoadAdjacent: true };
         }
         
         

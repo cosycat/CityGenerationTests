@@ -19,17 +19,6 @@ namespace Simulation {
         public Parcel(Parcel parcel) : base(parcel) {
             Population = parcel.Population;
         }
-
-        public static List<LandUsage> ConvertibleTo(LandUsage type) {
-            return type switch {
-                LandUsage.Residential => new List<LandUsage> {LandUsage.Residential, LandUsage.Commercial},
-                LandUsage.Commercial => new List<LandUsage> {LandUsage.Commercial, LandUsage.Residential, LandUsage.Industrial},
-                LandUsage.Industrial => new List<LandUsage> {LandUsage.Industrial, LandUsage.Commercial},
-                LandUsage.Park => new List<LandUsage> {LandUsage.Park},
-                LandUsage.Road => new List<LandUsage> {LandUsage.Road},
-                _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
-            };
-        }
         
     }
     

@@ -15,7 +15,17 @@ namespace Simulation {
         Vector2Int Position { get; }
         abstract Tile CorrespondingTile { get; }
 
+        /// <summary>
+        /// Calculates the value of the site for the current usage type.
+        /// </summary>
+        /// <returns> The value of the site </returns>
         public float CalcValue();
+        /// <summary>
+        /// Calculates the value of the site if it were to be used for the given usage type.
+        /// </summary>
+        /// <param name="usage"> The usage type to calculate the value for </param>
+        /// <returns> The value of the site for the given usage type </returns>
+        public float CalcValueForType(LandUsage usage);
         
         [Pure]
         public List<ISite> GetSitesInCircle(int radius) {

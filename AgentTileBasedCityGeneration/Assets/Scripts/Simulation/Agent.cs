@@ -14,11 +14,11 @@ namespace Simulation {
             }
         }
 
-        public LandUsage UsageType { get; }
+        public LandUsage AgentUsageType { get; }
 
         
-        protected Agent(LandUsage usageType, Tile currTile) {
-            UsageType = usageType;
+        protected Agent(LandUsage agentUsageType, Tile currTile) {
+            AgentUsageType = agentUsageType;
             CurrTile = currTile;
         }
 

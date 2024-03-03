@@ -11,17 +11,17 @@ namespace Simulation {
         private readonly int _dMin = 5; // TODO where should this be defined? locally or globally?
         private readonly int _dMax = 10; // TODO where should this be defined? locally or globally? Probably per agent (so difference for primary and tertiary roads and from settlement to settlement)
         
-        public TertiaryRoadExtender(LandUsage usageType, Tile currTile) : base(usageType, currTile) {
+        public TertiaryRoadExtender(LandUsage agentUsageType, Tile currTile) : base(agentUsageType, currTile) {
             
         }
         
         protected override void MoveToNewLocation() {
             // TODO keep list of visited patches, and don't visit them again (and forget them after teleporting)
-            var largestDistance = CurrTile.GetDistanceTo(UsageType);
+            var largestDistance = CurrTile.GetDistanceTo(AgentUsageType);
             Tile newTile = null;
             foreach (var neighbor in CurrTile.GetNeighbors(includeDiagonals: false)) {
                 // get a random neighbour out of all the neighbours with largest distance (but never more than dMax)
-                var distance = neighbor.GetDistanceTo(UsageType);
+                var distance = neighbor.GetDistanceTo(AgentUsageType);
                 if (distance <= _dMax &&
                         (distance > largestDistance ||
                         (distance == largestDistance && Random.Range(0, 2) == 1))) {
@@ -48,18 +48,18 @@ namespace Simulation {
             while (possibleRoad[^1].UsageType != LandUsage.Road) {
                 var currTile = possibleRoad[^1];
                 var neighbors = currTile.GetNeighbors(false);
-                var currRoadDistance = currTile.GetDistanceTo(UsageType);
-                Debug.Assert(!neighbors.Any(n => n.GetDistanceTo(UsageType) < currRoadDistance - 1 || n.GetDistanceTo(UsageType) > currRoadDistance + 1), $"Neighbours should always have a distance between +1 and -1 to currTile: {currTile}, neighbors: {string.Join(", ", neighbors)}");
+                var currRoadDistance = currTile.GetDistanceTo(AgentUsageType);
+                Debug.Assert(!neighbors.Any(n => n.GetDistanceTo(AgentUsageType) < currRoadDistance - 1 || n.GetDistanceTo(AgentUsageType) > currRoadDistance + 1), $"Neighbours should always have a distance between +1 and -1 to currTile: {currTile}, neighbors: {string.Join(", ", neighbors)}");
                 var possibleNextTiles = neighbors.Where(MeetsConstraints).ToList();
                 if (possibleNextTiles.Count == 0) {
                     return null;
                 }
-                var minDistance = possibleNextTiles.Min(n => n.GetDistanceTo(UsageType));
-                var nextTile = ApplyTiebreakers(possibleNextTiles.Where(t => t.GetDistanceTo(UsageType) <= minDistance + 0.1f).ToList(), possibleRoad[^1]);
+                var minDistance = possibleNextTiles.Min(n => n.GetDistanceTo(AgentUsageType));
+                var nextTile = ApplyTiebreakers(possibleNextTiles.Where(t => t.GetDistanceTo(AgentUsageType) <= minDistance + 0.1f).ToList(), possibleRoad[^1]);
                 possibleRoad.Add(nextTile);
                 
             }
-            return new RoadSegment(World, UsageType, possibleRoad, World.Tick);
+            return new RoadSegment(World, AgentUsageType, possibleRoad, World.Tick);
         }
 
         protected override bool IsValidRoad(RoadSegment newRoadSegment) {
