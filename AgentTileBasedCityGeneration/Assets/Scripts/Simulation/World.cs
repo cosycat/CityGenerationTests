@@ -34,7 +34,6 @@ namespace Simulation {
             }
             Instance = this;
 
-            Debug.Log("Creating Tiles...");
             _tilesContainer = new GameObject("Tiles");
             _tilesContainer.transform.SetParent(transform);
             Tiles = new Tile[Width, Height];
@@ -49,20 +48,26 @@ namespace Simulation {
                 }
             }
             Debug.Log($"{Width * Height} Tiles Created.");
-            Debug.Log("Initializing Tile distances...");
+
             foreach (var tile in AllTiles) {
                 tile.InitializeCurrentTileUsageDistances();
             }
             Debug.Log("Tile distances initialized.");
-            Debug.Log("Initializing Debug Roads...");
+            
             // TODO remove this, just for testing, simple way to add roads
-            foreach (var tile in Tiles) {
-                if (tile.Position.x == 5 || tile.Position.y == 30) {
-                    tile.MultiTileSite = new Parcel(this, LandUsage.Road, new List<Tile> {tile}, 0, 0);
-                }
-            }
-            Debug.Log("Debug Roads Initialized.");
-            Debug.Log("Initializing Agents...");
+            Tiles[Width/2, Height/2].MultiTileSite = new RoadSegment(this, LandUsage.Road, new List<Tile> {Tiles[Width/2, Height/2]}, 0);
+            // foreach (var tile in Tiles) {
+            //     if (tile.Position.x == 15 || tile.Position.y == 30) {
+            //         tile.MultiTileSite = new Parcel(this, LandUsage.Road, new List<Tile> {tile}, 0, 0);
+            //     }
+            // }
+            Debug.Log("Debug Road(s) Initialized.");
+
+            Debug.Log("Testing Removing Last Tile of certain type");
+            Tiles[Width - 1, Height - 1].MultiTileSite = new Parcel(this, LandUsage.Residential, new List<Tile> {Tiles[Width - 1, Height - 1]}, 0, 0);
+            Tiles[Width - 1, Height - 1].MultiTileSite = new Parcel(this, LandUsage.Industrial, new List<Tile> {Tiles[Width - 1, Height - 1]}, 0, 0);
+            Tiles[Width - 1, Height - 1].MultiTileSite = null;
+            
             InitializeAgents();
             Debug.Log("Agents Initialized.");
         }
@@ -75,11 +80,13 @@ namespace Simulation {
             CreateNewAgent(new PropertyDeveloperAgent(LandUsage.Industrial, new RangeInt(1, 6), Tiles[Width / 2, Height / 2]));
             
             CreateNewAgent(new TertiaryRoadExtender(LandUsage.Road, AllTiles.First(t => t.UsageType == LandUsage.Road)));
+            CreateNewAgent(new TertiaryRoadExtender(LandUsage.Road, AllTiles.First(t => t.UsageType == LandUsage.Road)));
+            CreateNewAgent(new TertiaryRoadExtender(LandUsage.Road, AllTiles.First(t => t.UsageType == LandUsage.Road)));
         }
         
         private void CreateNewAgent(Agent agent) {
             Agents.Add(agent);
-            var agentRepresentation = Instantiate(agentRepresentationPrefab, new Vector3(agent.CurrSite.Position.x, agent.CurrSite.Position.y), Quaternion.identity);
+            var agentRepresentation = Instantiate(agentRepresentationPrefab, new Vector3(agent.CurrTile.Position.x, agent.CurrTile.Position.y), Quaternion.identity);
             agentRepresentation.transform.SetParent(_agentsContainer.transform);
             agentRepresentation.name = $"Agent {agent.UsageType}";
             agentRepresentation.Initialize(agent);
@@ -87,7 +94,7 @@ namespace Simulation {
 
         private void Update() {
             TimeSinceLastTick += Time.deltaTime;
-            if (TimeSinceLastTick >= 1 / Speed) {
+            if (TimeSinceLastTick >= 1f / Speed) {
                 TimeSinceLastTick = 0;
                 foreach (var agent in Agents) {
                     agent.UpdateTick();

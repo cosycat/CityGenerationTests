@@ -13,7 +13,7 @@ namespace Simulation {
         private readonly RangeInt _sizeRange;
 
 
-        public PropertyDeveloperAgent(LandUsage type, RangeInt sizeRange, ISite startSite) : base(type, startSite) {
+        public PropertyDeveloperAgent(LandUsage type, RangeInt sizeRange, Tile startTile) : base(type, startTile) {
             _sizeRange = sizeRange;
         }
 
@@ -32,22 +32,22 @@ namespace Simulation {
             Debug.Assert(!devSites.Exists(site => site is null or Tile { MultiTileSite: null, IsRoadAdjacent: false }), $"devSites: {string.Join(", ", devSites)}");
             if (devSites.Count > 0) { // TODO check for recent relocation or commit
                 // move locally
-                CurrSite = devSites.OrderBy(site => site.CalcValue()).First();
+                CurrTile = devSites.OrderBy(site => site.CalcValue()).First().CorrespondingTile;
             }
             else {
                 // move globally
-                var allDevelopmentSites = CurrSite.World.AllTiles
-                    .Where(IsDevelopableSite)
-                    .OrderBy(site => site.CalcValue()).ToList();
-                if (allDevelopmentSites.Count == 0) {
-                    Debug.Log("No developable sites found");
+                var allDevelopmentSites = World.AllTiles
+                    .Where(IsDevelopableSite);
+                if (!allDevelopmentSites.Any()) {
+                    Debug.Log($"No developable sites found for {this}");
                     return;
                 }
-                Debug.Assert(allDevelopmentSites.Count > 0, "No developable sites found");
-                CurrSite = allDevelopmentSites[UnityEngine.Random.Range(0, allDevelopmentSites.Count)];
+                var allDevSitesOrdered = allDevelopmentSites.OrderBy(site => site.CalcValue()).ToList();
+                Debug.Assert(allDevSitesOrdered.Count > 0, "No developable sites found");
+                CurrTile = allDevSitesOrdered[UnityEngine.Random.Range(0, allDevSitesOrdered.Count)];
                 DevTiles = new List<Tile>();
             }
-            DevSites = CurrSite.GetSitesInCircle(5)
+            DevSites = ((ISite)CurrTile).GetSitesInCircle(5)
                 .Where(IsDevelopableSite)
                 .ToList();
             var allDevTiles = DevSites.OfType<Tile>().ToList();

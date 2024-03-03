@@ -27,8 +27,8 @@ public class CameraController : MonoBehaviour {
         Camera.orthographicSize = size;
         
         var position = transform.position;
-        position.x += horizontal * CameraSpeed * Time.deltaTime;
-        position.y += vertical * CameraSpeed * Time.deltaTime;
+        position.x += horizontal * CameraSpeed * Time.deltaTime * size / 10f;
+        position.y += vertical * CameraSpeed * Time.deltaTime * size / 10f;
         var minX = Camera.orthographicSize * Camera.aspect - 0.5f - AllowedBounds;
         var minY = Camera.orthographicSize - 0.5f - AllowedBounds;
         var maxX = World.Instance.Width - minX;

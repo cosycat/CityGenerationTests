@@ -11,7 +11,7 @@ namespace Simulation {
         private readonly int _dMin = 5; // TODO where should this be defined? locally or globally?
         private readonly int _dMax = 10; // TODO where should this be defined? locally or globally? Probably per agent (so difference for primary and tertiary roads and from settlement to settlement)
         
-        public TertiaryRoadExtender(LandUsage usageType, ISite currSite) : base(usageType, currSite) {
+        public TertiaryRoadExtender(LandUsage usageType, Tile currTile) : base(usageType, currTile) {
             
         }
         
@@ -19,13 +19,12 @@ namespace Simulation {
             // TODO keep list of visited patches, and don't visit them again (and forget them after teleporting)
             var largestDistance = CurrTile.GetDistanceTo(UsageType);
             Tile newTile = null;
-            foreach (var neighbor in CurrTile.GetNeighbors(true)) {
-                if (neighbor.UsageType == UsageType) {
-                    continue;
-                }
-                // TODO get a random neighbour out of all the neighbours with largest distance (but never more than dMax)
+            foreach (var neighbor in CurrTile.GetNeighbors(includeDiagonals: false)) {
+                // get a random neighbour out of all the neighbours with largest distance (but never more than dMax)
                 var distance = neighbor.GetDistanceTo(UsageType);
-                if (distance > largestDistance && distance <= _dMax) {
+                if (distance <= _dMax &&
+                        (distance > largestDistance ||
+                        (distance == largestDistance && Random.Range(0, 2) == 1))) {
                     largestDistance = distance;
                     newTile = neighbor;
                 }
@@ -36,6 +35,7 @@ namespace Simulation {
             }
             else {
                 // TODO what should happen if there are no valid neighbors? Move to a random location (with road) probably.
+                Debug.LogError("No valid neighbours found");
             }
         }
 
@@ -47,7 +47,7 @@ namespace Simulation {
             var possibleRoad = new List<Tile> {CurrTile};
             while (possibleRoad[^1].UsageType != LandUsage.Road) {
                 var currTile = possibleRoad[^1];
-                var neighbors = currTile.GetNeighbors(true);
+                var neighbors = currTile.GetNeighbors(false);
                 var currRoadDistance = currTile.GetDistanceTo(UsageType);
                 Debug.Assert(!neighbors.Any(n => n.GetDistanceTo(UsageType) < currRoadDistance - 1 || n.GetDistanceTo(UsageType) > currRoadDistance + 1), $"Neighbours should always have a distance between +1 and -1 to currTile: {currTile}, neighbors: {string.Join(", ", neighbors)}");
                 var possibleNextTiles = neighbors.Where(MeetsConstraints).ToList();

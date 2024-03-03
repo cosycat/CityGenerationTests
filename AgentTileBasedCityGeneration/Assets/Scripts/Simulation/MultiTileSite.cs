@@ -30,8 +30,16 @@ namespace Simulation {
         
         public List<Tile> Tiles { get; private set; }
         
-        public Vector2Int Position => Tiles[0].Position;
-        
+        public Vector2Int Position {
+            get {
+                if (Tiles.Count == 0) {
+                    Debug.LogError($"MultiTileSite {this} has no tiles.");
+                    return Vector2Int.zero;
+                }
+                return Tiles[0].Position;
+            }
+        }
+
         public Tile CorrespondingTile => Tiles[0];
 
         public MultiTileSite(World world, LandUsage usageType, List<Tile> tiles, long tickCreated) {
@@ -49,17 +57,50 @@ namespace Simulation {
         }
 
         public float CalcValue() {
+            Debug.Assert(Tiles.Count > 0, $"This MultiTileSite {this} has no tiles.");
             return Tiles.Average(tile => tile.CalcValue());
         }
 
         public void TileWasRemoved(Tile tile) {
-            throw new NotImplementedException();
+            if (Tiles.Contains(tile)) {
+                Debug.Log($"Tile {tile} was removed from {this}.");
+                if (Tiles.Count == 1) {
+                    // ignore
+                    Debug.Log($"MultiTileSite {this} has no tiles left. Last tile was {tile}.");
+                    OnMultiTileSiteRemoved(tile);
+                }
+                else {
+                    // I have no idea why, but Unity just crashes on this line... (At least if it is the last remaining tile, not sure about other cases)
+                    Tiles.Remove(tile);
+                }
+            }
+            else {
+                Debug.LogError($"Tile {tile} was removed from {this} but it was not in the list of tiles.");
+            }
+            // // Debug.Assert(Tiles.Count(t => t == tile) == 1, $"Tile {tile} exists {Tiles.Count(t => t == tile)} times in {this} instead of exactly once.");
+            // // Tiles.Remove(tile);
+            // if (Tiles.Count == 0) {
+            //     Debug.Log($"MultiTileSite {this} has no tiles left. Last tile was {tile}.");
+            //     return;
+            //     OnMultiTileSiteDestroyed(tile);
+            // }
         }
 
         public event Action<(LandUsage oldUsageType, LandUsage newUsageType)> MultiTileUsageChanged;
 
         protected virtual void OnMultiTileUsageChanged(LandUsage oldUsageType, LandUsage newUsageType) {
             MultiTileUsageChanged?.Invoke((oldUsageType, newUsageType));
+        }
+        
+        public event Action<MultiTileSite, Tile> MultiTileSiteRemoved;
+        
+        protected virtual void OnMultiTileSiteRemoved(Tile lastTile) {
+            MultiTileSiteRemoved?.Invoke(this, lastTile);
+        }
+
+
+        public override string ToString() {
+            return $"MultiTileSite({GetType()}) {Position} ({UsageType})";
         }
     }
 }

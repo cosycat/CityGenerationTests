@@ -67,6 +67,7 @@ namespace Simulation {
         public Tile CorrespondingTile => this;
         
         public bool IsWater { get; }
+        public bool IsBuildable => !IsWater; // TODO maybe add more conditions like if it is too steep.
         
         public bool IsRoadAdjacent => GetNeighbors().Exists(tile => tile.UsageType == LandUsage.Road);
         
@@ -82,9 +83,10 @@ namespace Simulation {
             get => _multiTileSite;
             internal set {
                 if (_multiTileSite == value) return;
-                if (_multiTileSite != null) _multiTileSite.MultiTileUsageChanged -= OnTileUsageChanged;
-                // TODO if a Tile changes its MultiTileSite, it should also update the MultiTileSite's Tiles
-                _multiTileSite.TileWasRemoved(this);
+                if (_multiTileSite != null) { _multiTileSite.MultiTileUsageChanged -= OnTileUsageChanged;
+                    // TODO if a Tile changes its MultiTileSite, it should also update the MultiTileSite's Tiles
+                    _multiTileSite?.TileWasRemoved(this);
+                }
                 var currUsageType = UsageType;
                 _multiTileSite = value;
                 if (currUsageType != UsageType) OnTileUsageChanged((currUsageType, UsageType));
@@ -215,7 +217,7 @@ namespace Simulation {
         /// </summary>
         /// <param name="usageType"> The usage type to calculate the distance to </param>
         /// <returns> The distance to the nearest tile of the given usage type </returns>
-        public float GetDistanceTo(LandUsage usageType) {
+        public int GetDistanceTo(LandUsage usageType) {
             Debug.Assert(
                 _distancesToUsageType[usageType] == 0 && UsageType == usageType ||
                 _distancesToUsageType[usageType] != 0 && UsageType != usageType,

@@ -228,7 +228,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b976473cc7b84462bad95cac28ede19d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  <CameraSpeed>k__BackingField: 1
+  <CameraSpeed>k__BackingField: 10
   <ZoomSpeed>k__BackingField: 5
   <MinZoom>k__BackingField: 3
   <MaxZoom>k__BackingField: 50

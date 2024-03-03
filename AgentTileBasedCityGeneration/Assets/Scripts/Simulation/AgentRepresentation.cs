@@ -18,10 +18,10 @@ namespace Simulation {
                 _ => throw new System.ArgumentOutOfRangeException()
             };
             agent.SiteChanged += OnAgentPositionChanged;
-            OnAgentPositionChanged(agent.CurrSite);
+            OnAgentPositionChanged(agent.CurrTile);
         }
 
-        private void OnAgentPositionChanged(ISite newSite) {
+        private void OnAgentPositionChanged(Tile newSite) {
             transform.position = new Vector3(newSite.Position.x, newSite.Position.y);
         }
         

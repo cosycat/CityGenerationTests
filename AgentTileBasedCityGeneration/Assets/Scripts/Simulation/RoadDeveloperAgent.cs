@@ -5,7 +5,7 @@ namespace Simulation {
     
     public abstract class RoadDeveloperAgent : Agent {
         
-        public RoadDeveloperAgent(LandUsage usageType, ISite currSite) : base(usageType, currSite) { }
+        public RoadDeveloperAgent(LandUsage usageType, Tile currTile) : base(usageType, currTile) { }
         
         protected internal override void UpdateTick() {
             MoveToNewLocation();

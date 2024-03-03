@@ -3,35 +3,31 @@ using System;
 namespace Simulation {
     public abstract class Agent {
         
-        public World World => CurrSite.World;
+        public World World => CurrTile.World;
         
-        private ISite _currSite; // TODO this should probably just be a tile
-        public ISite CurrSite {
-            get => _currSite;
-            protected set {
-                _currSite = value;
+        private Tile _currTile;
+        public Tile CurrTile {
+            get => _currTile;
+            set {
+                _currTile = value;
                 OnSiteChanged(value);
             }
-        }
-        public Tile CurrTile {
-            get => CurrSite.CorrespondingTile;
-            set => CurrSite = value;
         }
 
         public LandUsage UsageType { get; }
 
         
-        protected Agent(LandUsage usageType, ISite currSite) {
+        protected Agent(LandUsage usageType, Tile currTile) {
             UsageType = usageType;
-            CurrSite = currSite;
+            CurrTile = currTile;
         }
 
         
         protected internal abstract void UpdateTick();
 
-        public event Action<ISite> SiteChanged;
+        public event Action<Tile> SiteChanged;
         
-        protected virtual void OnSiteChanged(ISite obj) {
+        protected virtual void OnSiteChanged(Tile obj) {
             SiteChanged?.Invoke(obj);
         }
         
