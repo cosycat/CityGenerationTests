@@ -11,6 +11,13 @@ namespace Simulation {
         private List<ISite> DevSites { get; set; } = new();
         private List<Tile> DevTiles { get; set; } = new();
         private readonly RangeInt _sizeRange;
+        
+        private int _ticksSinceCreatedNewSite = 0;
+        private int _ticksSinceRelocated = 0;
+        /// <summary>
+        /// How many ticks without any newly created sites before relocating to a new area
+        /// </summary>
+        private int TicksUntilRelocate { get; } = 10;
 
 
         public PropertyDeveloperAgent(LandUsage type, RangeInt sizeRange, Tile startTile) : base(type, startTile) {
@@ -18,19 +25,23 @@ namespace Simulation {
         }
 
         protected internal override void UpdateTick() {
+            _ticksSinceCreatedNewSite++;
             Debug.Assert(AgentUsageType is LandUsage.Commercial or LandUsage.Industrial or LandUsage.Residential or LandUsage.Park);
             Prospect(DevSites);
             foreach (var devSite in DevSites) {
-                var newDev = Build(devSite);
+                var (newDev, buildType) = Build(devSite);
                 if (Profitable(newDev, devSite)) {
                     Commit(newDev, devSite);
+                    if (buildType == BuildType.New) {
+                        _ticksSinceCreatedNewSite = 0;
+                    }
                 }
             }
         }
 
         private void Prospect(List<ISite> devSites) {
             Debug.Assert(!devSites.Exists(site => site is null or Tile { MultiTileSite: null, IsRoadAdjacent: false }), $"devSites: {string.Join(", ", devSites)}");
-            if (devSites.Count > 0) { // TODO check for recent relocation or commit
+            if (devSites.Count > 0 && _ticksSinceCreatedNewSite < TicksUntilRelocate) {
                 // move locally
                 CurrTile = devSites.OrderBy(site => site.CalcValueForType(AgentUsageType)).First().CorrespondingTile;
             }
@@ -43,9 +54,15 @@ namespace Simulation {
                     return;
                 }
                 var allDevSitesOrdered = allDevelopmentSites.OrderBy(site => site.CalcValueForType(AgentUsageType)).ToList();
+                if (allDevSitesOrdered.Count == 0) {
+                    Debug.LogWarning($"No developable sites to relocate found for {this}");
+                    return;
+                }
                 Debug.Assert(allDevSitesOrdered.Count > 0, "No developable sites found");
                 CurrTile = allDevSitesOrdered[UnityEngine.Random.Range(0, allDevSitesOrdered.Count)];
                 DevTiles = new List<Tile>();
+                _ticksSinceRelocated = 0;
+                _ticksSinceCreatedNewSite = 0;
             }
             // We take the best 90% of the tiles and add them to the list of tiles to develop
             DevSites = ((ISite)CurrTile).GetSitesInCircle(5)
@@ -55,25 +72,31 @@ namespace Simulation {
             DevTiles = allDevTiles.OrderBy(tile => tile.CalcValueForType(AgentUsageType)).Take((int)(allDevTiles.Count / 10f * 9)).Union(DevTiles).ToList();
         }
 
-        [CanBeNull]
-        private Parcel Build(ISite devSite) {
+        private enum BuildType {
+            AddPopulation,
+            Convert,
+            New,
+            FailedBuild
+        }
+        
+        private (Parcel builtParcel, BuildType buildType) Build(ISite devSite) {
             switch (devSite) {
                 case Tile tile: {
                     // Build a new parcel
                     Debug.Assert(tile.UsageType == LandUsage.None && tile.MultiTileSite == null);
                     // TODO bigger size
                     var newParcel = new Parcel(tile.World, AgentUsageType, new List<Tile> {tile}, 0, tile.World.Tick);
-                    return newParcel;
+                    return (newParcel, BuildType.New);
                 }
                 // Expand or convert the parcel
                 case Parcel parcel: //when parcel.UsageType == _type:
                     var copy = new Parcel(parcel);
                     if (parcel.UsageType == AgentUsageType) {
                         copy.Population += 1;
-                        return copy;
+                        return (copy, BuildType.AddPopulation);
                     }
                     copy.UsageType = AgentUsageType;
-                    return copy;
+                    return (copy, BuildType.Convert);
                 default:
                     throw new NotImplementedException();
             }

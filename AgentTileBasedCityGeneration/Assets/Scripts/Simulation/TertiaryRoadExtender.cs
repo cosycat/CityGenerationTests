@@ -8,7 +8,7 @@ namespace Simulation {
     
     public class TertiaryRoadExtender : RoadDeveloperAgent {
 
-        private readonly int _dMin = 5; // TODO where should this be defined? locally or globally?
+        private readonly int _dMin = 7; // TODO where should this be defined? locally or globally?
         private readonly int _dMax = 10; // TODO where should this be defined? locally or globally? Probably per agent (so difference for primary and tertiary roads and from settlement to settlement)
         
         public TertiaryRoadExtender(LandUsage agentUsageType, Tile currTile) : base(agentUsageType, currTile) {
@@ -34,8 +34,10 @@ namespace Simulation {
                 CurrTile = newTile;
             }
             else {
-                // TODO what should happen if there are no valid neighbors? Move to a random location (with road) probably.
-                Debug.LogError("No valid neighbours found");
+                // Move to a random location (with road)
+                Debug.Log($"No valid neighbours found for {this} at {CurrTile.Position}. Moving to random location.");
+                var allRoads = World.AllTiles.Where(t => t.UsageType == LandUsage.Road).ToList();
+                CurrTile = allRoads[Random.Range(0, allRoads.Count)];
             }
         }
 

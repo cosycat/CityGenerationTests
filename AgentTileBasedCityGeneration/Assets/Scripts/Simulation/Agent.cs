@@ -30,7 +30,10 @@ namespace Simulation {
         protected virtual void OnSiteChanged(Tile obj) {
             SiteChanged?.Invoke(obj);
         }
-        
+
+        public override string ToString() {
+            return $"Agent ({AgentUsageType}) at {CurrTile}";
+        }
     }
     
 }
