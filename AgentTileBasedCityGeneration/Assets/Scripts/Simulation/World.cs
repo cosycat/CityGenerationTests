@@ -28,6 +28,8 @@ namespace Simulation {
         public long Tick { get; private set; }
 
         private void Awake() {
+            Random.InitState(1337);
+
             if (Instance != null) {
                 Destroy(gameObject);
                 return;
