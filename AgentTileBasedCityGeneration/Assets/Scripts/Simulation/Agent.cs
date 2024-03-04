@@ -2,40 +2,38 @@ using System;
 
 namespace Simulation {
     public abstract class Agent {
-        private ISite _currSite;
-        public ISite CurrSite {
-            get => _currSite;
-            protected set {
-                _currSite = value;
+        
+        public World World => CurrTile.World;
+        
+        private Tile _currTile;
+        public Tile CurrTile {
+            get => _currTile;
+            set {
+                _currTile = value;
                 OnSiteChanged(value);
             }
         }
 
-        public LandUsage UsageType { get; }
+        public LandUsage AgentUsageType { get; }
 
         
-        protected Agent(LandUsage usageType, ISite currSite) {
-            UsageType = usageType;
-            CurrSite = currSite;
+        protected Agent(LandUsage agentUsageType, Tile currTile) {
+            AgentUsageType = agentUsageType;
+            CurrTile = currTile;
         }
 
         
         protected internal abstract void UpdateTick();
 
-        public event Action<ISite> SiteChanged;
+        public event Action<Tile> SiteChanged;
         
-        protected virtual void OnSiteChanged(ISite obj) {
+        protected virtual void OnSiteChanged(Tile obj) {
             SiteChanged?.Invoke(obj);
         }
-        
-    }
 
-    public enum RoadType {
-        Primary,
-        Tertiary,
+        public override string ToString() {
+            return $"Agent ({AgentUsageType}) at {CurrTile}";
+        }
     }
-
-    public class RoadSegment {
-        
-    }
+    
 }

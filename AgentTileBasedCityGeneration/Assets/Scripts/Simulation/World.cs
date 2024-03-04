@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace Simulation {
     public class World : MonoBehaviour {
@@ -33,13 +34,12 @@ namespace Simulation {
             }
             Instance = this;
 
-            Debug.Log("Creating Tiles...");
             _tilesContainer = new GameObject("Tiles");
             _tilesContainer.transform.SetParent(transform);
             Tiles = new Tile[Width, Height];
             for (int x = 0; x < Width; x++) {
                 for (int y = 0; y < Height; y++) {
-                    Tiles[x, y] = new Tile(this, x + y < 6 || Math.Abs(x - y) < 2, new Vector2Int(x, y));
+                    Tiles[x, y] = new Tile(this, x + y < 6 || Math.Abs(x - y) < 2, new Vector2Int(x, y), Random.Range(0f, 5f));
                     // Tiles[x, y] = new Tile(this, x + y == 0, new Vector2Int(x, y));
                     var tileRepresentation = Instantiate(tileRepresentationPrefab, new Vector3(x, y), Quaternion.identity);
                     tileRepresentation.transform.SetParent(_tilesContainer.transform);
@@ -48,20 +48,26 @@ namespace Simulation {
                 }
             }
             Debug.Log($"{Width * Height} Tiles Created.");
-            Debug.Log("Initializing Tile distances...");
+
             foreach (var tile in AllTiles) {
                 tile.InitializeCurrentTileUsageDistances();
             }
             Debug.Log("Tile distances initialized.");
-            Debug.Log("Initializing Debug Roads...");
+            
             // TODO remove this, just for testing, simple way to add roads
-            foreach (var tile in Tiles) {
-                if (tile.Position.x == 5 || tile.Position.y == 30) {
-                    tile.Parcel = new Parcel(this, LandUsage.Road, new List<Tile> {tile}, 0, 0);
-                }
-            }
-            Debug.Log("Debug Roads Initialized.");
-            Debug.Log("Initializing Agents...");
+            Tiles[Width/2, Height/2].MultiTileSite = new RoadSegment(this, LandUsage.Road, new List<Tile> {Tiles[Width/2, Height/2]}, 0);
+            // foreach (var tile in Tiles) {
+            //     if (tile.Position.x == 15 || tile.Position.y == 30) {
+            //         tile.MultiTileSite = new Parcel(this, LandUsage.Road, new List<Tile> {tile}, 0, 0);
+            //     }
+            // }
+            Debug.Log("Debug Road(s) Initialized.");
+
+            Debug.Log("Testing Removing Last Tile of certain type");
+            Tiles[Width - 1, Height - 1].MultiTileSite = new Parcel(this, LandUsage.Residential, new List<Tile> {Tiles[Width - 1, Height - 1]}, 0, 0);
+            Tiles[Width - 1, Height - 1].MultiTileSite = new Parcel(this, LandUsage.Industrial, new List<Tile> {Tiles[Width - 1, Height - 1]}, 0, 0);
+            Tiles[Width - 1, Height - 1].MultiTileSite = null;
+            
             InitializeAgents();
             Debug.Log("Agents Initialized.");
         }
@@ -72,34 +78,59 @@ namespace Simulation {
             CreateNewAgent(new PropertyDeveloperAgent(LandUsage.Residential, new RangeInt(1, 4), Tiles[Width / 2, Height / 2]));
             CreateNewAgent(new PropertyDeveloperAgent(LandUsage.Commercial, new RangeInt(1, 6), Tiles[Width / 2, Height / 2]));
             CreateNewAgent(new PropertyDeveloperAgent(LandUsage.Industrial, new RangeInt(1, 6), Tiles[Width / 2, Height / 2]));
+            
+            CreateNewAgent(new TertiaryRoadExtender(LandUsage.Road, AllTiles.First(t => t.UsageType == LandUsage.Road)));
+            CreateNewAgent(new TertiaryRoadExtender(LandUsage.Road, AllTiles.First(t => t.UsageType == LandUsage.Road)));
+            CreateNewAgent(new TertiaryRoadExtender(LandUsage.Road, AllTiles.First(t => t.UsageType == LandUsage.Road)));
         }
         
         private void CreateNewAgent(Agent agent) {
             Agents.Add(agent);
-            var agentRepresentation = Instantiate(agentRepresentationPrefab, new Vector3(agent.CurrSite.Position.x, agent.CurrSite.Position.y), Quaternion.identity);
+            var agentRepresentation = Instantiate(agentRepresentationPrefab, new Vector3(agent.CurrTile.Position.x, agent.CurrTile.Position.y), Quaternion.identity);
             agentRepresentation.transform.SetParent(_agentsContainer.transform);
-            agentRepresentation.name = $"Agent {agent.UsageType}";
+            agentRepresentation.name = $"Agent {agent.AgentUsageType}";
             agentRepresentation.Initialize(agent);
         }
 
         private void Update() {
             TimeSinceLastTick += Time.deltaTime;
-            if (TimeSinceLastTick >= 1 / Speed) {
+            if (TimeSinceLastTick >= 1f / Speed) {
+                OnBeforeTick(Tick);
                 TimeSinceLastTick = 0;
                 foreach (var agent in Agents) {
                     agent.UpdateTick();
                 }
+                OnAfterTick(Tick);
                 Tick++;
             }
         }
 
-        public bool TryGetTile(Vector2Int position, out Tile tile) {
+        public bool TryGetTileAt(Vector2Int position, out Tile tile) {
             if (position.x < 0 || position.x >= Width || position.y < 0 || position.y >= Height) {
                 tile = null;
                 return false;
             }
             tile = Tiles[position.x, position.y];
             return true;
+        }
+        
+        
+        /// <summary>
+        /// Event that is called before each tick.
+        /// </summary>
+        public event Action<long> BeforeTick;
+        
+        protected virtual void OnBeforeTick(long tick) {
+            BeforeTick?.Invoke(tick);
+        }
+        
+        /// <summary>
+        /// Event that is called after each tick.
+        /// </summary>
+        public event Action<long> AfterTick;
+        
+        protected virtual void OnAfterTick(long tick) {
+            AfterTick?.Invoke(tick);
         }
         
     }

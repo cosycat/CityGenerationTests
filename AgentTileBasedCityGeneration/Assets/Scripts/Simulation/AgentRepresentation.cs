@@ -7,7 +7,7 @@ namespace Simulation {
 
         protected override void OnInitialize(Agent agent) {
             Agent = agent;
-            SpriteRenderer.color = Agent.UsageType switch {
+            SpriteRenderer.color = Agent.AgentUsageType switch {
                 LandUsage.None => new Color(0.11f, 0.62f, 0.1f),
                 LandUsage.Road => Color.gray,
                 LandUsage.Residential => Color.yellow,
@@ -18,10 +18,10 @@ namespace Simulation {
                 _ => throw new System.ArgumentOutOfRangeException()
             };
             agent.SiteChanged += OnAgentPositionChanged;
-            OnAgentPositionChanged(agent.CurrSite);
+            OnAgentPositionChanged(agent.CurrTile);
         }
 
-        private void OnAgentPositionChanged(ISite newSite) {
+        private void OnAgentPositionChanged(Tile newSite) {
             transform.position = new Vector3(newSite.Position.x, newSite.Position.y);
         }
         

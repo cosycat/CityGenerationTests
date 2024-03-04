@@ -9,6 +9,7 @@ namespace Simulation {
     /// <summary>
     /// A tile is the smallest unit of land in the simulation. It can be combined with other tiles to form a parcel by a property developer.
     /// </summary>
+    [Serializable]
     public sealed class Tile : ISite {
 
         #region AgentParameters
@@ -62,8 +63,11 @@ namespace Simulation {
         public World World { get; }
 
         public Vector2Int Position { get; }
+        public float Elevation { get; }
+        public Tile CorrespondingTile => this;
         
         public bool IsWater { get; }
+        public bool IsBuildable => !IsWater; // TODO maybe add more conditions like if it is too steep.
         
         public bool IsRoadAdjacent => GetNeighbors().Exists(tile => tile.UsageType == LandUsage.Road);
         
@@ -72,41 +76,45 @@ namespace Simulation {
 
         #region LandUsage and Parcel
 
-        [CanBeNull] private Parcel _parcel;
+        [CanBeNull] private MultiTileSite _multiTileSite;
 
         [CanBeNull]
-        public Parcel Parcel {
-            get => _parcel;
+        public MultiTileSite MultiTileSite {
+            get => _multiTileSite;
             internal set {
-                if (_parcel == value) return;
-                if (_parcel != null) _parcel.ParcelUsageChanged -= OnTileUsageChanged;
+                if (_multiTileSite == value) return;
+                if (_multiTileSite != null) { _multiTileSite.MultiTileUsageChanged -= OnTileUsageChanged;
+                    // TODO if a Tile changes its MultiTileSite, it should also update the MultiTileSite's Tiles
+                    _multiTileSite?.TileWasRemoved(this);
+                }
                 var currUsageType = UsageType;
-                _parcel = value;
+                _multiTileSite = value;
                 if (currUsageType != UsageType) OnTileUsageChanged((currUsageType, UsageType));
-                if (_parcel != null) _parcel.ParcelUsageChanged += OnTileUsageChanged;
+                if (_multiTileSite != null) _multiTileSite.MultiTileUsageChanged += OnTileUsageChanged;
             }
         }
 
-        public LandUsage UsageType => IsWater ? LandUsage.Water : Parcel?.UsageType ?? LandUsage.None;
+        public LandUsage UsageType => IsWater ? LandUsage.Water : MultiTileSite?.UsageType ?? LandUsage.None;
         
 
         #endregion
         
         
 
-        public Tile(World world, bool isWater, Vector2Int position) {
+        public Tile(World world, bool isWater, Vector2Int position, float elevation) {
             World = world; 
             Position = position;
             IsWater = isWater;
+            Elevation = elevation;
         }
 
-        private List<Tile> GetNeighbors(bool includeDiagonals = false) {
+        public List<Tile> GetNeighbors(bool includeDiagonals = false) {
             var neighbors = new List<Tile>();
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x == 0 && y == 0) continue;
                     if (!includeDiagonals && x != 0 && y != 0) continue;
-                    if (World.TryGetTile(Position + new Vector2Int(x, y), out var tile)) {
+                    if (World.TryGetTileAt(Position + new Vector2Int(x, y), out var tile)) {
                         neighbors.Add(tile);
                     }
                 }
@@ -115,10 +123,29 @@ namespace Simulation {
             return neighbors;
             
         }
-
+        
         public float CalcValue() {
-            var attributeValue = new Attribute(this).Calculate();
-            return attributeValue;
+            return CalcValueForType(UsageType);
+        }
+
+        public float CalcValueForType(LandUsage usage) {
+            switch (usage) {
+                case LandUsage.Residential:
+                case LandUsage.Commercial:
+                case LandUsage.Industrial:
+                case LandUsage.Park:
+                    var attributeValue = new Attribute(this).Calculate(usage);
+                    return attributeValue;
+                
+                case LandUsage.Road:
+                case LandUsage.Water:
+                case LandUsage.None:
+                    return 0f;
+                
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+            
         }
 
 
@@ -204,12 +231,12 @@ namespace Simulation {
         };
 
         /// <summary>
-        /// Calculates the distance to the nearest tile of a given usage type.
+        /// Returns the (precalculated) distance to the nearest tile of a given usage type.
         /// Currently in Manhattan distance.
         /// </summary>
         /// <param name="usageType"> The usage type to calculate the distance to </param>
         /// <returns> The distance to the nearest tile of the given usage type </returns>
-        public float GetDistanceTo(LandUsage usageType) {
+        public int GetDistanceTo(LandUsage usageType) {
             Debug.Assert(
                 _distancesToUsageType[usageType] == 0 && UsageType == usageType ||
                 _distancesToUsageType[usageType] != 0 && UsageType != usageType,
@@ -219,6 +246,13 @@ namespace Simulation {
 
         public override string ToString() {
             return $"Tile {Position} ({UsageType})";
+        }
+
+        public bool IsParcelBoundary() {
+            return MultiTileSite == null 
+                ? GetNeighbors().Any(n => n.MultiTileSite != null) 
+                : GetNeighbors().Any(n => n.MultiTileSite != null || n.MultiTileSite != MultiTileSite);
+            // If this tile is part of a parcel, but the other tile is not, then only the other tile is a boundary tile.
         }
     }
     
@@ -247,8 +281,8 @@ namespace Simulation {
         private float DistanceToPark => _tile.GetDistanceTo(LandUsage.Park);
         private float DistanceToCommercial => _tile.GetDistanceTo(LandUsage.Commercial);
         
-        public float Calculate() {
-            var weights = GetWeights();
+        public float Calculate(LandUsage usage) {
+            var weights = GetWeights(usage);
             var values = CalculateAttribute();
             Debug.Assert(weights.Count() == values.Count());
             return weights.Zip(values, (w, v) => w * v).Sum();
@@ -271,8 +305,8 @@ namespace Simulation {
             return values;
         }
 
-        private List<float> GetWeights() {
-            switch (_tile.UsageType) {
+        private List<float> GetWeights(LandUsage usage) {
+            switch (usage) {
                 case LandUsage.Residential:
                     return new List<float> { .3f, 0, 0, 0, .3f, .4f, 0, 0, 0, 0, 0, 0 };
                 case LandUsage.Commercial:
@@ -282,10 +316,13 @@ namespace Simulation {
                 case LandUsage.Park:
                     throw new NotImplementedException();
                 case LandUsage.Road:
-                    throw new NotImplementedException();
+                    Debug.LogWarning("Roads should not have attributes");
+                    return new List<float> { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
                 case LandUsage.Water:
+                    Debug.LogWarning("Water should not have attributes");
                     return new List<float> { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
                 case LandUsage.None:
+                    Debug.LogWarning("None should not have attributes");
                     return new List<float> { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
                 default:
                     throw new ArgumentOutOfRangeException();

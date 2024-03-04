@@ -1,13 +1,18 @@
 using System;
+using System.Text;
+using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Simulation {
     
     public class TileRepresentation : Representation<Tile> {
+        public Tile Tile { get; private set; }
 
         protected override void OnInitialize(Tile tile) {
             tile.TileUsageChanged += OnTileUsageChanged;
             OnTileUsageChanged((LandUsage.None, tile.UsageType));
+            Tile = tile;
         }
 
         private void OnTileUsageChanged((LandUsage oldUsageType, LandUsage newUsageType) usageTypes) {
