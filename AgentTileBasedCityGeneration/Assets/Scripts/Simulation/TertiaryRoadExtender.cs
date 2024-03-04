@@ -59,8 +59,8 @@ namespace Simulation {
                 var minDistance = possibleNextTiles.Min(n => n.GetDistanceTo(AgentUsageType));
                 var nextTile = ApplyTiebreakers(possibleNextTiles.Where(t => t.GetDistanceTo(AgentUsageType) <= minDistance + 0.1f).ToList(), possibleRoad[^1]);
                 possibleRoad.Add(nextTile);
-                
             }
+            // TODO don't add the last road tile.
             return new RoadSegment(World, AgentUsageType, possibleRoad, World.Tick);
         }
 

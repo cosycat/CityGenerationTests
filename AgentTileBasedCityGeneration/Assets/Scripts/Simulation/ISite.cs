@@ -32,7 +32,7 @@ namespace Simulation {
             var sites = new List<ISite>();
             for (int x = -radius; x <= radius; x++) {
                 for (int y = -radius; y <= radius; y++) {
-                    if (!World.TryGetTile(Position + new Vector2Int(x, y), out var tile)) {
+                    if (!World.TryGetTileAt(Position + new Vector2Int(x, y), out var tile)) {
                         continue;
                     }
                     if (Vector2Int.Distance(Position, tile.Position) + 0.1f >= radius) continue;

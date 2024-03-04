@@ -114,7 +114,7 @@ namespace Simulation {
                 for (int y = -1; y <= 1; y++) {
                     if (x == 0 && y == 0) continue;
                     if (!includeDiagonals && x != 0 && y != 0) continue;
-                    if (World.TryGetTile(Position + new Vector2Int(x, y), out var tile)) {
+                    if (World.TryGetTileAt(Position + new Vector2Int(x, y), out var tile)) {
                         neighbors.Add(tile);
                     }
                 }

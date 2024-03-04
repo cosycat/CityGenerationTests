@@ -88,6 +88,7 @@ namespace Simulation {
                     var newParcel = new Parcel(tile.World, AgentUsageType, new List<Tile> {tile}, 0, tile.World.Tick);
                     return (newParcel, BuildType.New);
                 }
+                // TODO don't copy the parcel, just change the usage type or population directly in here. Copying just adds potential bugs.
                 // Expand or convert the parcel
                 case Parcel parcel: //when parcel.UsageType == _type:
                     var copy = new Parcel(parcel);

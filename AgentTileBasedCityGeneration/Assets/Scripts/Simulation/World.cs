@@ -95,21 +95,42 @@ namespace Simulation {
         private void Update() {
             TimeSinceLastTick += Time.deltaTime;
             if (TimeSinceLastTick >= 1f / Speed) {
+                OnBeforeTick(Tick);
                 TimeSinceLastTick = 0;
                 foreach (var agent in Agents) {
                     agent.UpdateTick();
                 }
+                OnAfterTick(Tick);
                 Tick++;
             }
         }
 
-        public bool TryGetTile(Vector2Int position, out Tile tile) {
+        public bool TryGetTileAt(Vector2Int position, out Tile tile) {
             if (position.x < 0 || position.x >= Width || position.y < 0 || position.y >= Height) {
                 tile = null;
                 return false;
             }
             tile = Tiles[position.x, position.y];
             return true;
+        }
+        
+        
+        /// <summary>
+        /// Event that is called before each tick.
+        /// </summary>
+        public event Action<long> BeforeTick;
+        
+        protected virtual void OnBeforeTick(long tick) {
+            BeforeTick?.Invoke(tick);
+        }
+        
+        /// <summary>
+        /// Event that is called after each tick.
+        /// </summary>
+        public event Action<long> AfterTick;
+        
+        protected virtual void OnAfterTick(long tick) {
+            AfterTick?.Invoke(tick);
         }
         
     }
