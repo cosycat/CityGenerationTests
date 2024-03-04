@@ -60,7 +60,8 @@ namespace Simulation {
                 var nextTile = ApplyTiebreakers(possibleNextTiles.Where(t => t.GetDistanceTo(AgentUsageType) <= minDistance + 0.1f).ToList(), possibleRoad[^1]);
                 possibleRoad.Add(nextTile);
             }
-            // TODO don't add the last road tile.
+            // Don't add the last road tile, as it's already part of another RoadSegment.
+            possibleRoad.RemoveAt(possibleRoad.Count - 1);
             return new RoadSegment(World, AgentUsageType, possibleRoad, World.Tick);
         }
 
