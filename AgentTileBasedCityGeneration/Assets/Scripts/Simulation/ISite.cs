@@ -47,5 +47,21 @@ namespace Simulation {
             }
             return sites;
         }
+
+        //TODO refactor this copy pasta...
+        public List<ISite> GetTilesInCircle(int radius) {
+            var sites = new List<ISite>();
+            for (int x = -radius; x <= radius; x++) {
+                for (int y = -radius; y <= radius; y++) {
+                    if (!World.TryGetTileAt(Position + new Vector2Int(x, y), out var tile)) {
+                        continue;
+                    }
+                    if (Vector2Int.Distance(Position, tile.Position) + 0.1f >= radius) continue;
+
+                    sites.Add(tile);
+                }
+            }
+            return sites;
+        }
     }
 }
