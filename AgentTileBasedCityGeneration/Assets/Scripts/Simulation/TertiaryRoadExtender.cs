@@ -24,7 +24,7 @@ namespace Simulation {
                 var distance = neighbor.GetDistanceTo(AgentUsageType);
                 if (distance <= _dMax &&
                         (distance > largestDistance ||
-                        (distance == largestDistance && Random.Range(0, 2) == 1))) {
+                        (distance == largestDistance && Random.Range(0, 2) == 1)) && MeetsConstraints(neighbor)) {
                     largestDistance = distance;
                     newTile = neighbor;
                 }
@@ -36,7 +36,7 @@ namespace Simulation {
             else {
                 // Move to a random location (with road)
                 Debug.Log($"No valid neighbours found for {this} at {CurrTile.Position}. Moving to random location.");
-                var allRoads = World.AllTiles.Where(t => t.UsageType == LandUsage.Road).ToList();
+                var allRoads = World.AllTiles.Where(t => t.UsageType == LandUsage.Road && MeetsConstraints(t)).ToList();
                 CurrTile = allRoads[Random.Range(0, allRoads.Count)];
             }
         }
@@ -82,7 +82,17 @@ namespace Simulation {
         }
 
         private bool MeetsConstraints(Tile arg) {
-            return true; // TODO Add constrtaints
+            bool isOnGridLine(int x, int gx, int gdx) {
+                int xMax = ((x + gx - 1) / gx) * gx;
+                int xMin = (x / gx) * gx; //rounding down
+                return !(xMax - x > gdx && x - xMin > gdx);
+            }
+
+            //TODO why is gx saved in tile?
+            bool onXAxis = isOnGridLine(arg.Position.x, arg.gx, arg.gdx);
+            bool onYAxis = isOnGridLine(arg.Position.y, arg.gy, arg.gdy);
+
+            return onXAxis || onYAxis;
         }
 
         /// <summary>
