@@ -1,5 +1,8 @@
-using System.Collections.Generic;
 using JetBrains.Annotations;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
 
 namespace Simulation {
     
@@ -38,6 +41,26 @@ namespace Simulation {
             foreach (var tile in newRoadSegment.Tiles) {
                 tile.MultiTileSite = newRoadSegment;
             }
+        }
+
+        protected bool isRoadDensityOk(RoadSegment newRoadSegment) {
+            foreach (var tile in newRoadSegment.Tiles) {
+                if(!IsRoadDensityOkTile(tile)) return false;
+            }
+            return true;
+        }
+
+        protected bool IsRoadDensityOkTile(Tile tile) {
+            var allSitesInCircle = ((ISite)tile).GetTilesInCircle(5).OfType<Tile>();
+            var sitesInCircle = allSitesInCircle as Tile[] ?? allSitesInCircle.ToArray();
+            var roadCount = sitesInCircle.Count(t => t.UsageType == LandUsage.Road);
+            var acceptableRoadDensity = tile.Dt;
+            var actualRoadDensity = 1.0f * roadCount / sitesInCircle.Length;
+            if (actualRoadDensity > acceptableRoadDensity) {
+                //Debug.Log($"Road density too high at {tile.Position} with {roadCount} roads in circle of {sitesInCircle.Length} tiles (dRoad: {acceptableRoadDensity}, actual: {actualRoadDensity})");
+                return false;
+            }
+            return true;
         }
         
     }

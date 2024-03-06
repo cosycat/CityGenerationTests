@@ -49,8 +49,8 @@ namespace Simulation {
         }
 
         //TODO refactor this copy pasta...
-        public List<ISite> GetTilesInCircle(int radius) {
-            var sites = new List<ISite>();
+        public List<Tile> GetTilesInCircle(int radius) {
+            var sites = new List<Tile>();
             for (int x = -radius; x <= radius; x++) {
                 for (int y = -radius; y <= radius; y++) {
                     if (!World.TryGetTileAt(Position + new Vector2Int(x, y), out var tile)) {
