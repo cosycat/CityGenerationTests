@@ -8,6 +8,7 @@ public class CameraController : MonoBehaviour {
     private Camera Camera { get; set; }
     [field: SerializeField] private float CameraSpeed { get; set; } = 10f;
     [field: SerializeField] private float ZoomSpeed { get; set; } = 5f;
+    [field: SerializeField] private float ZoomSpeedMultiplicator { get; set; } = 10f;
     [field: SerializeField] private float MinZoom { get; set; } = 5f;
     [field: SerializeField] private float MaxZoom { get; set; } = 15f;
     [field: SerializeField] private float AllowedBounds { get; set; } = 2f;
@@ -20,9 +21,10 @@ public class CameraController : MonoBehaviour {
         var horizontal = Input.GetAxis("Horizontal");
         var vertical = Input.GetAxis("Vertical");
         var zoom = Input.GetAxis("Mouse ScrollWheel");
+        var ctrl = Input.GetKey(KeyCode.LeftControl);
         
         var size = Camera.orthographicSize;
-        size -= zoom * ZoomSpeed;
+        size -= zoom * ZoomSpeed * (ctrl ? ZoomSpeedMultiplicator : 1);
         size = Mathf.Clamp(size, MinZoom, MaxZoom);
         Camera.orthographicSize = size;
         
