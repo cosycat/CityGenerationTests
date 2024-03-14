@@ -44,8 +44,14 @@ namespace Simulation {
 
     public class RoadSegment : MultiTileSite {
         
-        public RoadSegment(World world, LandUsage usageType, List<Tile> tiles, long tickCreated) : base(world, usageType, tiles, tickCreated) { }
-        public RoadSegment(MultiTileSite site) : base(site) { }
+        public RoadType RoadType { get; }
+        
+        public RoadSegment(World world, LandUsage usageType, List<Tile> tiles, long tickCreated, RoadType roadType) : base(world, usageType, tiles, tickCreated) {
+            RoadType = roadType;
+        }
+        public RoadSegment(RoadSegment roadSegment) : base(roadSegment) {
+            RoadType = roadSegment.RoadType;
+        }
         
     }
     

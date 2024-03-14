@@ -62,7 +62,7 @@ namespace Simulation {
             }
             // Don't add the last road tile, as it's already part of another RoadSegment.
             possibleRoad.RemoveAt(possibleRoad.Count - 1);
-            return new RoadSegment(World, AgentUsageType, possibleRoad, World.Tick);
+            return new RoadSegment(World, AgentUsageType, possibleRoad, World.Tick, RoadType.Tertiary);
         }
 
         protected override bool IsValidRoad(RoadSegment newRoadSegment) {

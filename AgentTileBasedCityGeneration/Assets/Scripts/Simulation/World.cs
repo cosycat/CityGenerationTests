@@ -56,8 +56,8 @@ namespace Simulation {
             }
             Debug.Log("Tile distances initialized.");
             
-            // TODO remove this, just for testing, simple way to add roads
-            Tiles[Width/2, Height/2].MultiTileSite = new RoadSegment(this, LandUsage.Road, new List<Tile> {Tiles[Width/2, Height/2]}, 0);
+            // TODO remove this, just for testing, simple way to add roads (but initially one road is needed)
+            Tiles[Width/2, Height/2].MultiTileSite = new RoadSegment(this, LandUsage.Road, new List<Tile> {Tiles[Width/2, Height/2]}, 0, RoadType.Tertiary);
             // foreach (var tile in Tiles) {
             //     if (tile.Position.x == 15 || tile.Position.y == 30) {
             //         tile.MultiTileSite = new Parcel(this, LandUsage.Road, new List<Tile> {tile}, 0, 0);
