@@ -69,7 +69,7 @@ namespace Simulation {
                             .ToList();
 
                         nextPatch = possibleTiles.FirstOrDefault();
-                        possibleTiles.RemoveAt(0);
+                        possibleTiles.RemoveAt(0); // TODO: this throws error sometime (when possibleTiles is empty)
                         prevStates.Push((new List<Tile>(possibleRoad), possibleTiles));
                     }
 
@@ -95,7 +95,7 @@ namespace Simulation {
                             CurrTile = possibleRoad[^1];
                             possibleRoad.RemoveAt(0); //remove start tile
                             possibleRoad.RemoveAt(possibleRoad.Count - 1); //due to algorithm, last tile is already a road
-                            return new RoadSegment(World, AgentUsageType, possibleRoad, World.Tick);
+                            return new RoadSegment(World, AgentUsageType, possibleRoad, World.Tick, RoadType.Tertiary);
                         }
                     }
 

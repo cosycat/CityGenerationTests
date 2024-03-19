@@ -50,7 +50,7 @@ namespace Simulation {
                 var allDevelopmentSites = World.AllTiles
                     .Where(IsDevelopableSite);
                 if (!allDevelopmentSites.Any()) {
-                    Debug.Log($"No developable sites found for {this}");
+                    // Debug.Log($"No developable sites found for {this}");
                     return;
                 }
                 var allDevSitesOrdered = allDevelopmentSites.OrderBy(site => site.CalcValueForType(AgentUsageType)).ToList();

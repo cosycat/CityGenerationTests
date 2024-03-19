@@ -82,8 +82,10 @@ namespace Simulation {
             CreateNewAgent(new PropertyDeveloperAgent(LandUsage.Industrial, new RangeInt(1, 6), Tiles[Width / 2, Height / 2]));
             
             CreateNewAgent(new TertiaryRoadExtender(LandUsage.Road, AllTiles.First(t => t.UsageType == LandUsage.Road)));
-            CreateNewAgent(new TertiaryRoadExtender(LandUsage.Road, AllTiles.First(t => t.UsageType == LandUsage.Road)));
-            CreateNewAgent(new TertiaryRoadExtender(LandUsage.Road, AllTiles.First(t => t.UsageType == LandUsage.Road)));
+            // CreateNewAgent(new TertiaryRoadExtender(LandUsage.Road, AllTiles.First(t => t.UsageType == LandUsage.Road)));
+            // CreateNewAgent(new TertiaryRoadExtender(LandUsage.Road, AllTiles.First(t => t.UsageType == LandUsage.Road)));
+            
+            CreateNewAgent(new TertiaryRoadConnector(LandUsage.Road, AllTiles.First(t => t.UsageType == LandUsage.Road)));
         }
         
         private void CreateNewAgent(Agent agent) {
