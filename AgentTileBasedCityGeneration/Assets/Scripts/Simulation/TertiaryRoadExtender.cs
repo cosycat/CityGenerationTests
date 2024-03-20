@@ -66,19 +66,7 @@ namespace Simulation {
         }
 
         protected override bool IsValidRoad(RoadSegment newRoadSegment) {
-            // check if road density is still okay
-            foreach (var tile in newRoadSegment.Tiles) {
-                var allSitesInCircle = ((ISite)tile).GetTilesInCircle(5).OfType<Tile>();
-                var sitesInCircle = allSitesInCircle as Tile[] ?? allSitesInCircle.ToArray();
-                var roadCount = sitesInCircle.Count(t => t.UsageType == LandUsage.Road);
-                var acceptableRoadDensity = tile.Dt;
-                var actualRoadDensity = 1.0f * roadCount / sitesInCircle.Length;
-                if (actualRoadDensity > acceptableRoadDensity) {
-                    Debug.Log($"Road density too high at {tile.Position} with {roadCount} roads in circle of {sitesInCircle.Length} tiles (dRoad: {acceptableRoadDensity}, actual: {actualRoadDensity})");
-                    return false;
-                }
-            }
-            return true;
+            return isRoadDensityOk(newRoadSegment);
         }
 
         private bool MeetsConstraints(Tile arg) {
