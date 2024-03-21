@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
 using Simulation;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Splines;
 
@@ -86,17 +87,40 @@ namespace Visualisation {
             // connect all the tiles
             foreach (var edge in graph.Edges) {
                 var spline = _splineContainer.AddSpline();
-                foreach (var tile in edge.Tiles) {
-                    // only add a tile if it is not in a corner. But add crossings and dead ends
-                    var roadNeighbors = tile.GetNeighbors(false).Where(n => n.UsageType == LandUsage.Road).ToList();
-                    if (roadNeighbors.Count == 2
-                        && !(roadNeighbors[0].Position.x == roadNeighbors[1].Position.x || roadNeighbors[0].Position.y == roadNeighbors[1].Position.y)) {
-                        continue; // They form an L-shape instead of an I-shape
+                for (var i = 0; i < edge.Tiles.Count; i++) {
+                    var tile = edge.Tiles[i];
+                    // only add a tile if it is not in a corner. But add crossings and dead ends.
+                    if (i > 0 && i < edge.Tiles.Count - 1) {
+                        var prevTile = edge.Tiles[i - 1];
+                        var nextTile = edge.Tiles[i + 1];
+                        Debug.Assert(tile.GetNeighbors().Count(n => n.UsageType == LandUsage.Road) == 2
+                                     && tile.GetNeighbors(false).Where(n => n.UsageType == LandUsage.Road).Contains(prevTile)
+                                     && tile.GetNeighbors(false).Where(n => n.UsageType == LandUsage.Road).Contains(nextTile));
+
+                        var currTilePos = TilePosToVector3(tile);
+                        if (prevTile.Position.x == nextTile.Position.x) {
+                            var bezierKnot = new BezierKnot(new Vector3(tile.Position.x, tile.Position.y, 0), TilePosToVector3(prevTile) - currTilePos, TilePosToVector3(nextTile) - currTilePos);
+                            spline.Add(bezierKnot, TangentMode.Mirrored);
+                        } else if (prevTile.Position.y == nextTile.Position.y) { // TODO probably combine these two if statements
+                            var bezierKnot = new BezierKnot(new Vector3(tile.Position.x, tile.Position.y, 0), TilePosToVector3(prevTile) - currTilePos, TilePosToVector3(nextTile) - currTilePos);
+                            spline.Add(bezierKnot, TangentMode.Mirrored);
+                        } else {
+                            // The tile is in a corner. Skip it.
+                            continue;
+                        }
                     }
-                    var bezierKnot = new BezierKnot(new Vector3(tile.Position.x, tile.Position.y, 0));
-                    spline.Add(bezierKnot, TangentMode.AutoSmooth);
+                    else {
+                        // The tile is a crossing or a dead end (start or end of edge). Add it.
+                        var bezierKnot = new BezierKnot(new Vector3(tile.Position.x, tile.Position.y, 0));
+                        spline.Add(bezierKnot, TangentMode.Mirrored);
+                    }
                 }
-                
+            }
+
+            return;
+
+            float3 TilePosToVector3(Tile tile) {
+                return new Vector3(tile.Position.x, tile.Position.y, 0);
             }
             
             // connect only the nodes
