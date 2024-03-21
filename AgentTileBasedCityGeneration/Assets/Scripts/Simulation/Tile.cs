@@ -39,7 +39,7 @@ namespace Simulation {
         /// <summary>
         /// Limiting road density (number of road patches within each local neighborhood circle(5))
         /// </summary>
-        public float Dt { get; } = 0.1f;
+        public float Dt { get; } = 0.5f;
         /// <summary>
         /// Road density
         /// Number of road patches within each local neighborhood circle(5)

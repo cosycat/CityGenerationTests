@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -23,6 +24,9 @@ namespace Simulation {
         private Tile[,] Tiles { get; set; }
         
         public IEnumerable<Tile> AllTiles => Tiles.Cast<Tile>();
+
+        public IEnumerable<RoadSegment> AllRoadSegments =>
+            AllTiles.Select(t => t.MultiTileSite).OfType<RoadSegment>().Distinct();
         
         private List<Agent> Agents { get; } = new();
         public long Tick { get; private set; }
@@ -82,7 +86,7 @@ namespace Simulation {
             CreateNewAgent(new PropertyDeveloperAgent(LandUsage.Industrial, new RangeInt(1, 6), Tiles[Width / 2, Height / 2]));
             
             CreateNewAgent(new TertiaryRoadExtender(LandUsage.Road, AllTiles.First(t => t.UsageType == LandUsage.Road)));
-            // CreateNewAgent(new TertiaryRoadExtender(LandUsage.Road, AllTiles.First(t => t.UsageType == LandUsage.Road)));
+            CreateNewAgent(new TertiaryRoadExtender(LandUsage.Road, AllTiles.First(t => t.UsageType == LandUsage.Road)));
             // CreateNewAgent(new TertiaryRoadExtender(LandUsage.Road, AllTiles.First(t => t.UsageType == LandUsage.Road)));
             
             CreateNewAgent(new TertiaryRoadConnector(LandUsage.Road, AllTiles.First(t => t.UsageType == LandUsage.Road)));
@@ -117,26 +121,29 @@ namespace Simulation {
             tile = Tiles[position.x, position.y];
             return true;
         }
-        
-        
+
+
+        public List<Tile> GetAllTilesOfType(LandUsage type) {
+            return AllTiles.Where(t => t.UsageType == type).ToList();
+        }
+
         /// <summary>
         /// Event that is called before each tick.
         /// </summary>
         public event Action<long> BeforeTick;
-        
+
         protected virtual void OnBeforeTick(long tick) {
             BeforeTick?.Invoke(tick);
         }
-        
+
         /// <summary>
         /// Event that is called after each tick.
         /// </summary>
         public event Action<long> AfterTick;
-        
+
         protected virtual void OnAfterTick(long tick) {
             AfterTick?.Invoke(tick);
         }
-        
     }
 
     public enum LandUsage {
