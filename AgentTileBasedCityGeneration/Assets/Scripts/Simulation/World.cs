@@ -27,6 +27,8 @@ namespace Simulation {
         private List<Agent> Agents { get; } = new();
         public long Tick { get; private set; }
 
+        public bool Paused = true;
+
         private void Awake() {
             Random.InitState(1337);
 
@@ -95,8 +97,16 @@ namespace Simulation {
         }
 
         private void Update() {
+            var step = false;
+            if(Input.GetKeyDown(KeyCode.Space)) { 
+                Paused = !Paused;
+            }
+            else if(Input.GetKeyDown(KeyCode.Tab)) { 
+                step = true;
+            }
+
             TimeSinceLastTick += Time.deltaTime;
-            if (TimeSinceLastTick >= 1f / Speed) {
+            if (TimeSinceLastTick >= 1f / Speed && (!Paused || step)) {
                 OnBeforeTick(Tick);
                 TimeSinceLastTick = 0;
                 foreach (var agent in Agents) {

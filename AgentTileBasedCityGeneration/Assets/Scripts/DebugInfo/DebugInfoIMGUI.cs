@@ -79,9 +79,12 @@ namespace DebugInfo {
 
 
         private string GetDebugText([CanBeNull] Tile tile) {
+            var str = new StringBuilder();
+            if(World.Instance.Paused) {
+                str.AppendLine("Simulation Paused! (Press 'Tab' to step)\n");
+            }
             if (tile == null) return "No tile under mouse";
-            var str = new StringBuilder()
-                .AppendLine($"{tile.Position}")
+                str.AppendLine($"{tile.Position}")
                 .AppendLine($"LandUse: {tile.UsageType}")
                 .AppendLine($"Elevation: {tile.Elevation}");
 
