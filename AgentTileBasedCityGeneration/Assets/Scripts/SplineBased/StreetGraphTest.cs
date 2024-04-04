@@ -1,6 +1,9 @@
 using System;
+using System.Linq;
+using System.Collections.Generic;
 using JetBrains.Annotations;
 using UnityEngine;
+using UnityEngine.Splines;
 using UnityEngine.Serialization;
 
 namespace SplineBased {
@@ -15,6 +18,9 @@ namespace SplineBased {
         private StreetNode _prevCreatedNode;
         private float X => float.TryParse(_x, out var x) ? x : 0;
         private float Y => float.TryParse(_y, out var y) ? y : 0;
+
+        private bool drawGrid = false;
+        private bool drawCurveBboxes = false;
 
         private void Start() {
             _graph = FindObjectOfType<StreetGraph>();
@@ -102,7 +108,9 @@ namespace SplineBased {
             //   - "Create Node Closest" creates a new node connected to the closest existing node
             //   - "Create Node Previous" creates a new node connected to the previously created node
             
-            GUILayout.BeginArea(new Rect(10, 10, 200, 200));
+            GUILayout.BeginArea(new Rect(10, 10, 200, 300));
+            GUILayout.Label($"Number of nodes: {_graph.Nodes.Count}");
+            GUILayout.Label($"Number of edges: {_graph.Edges.Count}");
             GUILayout.Label("Create New Node");
             GUILayout.BeginHorizontal();
             GUILayout.Label("X:");
@@ -119,6 +127,12 @@ namespace SplineBased {
             if (GUILayout.Button("Connected to Previous")) {
                 CreateNodePrevious();
             }
+            if (GUILayout.Button($"Draw grid: ({drawGrid})")) {
+                drawGrid = !drawGrid;
+            }
+            if (GUILayout.Button($"Bezier B-Boxes: ({drawCurveBboxes})")) {
+                drawCurveBboxes = !drawCurveBboxes;
+            }
 
             if (allowMouseCreation) {
                 GUILayout.Label("Drag from one node to create a new connection or node.");
@@ -134,8 +148,12 @@ namespace SplineBased {
                 Gizmos.color = Color.red;
                 Gizmos.DrawSphere(node.Position, 0.1f);
             }
+            var edgeDrawingColors = new List<Color>() {Color.blue, Color.cyan};
+            var colorIndex = 0;
+
             foreach (var edge in _graph.Edges) {
-                Gizmos.color = Color.blue;
+                Gizmos.color = edgeDrawingColors[colorIndex];
+                colorIndex = (colorIndex + 1) % edgeDrawingColors.Count;
                 Gizmos.DrawLine(edge.From.Position, edge.To.Position);
             }
             Gizmos.color = Color.green;
@@ -143,6 +161,39 @@ namespace SplineBased {
             if (Input.GetMouseButton(0) && _dragStartNode != null) {
                 Gizmos.DrawLine(_dragStartNode.Position, MouseWorldPos);
             } 
+
+            foreach((var pos, var dir) in Intersections._dbg_curveSteps) {
+                Gizmos.color = Color.grey;
+                Gizmos.DrawRay(pos, Vector3.up * dir);
+            }
+            foreach(var intersection in Intersections._dbg_splineIntersectionPoints) {
+                Gizmos.color = Color.magenta;
+                Gizmos.DrawRay(intersection, Vector3.up);
+            }
+
+            if(drawGrid) {
+                Gizmos.color = new Color(0.5f, 0.5f, 0.5f, 0.5f);
+                for(int i = -100; i < 100; i++) {
+                    Gizmos.DrawRay(new Vector3(i, -100), Vector3.up * 200);
+                }
+                for(int i = -100; i < 100; i++) {
+                    Gizmos.DrawRay(new Vector3(-100, i), Vector3.right * 200);
+                }
+            }
+
+            if(drawCurveBboxes) {
+                foreach(var s in _graph.Nodes.SelectMany(n => n.CorrespondingSplines).Distinct()) {
+                    for(var i = 0; i < SplineUtility.GetCurveCount(s); i++) {
+                        var targetCurve = s.GetCurve(i);
+                        var bounds = Intersections.GetBoundsForCurve(targetCurve);
+                        Gizmos.DrawRay(bounds.min, Vector3.right * (bounds.max.x - bounds.min.x));
+                        Gizmos.DrawRay(bounds.min, Vector3.up* (bounds.max.y - bounds.min.y));
+                        Gizmos.DrawRay(bounds.max, Vector3.left * (bounds.max.x - bounds.min.x));
+                        Gizmos.DrawRay(bounds.max, Vector3.down* (bounds.max.y - bounds.min.y));
+                    }
+                }
+            }
+
         }
     }
 }

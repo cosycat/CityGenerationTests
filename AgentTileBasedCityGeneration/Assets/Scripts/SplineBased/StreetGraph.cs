@@ -55,11 +55,28 @@ namespace SplineBased {
         /// <returns> True if the Node and the Segment was added successfully, false otherwise </returns>
         public bool AddNewSegment(StreetNode from, Vector3 to, out StreetSegment newSegment, out StreetNode newNode) {
             Debug.Log($"Adding new segment from {from} to new Node at {to}");
-            if (!GenerateAndConnectNewNode(from, to, out newNode, out newSegment)) {
+
+            //grid snapping
+            to.x = Mathf.Round(to.x);
+            to.y = Mathf.Round(to.y);
+
+            if (!GenerateAndConnectNewNode(from, to, out newNode, out newSegment, out var lastModifiedSpline, out var lastModifiedCurve)) {
                 return false;
             }
             Edges.Add(newSegment);
+
+            if(lastModifiedSpline != null && lastModifiedCurve != null) {
+                //Wth do i need to cast here??
+                var intersections = Intersections.GetIntersectionsForCurve(
+                    from,
+                    lastModifiedSpline, 
+                    (BezierCurve)lastModifiedCurve, 
+                    Nodes);
+                Intersections.HandleIntersections(intersections, Nodes, Edges);
+            }
+
             _splineExtrude.Rebuild();
+            SanityChecks();
             return true;
         }
 
@@ -73,11 +90,18 @@ namespace SplineBased {
         /// <param name="newNode"> The newly generated node </param>
         /// <param name="newSegment"> The newly generated segment </param>
         /// <returns> True if the Node was added successfully, false otherwise </returns>
-        private bool GenerateAndConnectNewNode(StreetNode from, Vector3 to, out StreetNode newNode, out StreetSegment newSegment) {
+        private bool GenerateAndConnectNewNode(StreetNode from, 
+                Vector3 to, 
+                out StreetNode newNode,
+                out StreetSegment newSegment,
+                out Spline? lastModifiedSpline,
+                out BezierCurve? lastModifiedCurve) {
             Debug.Log($"GenerateAndConnectNewNode from {from} to new position {to}");
             if (from.MaxSegmentCountReached) {
                 newNode = null;
                 newSegment = null;
+                lastModifiedSpline = null;
+                lastModifiedCurve = null;
                 return false;
             }
 
@@ -114,11 +138,14 @@ namespace SplineBased {
                     return false;
                 }
 
+                lastModifiedSpline = spline;
+                lastModifiedCurve = spline.GetCurve(index);
+
                 return true;
             }
 
             // all the knots are in the middle of a spline. we need to create a new spline.
-            if (!GenerateNewUnconnectedNode(to, out newNode, false)) { // TODO: FIX THIS, this creates a new spline with a single knot and afterwards creates another new spline.
+            if (!GenerateNewUnconnectedNode(to, out newNode, false, out lastModifiedSpline, out lastModifiedCurve)) { // TODO: FIX THIS, this creates a new spline with a single knot and afterwards creates another new spline.
                 newSegment = null;
                 return false;
             }
@@ -137,8 +164,15 @@ namespace SplineBased {
             return true;
         }
 
-        private bool GenerateNewUnconnectedNode(Vector3 position, out StreetNode newNode, bool generateSplineAndKnot) {
+        private bool GenerateNewUnconnectedNode(
+                Vector3 position, 
+                out StreetNode newNode, 
+                bool generateSplineAndKnot,
+                out Spline? newSpline,
+                out BezierCurve? curve) {
             Debug.Log($"Generating new unconnected node at {position}");
+            newSpline = null;
+            curve = null;
             if (!IsPositionValidForNewKnot(position)) {
                 newNode = null;
                 return false;
@@ -151,6 +185,8 @@ namespace SplineBased {
                 };
                 spline.Add(knot);
                 newNode = new StreetNode(knot, spline);
+                newSpline = spline;
+                curve = spline.GetCurve(0);
             }
             else {
                 newNode = new StreetNode(position);
@@ -202,85 +238,13 @@ namespace SplineBased {
 
             return closestNode;
         }
-    }
 
-    public class StreetSegment {
-        public StreetNode From { get; }
-        public StreetNode To { get; }
-
-        private StreetSegment(StreetNode from, StreetNode to) {
-            From = from;
-            To = to;
-        }
-
-        /// <summary>
-        /// Generates a new StreetSegment between two nodes and adds it to the nodes.
-        ///
-        /// Does not change splines, this has to be done manually before or after calling this method.
-        /// (If done before, make sure to remove it again if this method returns false)
-        /// </summary>
-        /// <param name="from"> The first node </param>
-        /// <param name="to"> The second node </param>
-        /// <param name="newSegment"> The newly generated segment </param>
-        /// <returns> True if the segment was added successfully, false otherwise </returns>
-        internal static bool GenerateStreetSegment(StreetNode from, StreetNode to, out StreetSegment newSegment) {
-            newSegment = new StreetSegment(from, to);
-            if (!from.AddSegment(newSegment) || !to.AddSegment(newSegment)) {
-                from.ConnectedSegments.Remove(newSegment);
-                to.ConnectedSegments.Remove(newSegment); // probably not needed, but to be sure
-                return false;
+        private void SanityChecks() {
+            foreach(var n in Nodes) {
+                if(n.ConnectedSegments.Count >= 1) {
+                    Debug.Assert(n.CorrespondingSplines.Count != 0, n);
+                }
             }
-
-            return true;
-        }
-        
-        public override string ToString() {
-            return $"Segment from {From.Position} to {To.Position}";
-        }
-    }
-
-    public class StreetNode {
-        private const int MaxConnectedSegments = 4;
-        private readonly List<Spline> _correspondingSplines = new();
-
-        public IEnumerable<(Spline spline, int index)> SplineIndices =>
-            _correspondingSplines
-                .SelectMany(spline => spline.Knots
-                    .Select((k, index) => (k, index))
-                    .Where(t => Math.Abs(t.k.Position.x - Position.x) < 0.0001f && Math.Abs(t.k.Position.y - Position.y) < 0.0001f)
-                    .Select(t => (spline, t.index)));
-            
-
-        public Vector3 Position { get; }
-        public List<StreetSegment> ConnectedSegments { get; } = new();
-        public bool MaxSegmentCountReached => ConnectedSegments.Count >= MaxConnectedSegments;
-
-        public StreetNode(BezierKnot knot, Spline spline) {
-            Debug.Assert(spline.ContainsKnotPos(knot, out _));
-            Position = knot.Position;
-            _correspondingSplines.Add(spline);
-        }
-
-        public StreetNode(Vector3 position) {
-            Position = position;
-        }
-
-        internal bool AddSegment(StreetSegment segment) {
-            if (ConnectedSegments.Count >= MaxConnectedSegments) {
-                return false;
-            }
-
-            ConnectedSegments.Add(segment);
-            return true;
-        }
-        
-        public void AddSpline(Spline spline) {
-            Debug.Assert(spline.ContainsKnotPos(Position, out _));
-            _correspondingSplines.Add(spline);
-        }
-
-        public override string ToString() {
-            return $"Node at {Position} with {ConnectedSegments.Count} connected segments{(ConnectedSegments.Count > 0 ? $": {string.Join(", ", ConnectedSegments)}" : "")}";
         }
     }
     
