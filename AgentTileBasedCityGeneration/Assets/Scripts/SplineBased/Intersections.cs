@@ -19,6 +19,9 @@ namespace SplineBased {
         /// all existing curves for intersections.
         /// The algorithm used is iterative, which is why there are two parameters which have to be adjusted. The default values
         /// are chosen to be a good default.
+        /// 
+        /// Limitations:
+        /// Multiple intersections on a single bezier curve don't work. Only one intersection is found.
         /// </summary>
         /// <param name="from">The node where the curve was built from. Needed to prevent intersections with previous curve.</param>
         /// <param name="s">The spline where this curve is on</param>
