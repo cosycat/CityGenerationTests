@@ -44,23 +44,6 @@ namespace SplineBased {
                 
                 var indices = otherSegment.GetIndices();
                 var otherLowerIndex = Math.Min(indices.startIndex, indices.endIndex);
-                // // find the knot index of the other spline that is closest to the start of the other segment, i.e. the knot index for the other segment start
-                // var otherIndex = -1;
-                // var otherDistance = float.MaxValue;
-                // for (int j = 0; j < otherSpline.Count; j++) {
-                //     var knotDistance = Vector3.Distance(otherSpline[j].Position, otherSegmentStart);
-                //     if (knotDistance < otherDistance) {
-                //         otherDistance = knotDistance;
-                //         otherIndex = j;
-                //     }
-                // }
-                // // make sure it is the lower of the two indices
-                // if (otherIndex > 0) {
-                //     if (otherIndex == otherSpline.Count - 1
-                //         || Vector3.Distance(otherSpline[otherIndex - 1].Position, otherSegmentEnd) < Vector3.Distance(otherSpline[otherIndex + 1].Position, otherSegmentEnd)) {
-                //         otherIndex--;
-                //     }
-                // }
                 
                 var otherCurve = otherSpline.GetCurve(otherLowerIndex);
                 // check if the other curve is starting or ending at the same point as the new segment. if so, skip it.
@@ -77,7 +60,8 @@ namespace SplineBased {
                         var otherPoint = otherPointsOnSpline[k];
                         if (Vector3.Distance(point, otherPoint) < distanceThreshold) {
                             // found an intersection
-                            var intersectionPoint = (point + otherPoint) / 2; // take the average of the two points
+                            // var intersectionPoint = (point + otherPoint) / 2; 
+                            var intersectionPoint = point; // Don't take the average, take the exising point, to avoid changing the existing spline.
                             var otherTangent = CurveUtility.EvaluateTangent(otherCurve, k * 1.0f / otherPointsOnSpline.Count);
                             foundIntersections.Add(new Intersection(
                                 intersectionPoint,
