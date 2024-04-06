@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics;
 using ExtensionMethods;
 using UnityEngine;
 using UnityEngine.Splines;
+using Debug = UnityEngine.Debug;
 
 namespace SplineBased {
     public class StreetGraph : MonoBehaviour {
@@ -17,7 +18,7 @@ namespace SplineBased {
         private void Awake() {
             _splineContainer = GetComponentInChildren<SplineContainer>();
             _splineExtrude = GetComponentInChildren<SplineExtrude>();
-            GenerateNewUnconnectedNode(Vector3.zero, out var newNode, true);
+            GenerateNewUnconnectedNode(Vector3.zero, out var newNode, true, out var newSpline, out var curve);
         }
 
         /// <summary>
@@ -239,6 +240,7 @@ namespace SplineBased {
             return closestNode;
         }
 
+        [Conditional("DEBUG")]
         private void SanityChecks() {
             foreach(var n in Nodes) {
                 if(n.ConnectedSegments.Count >= 1) {
