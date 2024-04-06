@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using ExtensionMethods;
 using UnityEngine;
 using UnityEngine.Splines;
@@ -8,6 +9,8 @@ using Debug = UnityEngine.Debug;
 
 namespace SplineBased {
     public class StreetGraph : MonoBehaviour {
+        
+        [SerializeField] private bool snapToGrid = true;
 
         public List<StreetNode> Nodes { get; } = new();
         public List<StreetSegment> Edges { get; } = new();
@@ -30,7 +33,9 @@ namespace SplineBased {
         /// <returns> True if the segment was added successfully, false otherwise </returns>
         public bool AddNewSegment(StreetNode from, StreetNode to, out StreetSegment newSegment) {
             Debug.Log($"Adding new segment between {from} to {to}");
-            if (!StreetSegment.GenerateStreetSegment(from, to, out newSegment)) {
+            // TODO if one of the Nodes has <= 1 connections, just add the segment to the existing spline, instead of creating a new one.
+            
+            if (!StreetSegment.GenerateStreetSegment(from, to, null, out newSegment)) {
                 return false;
             }
             if (!AddSplineForSegment(newSegment, out var newSpline)) {
@@ -38,6 +43,9 @@ namespace SplineBased {
                 throw new NotImplementedException("Remove the segment from the nodes");
                 return false;
             }
+            
+            // TODO check intersections as well
+            // If intersection, add intersection point, split up the spline, then recursively add two new segments, from - intersection and intersection - to.
 
             from.AddSpline(newSpline);
             to.AddSpline(newSpline);
@@ -58,24 +66,63 @@ namespace SplineBased {
             Debug.Log($"Adding new segment from {from} to new Node at {to}");
 
             //grid snapping
-            to.x = Mathf.Round(to.x);
-            to.y = Mathf.Round(to.y);
+            if (snapToGrid) {
+                to.x = Mathf.Round(to.x);
+                to.y = Mathf.Round(to.y);
+            }
 
-            if (!GenerateAndConnectNewNode(from, to, out newNode, out newSegment, out var lastModifiedSpline, out var lastModifiedCurve)) {
+            if (!GenerateAndConnectNewNode(from, to, out newNode, out newSegment, out var lastModifiedSpline, out var lastModifiedCurve, out var bezierIndex)) {
                 return false;
             }
-            Edges.Add(newSegment);
 
-            if(lastModifiedSpline != null && lastModifiedCurve != null) {
-                //Wth do i need to cast here??
-                var intersections = Intersections.GetIntersectionsForCurve(
-                    from,
-                    lastModifiedSpline, 
-                    (BezierCurve)lastModifiedCurve, 
-                    Nodes);
-                Intersections.HandleIntersections(intersections, Nodes, Edges);
+            if (Intersections.HasIntersection(newSegment, lastModifiedSpline, lastModifiedCurve, Edges, bezierIndex, out var intersection)) {
+                Debug.Log("Intersection detected: " + intersection);
+                Debug.Assert(newNode.SplineIndices.Count() == 1 && newNode.SplineIndices.First().spline == newSegment.Spline);
+                
+                // TODO check if near the end or start node, and if so, connect to that if possible (and return false if not possible).
+
+                // 1. split up the existing spline with a new knot
+                // 1.1 add the new knot to the spline
+                var tangentAtIntersection = intersection.ExistingTangentAtIntersection;
+                var newBezierKnot = new BezierKnot(intersection.IntersectionPoint) {
+                    Rotation = Quaternion.LookRotation(tangentAtIntersection, Vector3.forward)
+                };
+                var existingSegmentToSplit = intersection.ExistingSegment;
+                existingSegmentToSplit.Spline.Insert(intersection.ExistingBezierIndex + 1, newBezierKnot, TangentMode.AutoSmooth);
+                var addedNode = new StreetNode(newBezierKnot, intersection.ExistingSegment.Spline);
+                Nodes.Add(addedNode);
+
+                // 1.2 split the existing segment and replace it with two new segments
+                Edges.Remove(existingSegmentToSplit);
+                existingSegmentToSplit.From.RemoveSegment(existingSegmentToSplit);
+                existingSegmentToSplit.To.RemoveSegment(existingSegmentToSplit);
+                var success1 = StreetSegment.GenerateStreetSegment(existingSegmentToSplit.From, addedNode, existingSegmentToSplit.Spline, out var splitSegment1);
+                var success2 = StreetSegment.GenerateStreetSegment(addedNode, existingSegmentToSplit.To, existingSegmentToSplit.Spline, out var splitSegment2);
+                Debug.Assert(success1 && success2);
+                Edges.Add(splitSegment1);
+                Edges.Add(splitSegment2);
+                
+                
+                // 2. remove the new node and segment. This has to be done after splitting the existing segment, otherwise the index of the split would be wrong.
+                newSegment.Spline.RemoveAt(newNode.SplineIndices.First().index); // Remove the new knot from the existing spline
+                Nodes.Remove(newNode);
+                Edges.Remove(newSegment);
+                from.RemoveSegment(newSegment);
+                newNode = null;
+                newSegment = null;
+                
+                // 3. add a new segment between the existing node (from) and the newly added intersection node
+                if (!AddNewSegment(from, addedNode, out newSegment)) { // Add a segment between two existing nodes
+                    // TODO remove the new node and segment
+                    throw new NotImplementedException("Remove the new node and segment");
+                }
+                
+                newNode = addedNode;
+                return true;
             }
-
+            
+            // There was no intersection, all is well
+            
             _splineExtrude.Rebuild();
             SanityChecks();
             return true;
@@ -85,24 +132,32 @@ namespace SplineBased {
         /// Creates a new Node at the given position and connects it to the given existing node.
         /// If the existing node is at the beginning or end of a spline, a new knot is added to that spline.
         /// Otherwise, a new spline is created.
+        ///
+        /// The spline gets added to the new node and the existing node and the new segment.
+        /// 
         /// </summary>
         /// <param name="from"> The existing node </param>
         /// <param name="to"> The position of the new node </param>
         /// <param name="newNode"> The newly generated node </param>
         /// <param name="newSegment"> The newly generated segment </param>
+        /// <param name="lastModifiedSpline"> The spline that was modified or added </param>
+        /// <param name="lastModifiedCurve"> The curve that was added </param>
+        /// <param name="bezierIndex"> The lower index of one of the two knots of the new segment </param>
         /// <returns> True if the Node was added successfully, false otherwise </returns>
         private bool GenerateAndConnectNewNode(StreetNode from, 
                 Vector3 to, 
                 out StreetNode newNode,
                 out StreetSegment newSegment,
-                out Spline? lastModifiedSpline,
-                out BezierCurve? lastModifiedCurve) {
+                out Spline lastModifiedSpline,
+                out BezierCurve lastModifiedCurve,
+                out int bezierIndex) {
             Debug.Log($"GenerateAndConnectNewNode from {from} to new position {to}");
             if (from.MaxSegmentCountReached) {
                 newNode = null;
                 newSegment = null;
                 lastModifiedSpline = null;
-                lastModifiedCurve = null;
+                lastModifiedCurve = default; // we just use default here, because we know from returning false, that it is not a valid value.
+                bezierIndex = -1;
                 return false;
             }
 
@@ -120,9 +175,11 @@ namespace SplineBased {
                 };
                 if (index == 0) {
                     spline.Insert(0, newKnot, TangentMode.AutoSmooth); // TODO check if AutoSmooth would be better.
+                    bezierIndex = 0;
                 }
                 else if (index == spline.Count - 1) { // TODO check if AutoSmooth would be better.
                     spline.Add(newKnot, TangentMode.AutoSmooth);
+                    bezierIndex = spline.Count - 2;
                 }
                 else {
                     Debug.LogError(
@@ -133,12 +190,13 @@ namespace SplineBased {
                 
                 from.AddSpline(spline);
                 Nodes.Add(newNode = new StreetNode(newKnot, spline));
-                if (!StreetSegment.GenerateStreetSegment(from, newNode, out newSegment)) {
+                if (!StreetSegment.GenerateStreetSegment(from, newNode, spline, out newSegment)) {
                     // TODO: remove the new knot from the spline
                     throw new NotImplementedException("Remove the new knot from the spline");
                     return false;
                 }
-
+                Edges.Add(newSegment);
+                
                 lastModifiedSpline = spline;
                 lastModifiedCurve = spline.GetCurve(index);
 
@@ -146,12 +204,15 @@ namespace SplineBased {
             }
 
             // all the knots are in the middle of a spline. we need to create a new spline.
-            if (!GenerateNewUnconnectedNode(to, out newNode, false, out lastModifiedSpline, out lastModifiedCurve)) { // TODO: FIX THIS, this creates a new spline with a single knot and afterwards creates another new spline.
+            if (!GenerateNewUnconnectedNode(to, out newNode, false, out _, out _)) { // TODO: FIX THIS, this creates a new spline with a single knot and afterwards creates another new spline.
                 newSegment = null;
+                lastModifiedSpline = null;
+                lastModifiedCurve = default;
+                bezierIndex = -1;
                 return false;
             }
 
-            if (!StreetSegment.GenerateStreetSegment(from, newNode, out newSegment)) {
+            if (!StreetSegment.GenerateStreetSegment(from, newNode, null, out newSegment)) {
                 // TODO: remove the new node from the nodes
                 throw new NotImplementedException("Remove the new node from the nodes");
                 return false;
@@ -161,6 +222,12 @@ namespace SplineBased {
                 throw new NotImplementedException("Remove the new node and segments");
                 return true;
             }
+            Edges.Add(newSegment);
+            
+            // Since we added a new spline, it has only one curve
+            lastModifiedSpline = newSpline;
+            lastModifiedCurve = newSpline.GetCurve(0);
+            bezierIndex = 0;
             
             return true;
         }
@@ -169,13 +236,13 @@ namespace SplineBased {
                 Vector3 position, 
                 out StreetNode newNode, 
                 bool generateSplineAndKnot,
-                out Spline? newSpline,
-                out BezierCurve? curve) {
+                out Spline newSpline,
+                out BezierCurve newCurve) {
             Debug.Log($"Generating new unconnected node at {position}");
-            newSpline = null;
-            curve = null;
             if (!IsPositionValidForNewKnot(position)) {
                 newNode = null;
+                newSpline = null;
+                newCurve = default;
                 return false;
             }
 
@@ -187,10 +254,12 @@ namespace SplineBased {
                 spline.Add(knot);
                 newNode = new StreetNode(knot, spline);
                 newSpline = spline;
-                curve = spline.GetCurve(0);
+                newCurve = spline.GetCurve(0);
             }
             else {
                 newNode = new StreetNode(position);
+                newSpline = null;
+                newCurve = default;
             }
             Nodes.Add(newNode);
 
@@ -202,6 +271,13 @@ namespace SplineBased {
             return true;
         }
 
+        /// <summary>
+        /// Adds a new Spline for the given segment.
+        /// Adds the spline to the nodes of the segment and sets the spline for the segment.
+        /// </summary>
+        /// <param name="newSegment"> The segment for which a new spline should be created </param>
+        /// <param name="newSpline"> The newly created spline </param>
+        /// <returns> True if the spline was added successfully, false otherwise </returns>
         private bool AddSplineForSegment(StreetSegment newSegment, out Spline newSpline) {
             Debug.Log("Creating new Spline for segment");
             newSpline = _splineContainer.AddSpline();
@@ -218,6 +294,7 @@ namespace SplineBased {
             
             newSegment.From.AddSpline(newSpline);
             newSegment.To.AddSpline(newSpline);
+            newSegment.Spline = newSpline;
             return true;
         }
 

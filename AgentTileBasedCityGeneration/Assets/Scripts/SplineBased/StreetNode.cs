@@ -53,5 +53,9 @@ namespace SplineBased {
         public override string ToString() {
             return $"Node at {Position} with {ConnectedSegments.Count} connected segments{(ConnectedSegments.Count > 0 ? $": {string.Join(", ", ConnectedSegments)}" : "")}";
         }
+
+        public bool RemoveSegment(StreetSegment segment) {
+            return ConnectedSegments.Remove(segment);
+        }
     }
 }

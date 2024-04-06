@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using Unity.Mathematics;
 using UnityEngine.Splines;
 using UnityEngine;
 
@@ -10,8 +11,137 @@ namespace SplineBased {
         //DEBUG stuff
         public static List<Vector3> _dbg_splineIntersectionPoints = new();
         //DEBUG stuff
-        public static List<(Vector3, float)> _dbg_curveSteps = new();
+        public static List<(Vector3 pos, float length)> _dbg_curveSteps = new();
         
+
+        public static bool HasIntersection(StreetSegment newSegment, Spline lastModifiedSpline,
+            BezierCurve lastModifiedCurve, List<StreetSegment> allSegments, int curveBezierIndex,
+            out Intersection intersection) {
+            Debug.Assert(lastModifiedSpline != null);
+            Debug.Assert(newSegment.Spline == lastModifiedSpline); // sanity check
+            _dbg_curveSteps.Clear();
+            _dbg_splineIntersectionPoints.Clear();
+            
+            var segmentSpline = newSegment.Spline;
+            var startPoint = newSegment.From.Position;
+            var endPoint = newSegment.To.Position;
+            var segmentBounds = GetBoundsForCurve(lastModifiedCurve);
+            
+            var stepSize = 0.1f;
+            var distanceThreshold = 0.5f;
+
+            var pointsOnSpline = SeparateSplineIntoPoints(lastModifiedCurve, curveBezierIndex, segmentSpline, stepSize);
+
+            var foundIntersections = new List<Intersection>();
+
+            for (int i = 0; i < allSegments.Count; i++) {
+                var otherSegment = allSegments[i];
+                if (otherSegment == newSegment) continue; // don't check against itself
+                var otherSpline = otherSegment.Spline;
+                // if (otherSpline == lastModifiedSpline) continue; // don't check against the same spline // TODO only skip the prev and next curve, instead of all.
+                var otherSegmentStart = otherSegment.From.Position;
+                var otherSegmentEnd = otherSegment.To.Position;
+                
+                var indices = otherSegment.GetIndices();
+                var otherLowerIndex = Math.Min(indices.startIndex, indices.endIndex);
+                // // find the knot index of the other spline that is closest to the start of the other segment, i.e. the knot index for the other segment start
+                // var otherIndex = -1;
+                // var otherDistance = float.MaxValue;
+                // for (int j = 0; j < otherSpline.Count; j++) {
+                //     var knotDistance = Vector3.Distance(otherSpline[j].Position, otherSegmentStart);
+                //     if (knotDistance < otherDistance) {
+                //         otherDistance = knotDistance;
+                //         otherIndex = j;
+                //     }
+                // }
+                // // make sure it is the lower of the two indices
+                // if (otherIndex > 0) {
+                //     if (otherIndex == otherSpline.Count - 1
+                //         || Vector3.Distance(otherSpline[otherIndex - 1].Position, otherSegmentEnd) < Vector3.Distance(otherSpline[otherIndex + 1].Position, otherSegmentEnd)) {
+                //         otherIndex--;
+                //     }
+                // }
+                
+                var otherCurve = otherSpline.GetCurve(otherLowerIndex);
+                // check if the other curve is starting or ending at the same point as the new segment. if so, skip it.
+                if (Vector3.Distance(otherCurve.P0, startPoint) <= distanceThreshold || Vector3.Distance(otherCurve.P3, startPoint) <= distanceThreshold) continue;
+                
+                var otherBounds = GetBoundsForCurve(otherCurve);
+                if (!segmentBounds.Intersects(otherBounds)) continue; // no intersection possible
+                
+                // check for intersections
+                var otherPointsOnSpline = SeparateSplineIntoPoints(otherCurve, otherLowerIndex, otherSpline, stepSize);
+                for (int j = 0; j < pointsOnSpline.Count; j++) {
+                    var point = pointsOnSpline[j];
+                    for (int k = 0; k < otherPointsOnSpline.Count; k++) {
+                        var otherPoint = otherPointsOnSpline[k];
+                        if (Vector3.Distance(point, otherPoint) < distanceThreshold) {
+                            // found an intersection
+                            var intersectionPoint = (point + otherPoint) / 2; // take the average of the two points
+                            var otherTangent = CurveUtility.EvaluateTangent(otherCurve, k * 1.0f / otherPointsOnSpline.Count);
+                            foundIntersections.Add(new Intersection(
+                                intersectionPoint,
+                                otherSegment, 
+                                otherLowerIndex,
+                                otherTangent
+                                ));
+                            // DEBUG
+                            _dbg_splineIntersectionPoints.Add(intersectionPoint);
+                            if (foundIntersections.Count == 1) {
+                                Debug.Log($"Found intersection at {intersectionPoint} between {newSegment} and {otherSegment}, curve {curveBezierIndex} and {otherLowerIndex} (indices: {indices})");
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (foundIntersections.Count == 0) {
+                intersection = null;
+                return false;
+            }
+            
+            // sort the intersections by distance to the start of the segment
+            // TODO ability to invert the sorting order, in case the segment is built from end to start
+            foundIntersections.Sort((a, b) => {
+                var distanceA = Vector3.Distance(startPoint, a.IntersectionPoint);
+                var distanceB = Vector3.Distance(startPoint, b.IntersectionPoint);
+                return distanceA.CompareTo(distanceB);
+            });
+            
+            intersection = foundIntersections[0];
+            _dbg_splineIntersectionPoints.Add(intersection.IntersectionPoint);
+            return true;
+        }
+
+        private static List<Vector3> SeparateSplineIntoPoints(BezierCurve bezierCurve, int curveBezierIndex, Spline spline, float stepSize) {
+            var pointsOnCurve = new List<Vector3>();
+            var steps = Mathf.CeilToInt(spline.GetCurveLength(curveBezierIndex) / stepSize);
+            for (int i = 0; i < steps; i++) {
+                var pos = CurveUtility.EvaluatePosition(bezierCurve, i * 1.0f / steps);
+                pointsOnCurve.Add(pos);
+                _dbg_curveSteps.Add((pos, i * 1.0f / steps));
+            }
+
+            return pointsOnCurve;
+        }
+
+        public class Intersection {
+            public Vector3 IntersectionPoint { get; }
+            public StreetSegment ExistingSegment { get; }
+            public int ExistingBezierIndex { get; }
+            public Vector3 ExistingTangentAtIntersection { get; }
+
+            public Intersection(Vector3 intersectionPoint, StreetSegment existingSegment, int existingBezierIndex, Vector3 existingTangentAtIntersection) {
+                IntersectionPoint = intersectionPoint;
+                ExistingSegment = existingSegment;
+                ExistingBezierIndex = existingBezierIndex;
+                ExistingTangentAtIntersection = existingTangentAtIntersection;
+            }
+
+            public override string ToString() {
+                return $"Intersection at {IntersectionPoint} with segment {ExistingSegment} at index {ExistingBezierIndex}";
+            }
+        }
 
         /// <summary>
         /// Calculates intersection between a given curve and all other curves. The general idea here is, that
@@ -37,7 +167,7 @@ namespace SplineBased {
                 float stepSize = 0.4f, 
                 float minDistanceForHit = 0.4f) {
 
-            if(s == null || c == null) return new();
+            if(s == null || c == null) return new List<CurveIntersection>();
 
             var allSplines = nodes
                 .SelectMany(n => n.CorrespondingSplines)
@@ -87,10 +217,12 @@ namespace SplineBased {
                             _dbg_splineIntersectionPoints.Add(nearest);
                             lastNearestPoint = nearest;
                             var newIntersection = new CurveIntersection(
+                                intersectionPosition: nearest,
                                 sourceSpline: s,
                                 sourceCurve: c,
                                 sourceCurveInterpolation: currentPosOnSpline,
                                 sourcePositionOnCurve: currentPosOnSplineWorldCoords,
+                                otherBezierKnotIndex: i,
                                 otherSpline: targetSpline,
                                 otherCurve: targetCurve,
                                 otherCurveInterpolation: nearestInterpolation,
@@ -105,7 +237,7 @@ namespace SplineBased {
 
             return intersections;
         }
-    
+
 
         /// <summary>
         /// Handles intersections by splitting or merging points
@@ -258,14 +390,28 @@ namespace SplineBased {
                 max = new Vector3(maxX, maxY, 0),
             };
         }
+
+        
     }
 
     /// <summary>
     /// Represents the intersection of a Bezier curve.
     /// Intersection is always represented between two curves/splines (source, ie the current curve/spline and 
-    /// other, ie the curve/splien that we hit)
+    /// other, ie the curve/spline that we hit)
     /// </summary>
     public struct CurveIntersection {
+        
+        /// <summary>
+        /// The position where the intersection was found
+        /// </summary>
+        public Vector3 IntersectionPosition;
+        
+        /// <summary>
+        /// The index of the bezier knot with the lower index from the segment of the other spline that was intersected.
+        /// </summary>
+        public int OtherBezierKnotIndex;
+
+        
         /// <summary>
         /// The spline which the source curve is part of
         /// </summary>
@@ -282,8 +428,6 @@ namespace SplineBased {
         /// The position in world coordinates where the nearest point on the bezier curve was found
         /// </summary>
         public Vector3 SourcePositionOnCurve;
-
-
 
         /// <summary>
         /// The spline intersecting with this curve.
@@ -305,16 +449,22 @@ namespace SplineBased {
         /// </summary>
         public Vector3 OtherPositionOnCurve;
 
+        
 
-        public CurveIntersection(Spline sourceSpline, 
-                BezierCurve sourceCurve, 
-                float sourceCurveInterpolation, 
-                Vector3 sourcePositionOnCurve,
-                Spline otherSpline, 
-                BezierCurve otherCurve, 
-                float otherCurveInterpolation, 
-                Vector3 otherPositionOnCurve
-                ) {
+
+        public CurveIntersection(Vector3 intersectionPosition,
+            Spline sourceSpline,
+            BezierCurve sourceCurve,
+            float sourceCurveInterpolation,
+            Vector3 sourcePositionOnCurve,
+            int otherBezierKnotIndex,
+            Spline otherSpline,
+            BezierCurve otherCurve,
+            float otherCurveInterpolation,
+            Vector3 otherPositionOnCurve) {
+            IntersectionPosition = intersectionPosition;
+            OtherBezierKnotIndex = otherBezierKnotIndex;
+            
             SourceSpline = sourceSpline;
             SourceCurve = sourceCurve;
             SourceCurveInterpolation = sourceCurveInterpolation;
