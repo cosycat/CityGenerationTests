@@ -76,11 +76,12 @@ namespace SplineBased {
             }
 
             if (Intersections.HasIntersection(newSegment, lastModifiedSpline, lastModifiedCurve, Edges, bezierIndex, out var intersection)) {
+                // TODO: maybe refactor this into a separate method?
                 Debug.Log("Intersection detected: " + intersection);
                 Debug.Assert(newNode.SplineIndices.Count() == 1 && newNode.SplineIndices.First().spline == newSegment.Spline);
                 
                 // TODO check if near the end or start node, and if so, connect to that if possible (and return false if not possible).
-
+                
                 // 1. split up the existing spline with a new knot
                 // 1.1 add the new knot to the spline
                 var tangentAtIntersection = intersection.ExistingTangentAtIntersection;
@@ -232,6 +233,20 @@ namespace SplineBased {
             return true;
         }
 
+        /// <summary>
+        /// Generates a new node at the given position and adds it to the graph.
+        ///
+        /// Mainly used, if generating a new Node, to then immediately connect it to an existing Node afterwards.
+        /// 
+        /// If <paramref name="generateSplineAndKnot"/> is true, a new spline is created and the knot is added to it.
+        /// This is used, if the new Node should start a completely new spline, and not immediately connect to an existing one.
+        /// </summary>
+        /// <param name="position"> The position of the new node </param>
+        /// <param name="newNode"> The newly generated node </param>
+        /// <param name="generateSplineAndKnot"> If true, a new spline is created and the knot is added to it </param>
+        /// <param name="newSpline"> The newly created spline </param>
+        /// <param name="newCurve"> The newly created curve </param>
+        /// <returns></returns>
         private bool GenerateNewUnconnectedNode(
                 Vector3 position, 
                 out StreetNode newNode, 
@@ -298,6 +313,11 @@ namespace SplineBased {
             return true;
         }
 
+        /// <summary>
+        /// Finds the closest node to the given position.
+        /// </summary>
+        /// <param name="pos"> The position to find the closest node to </param>
+        /// <returns> The closest node </returns>
         public StreetNode FindClosestNode(Vector2 pos) {
             if (Nodes.Count == 0) {
                 Debug.LogWarning("No nodes in the graph. Should not happen.");
