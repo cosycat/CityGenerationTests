@@ -35,7 +35,7 @@ namespace FreeFormGraph {
             if (Input.GetMouseButtonDown(0)) {
                 _dragStartNode = _streetGraph.FindClosestNode(mousePosWorld);
                 if (_dragStartNode != null && Vector3.Distance(_dragStartNode.Position, mousePosWorld) < dragThreshold) {
-                    Debug.Log($"StreetGraphTest - Dragging from {_dragStartNode}");
+                    Debug.Log($"FreeFormStreetGraphTest - Dragging from {_dragStartNode}");
                 } else {
                     Debug.Log($"No node found at {mousePosWorld}.");
                     _dragStartNode = null;
@@ -44,8 +44,8 @@ namespace FreeFormGraph {
                 if (_dragStartNode == null) {
                     return;
                 }
-                if (!_streetGraph.AddEdge(_dragStartNode, mousePosWorld, out _, out _)) {
-                    Debug.LogError("Failed to create new node.");
+                if (!_streetGraph.CreateEdge(_dragStartNode, mousePosWorld, out _, out _, out _)) {
+                    Debug.LogError("FreeFormStreetGraphTest - Failed to create new edge.");
                 }
 
                 _dragStartNode = null;
