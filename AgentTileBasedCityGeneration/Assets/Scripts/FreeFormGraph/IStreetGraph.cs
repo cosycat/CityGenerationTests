@@ -92,7 +92,7 @@ namespace FreeFormGraph {
         /// <summary>
         /// The edges connected to this node.
         /// </summary>
-        public List<IStreetEdge> Edges { get; }
+        public IEnumerable<IStreetEdge> Edges { get; }
         
         /// <summary>
         /// How many edges can be connected to this node.

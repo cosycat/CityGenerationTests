@@ -8,8 +8,9 @@ using UnityEngine.Splines;
 
 namespace FreeFormGraph.SplineBased {
 
-    public class StreetNode : IStreetNode {
+    public class SplineStreetNode : IStreetNode {
         private readonly List<Spline> _correspondingSplines = new();
+        private readonly List<SplineStreetSegment> _edges = new();
 
         public List<Spline> CorrespondingSplines => _correspondingSplines;
 
@@ -24,26 +25,28 @@ namespace FreeFormGraph.SplineBased {
 
         public Vector3 Position { get; }
         public int MaxConnectedEdges => 4;
-        public int ConnectedEdgesCount => Edges.Count;
-        public List<IStreetEdge> Edges { get; } = new();
-        public bool MaxSegmentCountReached => Edges.Count >= MaxConnectedEdges;
+        public int ConnectedEdgesCount => _edges.Count;
 
-        public StreetNode(BezierKnot knot, Spline spline) {
+        public IEnumerable<IStreetEdge> Edges => _edges;
+
+        public bool MaxSegmentCountReached => _edges.Count >= MaxConnectedEdges;
+
+        public SplineStreetNode(BezierKnot knot, Spline spline) {
             Debug.Assert(spline.ContainsKnotPos(knot, out _));
             Position = knot.Position;
             _correspondingSplines.Add(spline);
         }
 
-        public StreetNode(Vector3 position) {
+        public SplineStreetNode(Vector3 position) {
             Position = position;
         }
 
-        internal bool AddSegment(StreetSegment segment) {
-            if (Edges.Count >= MaxConnectedEdges) {
+        internal bool AddSegment(SplineStreetSegment segment) {
+            if (_edges.Count >= MaxConnectedEdges) {
                 return false;
             }
 
-            Edges.Add(segment);
+            _edges.Add(segment);
             return true;
         }
         
@@ -53,11 +56,11 @@ namespace FreeFormGraph.SplineBased {
         }
 
         public override string ToString() {
-            return $"Node at {Position} with {Edges.Count} connected segments{(Edges.Count > 0 ? $": {string.Join(", ", Edges)}" : "")}";
+            return $"Node at {Position} with {_edges.Count} connected segments{(_edges.Count > 0 ? $": {string.Join(", ", Edges)}" : "")}";
         }
 
-        public bool RemoveSegment(StreetSegment segment) {
-            return Edges.Remove(segment);
+        public bool RemoveSegment(SplineStreetSegment segment) {
+            return _edges.Remove(segment);
         }
     }
 }

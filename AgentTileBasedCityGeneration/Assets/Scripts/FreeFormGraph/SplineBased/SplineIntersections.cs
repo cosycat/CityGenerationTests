@@ -1,12 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using FreeFormGraph.SplineBased;
 using UnityEngine;
 using UnityEngine.Splines;
 
 namespace FreeFormGraph.SplineBased {
-    public static class Intersections {
+    public static class SplineIntersections {
 
         //DEBUG stuff
         public static List<Vector3> _dbg_splineIntersectionPoints = new();
@@ -26,8 +25,8 @@ namespace FreeFormGraph.SplineBased {
         /// <param name="curveBezierIndex"> The index of the <paramref name="curveOfNewSegment"/> in the <paramref name="lastModifiedSpline"/> </param>
         /// <param name="intersection"> The intersection that was found, if any </param>
         /// <returns> True if an intersection was found, false otherwise </returns>
-        public static bool HasIntersection(StreetSegment newSegment, Spline lastModifiedSpline,
-            BezierCurve curveOfNewSegment, List<StreetSegment> allSegments, int curveBezierIndex,
+        public static bool HasIntersection(SplineStreetSegment newSegment, Spline lastModifiedSpline,
+            BezierCurve curveOfNewSegment, List<SplineStreetSegment> allSegments, int curveBezierIndex,
             out Intersection intersection) {
             Debug.Assert(lastModifiedSpline != null);
             Debug.Assert(newSegment.Spline == lastModifiedSpline); // sanity check
@@ -147,7 +146,7 @@ namespace FreeFormGraph.SplineBased {
             /// <summary>
             /// The segment that was intersected.
             /// </summary>
-            public StreetSegment ExistingSegment { get; }
+            public SplineStreetSegment ExistingSegment { get; }
             
             /// <summary>
             /// The index of the curve in the segment that was intersected.
@@ -159,7 +158,7 @@ namespace FreeFormGraph.SplineBased {
             /// </summary>
             public Vector3 ExistingTangentAtIntersection { get; }
 
-            public Intersection(Vector3 intersectionPoint, StreetSegment existingSegment, int existingBezierIndex, Vector3 existingTangentAtIntersection) {
+            public Intersection(Vector3 intersectionPoint, SplineStreetSegment existingSegment, int existingBezierIndex, Vector3 existingTangentAtIntersection) {
                 IntersectionPoint = intersectionPoint;
                 ExistingSegment = existingSegment;
                 ExistingBezierIndex = existingBezierIndex;
@@ -188,10 +187,10 @@ namespace FreeFormGraph.SplineBased {
         /// <param name="stepSize">Steping size used when walking over curve</param>
         /// <param name="minDistanceForHit">Hit is registered when this distance is met. Bigger value will trigger intersections earlier TOOD explain better</param>
         public static List<CurveIntersection> GetIntersectionsForCurve(
-                StreetNode from,
+                SplineStreetNode from,
                 Spline s,
                 BezierCurve c, 
-                List<StreetNode> nodes, 
+                List<SplineStreetNode> nodes, 
                 float stepSize = 0.4f, 
                 float minDistanceForHit = 0.4f) {
 

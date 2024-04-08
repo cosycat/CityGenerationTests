@@ -4,10 +4,10 @@ using UnityEngine.Splines;
 
 namespace FreeFormGraph.SplineBased {
 
-    public class StreetSegment : IStreetEdge {
+    public class SplineStreetSegment : IStreetEdge {
         
-        private readonly StreetNode _nodeA;
-        private readonly StreetNode _nodeB;
+        private readonly SplineStreetNode _nodeA;
+        private readonly SplineStreetNode _nodeB;
         
         public IStreetNode NodeA => _nodeA;
         public IStreetNode NodeB => _nodeB;
@@ -16,7 +16,7 @@ namespace FreeFormGraph.SplineBased {
 
         public float StreetWidth { get; } = 0.3f;
 
-        private StreetSegment(StreetNode nodeA, StreetNode nodeB) {
+        private SplineStreetSegment(SplineStreetNode nodeA, SplineStreetNode nodeB) {
             _nodeA = nodeA;
             _nodeB = nodeB;
         }
@@ -55,11 +55,11 @@ namespace FreeFormGraph.SplineBased {
         /// <param name="existingSpline"> The spline that should be used for the segment, or null if a new spline will be generated and set afterwards </param>
         /// <param name="newSegment"> The newly generated segment </param>
         /// <returns> True if the segment was added successfully, false otherwise </returns>
-        internal static bool GenerateStreetSegment(StreetNode from, StreetNode to, [CanBeNull] Spline existingSpline, out StreetSegment newSegment) {
-            newSegment = new StreetSegment(from, to);
+        internal static bool GenerateStreetSegment(SplineStreetNode from, SplineStreetNode to, [CanBeNull] Spline existingSpline, out SplineStreetSegment newSegment) {
+            newSegment = new SplineStreetSegment(from, to);
             if (!from.AddSegment(newSegment) || !to.AddSegment(newSegment)) {
-                from.Edges.Remove(newSegment);
-                to.Edges.Remove(newSegment); // probably not needed, but to be sure
+                from.RemoveSegment(newSegment);
+                to.RemoveSegment(newSegment); // probably not needed, but to be sure
                 return false;
             }
 

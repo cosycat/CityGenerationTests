@@ -10,14 +10,14 @@ using UnityEngine.Splines;
 using Debug = UnityEngine.Debug;
 
 namespace FreeFormGraph.SplineBased {
-    public class StreetGraph : StreetGraphGameObject {
+    public class SplineStreetGraph : StreetGraphGameObject {
         
         [SerializeField] private bool snapToGrid = true;
 
         private SplineContainer _splineContainer;
         private SplineExtrude _splineExtrude;
-        private readonly List<StreetSegment> _edges = new();
-        private readonly List<StreetNode> _nodes = new();
+        private readonly List<SplineStreetSegment> _edges = new();
+        private readonly List<SplineStreetNode> _nodes = new();
         
         public override IEnumerable<IStreetNode> Nodes => _nodes;
 
@@ -32,7 +32,7 @@ namespace FreeFormGraph.SplineBased {
         }
 
         public override bool AddEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode) {
-            var res = AddNewSegment((StreetNode)from, to, out var newSegment, out var toNodeA);
+            var res = AddNewSegment((SplineStreetNode)from, to, out var newSegment, out var toNodeA);
             newEdge = newSegment;
             toNode = toNodeA;
             return res;
@@ -52,11 +52,11 @@ namespace FreeFormGraph.SplineBased {
         /// <param name="to"> The second node </param>
         /// <param name="newSegment"> The newly generated segment </param>
         /// <returns> True if the segment was added successfully, false otherwise </returns>
-        public bool AddNewSegment(StreetNode from, StreetNode to, out StreetSegment newSegment) {
+        public bool AddNewSegment(SplineStreetNode from, SplineStreetNode to, out SplineStreetSegment newSegment) {
             Debug.Log($"Adding new segment between {from} to {to}");
             // TODO if one of the Nodes has <= 1 connections, just add the segment to the existing spline, instead of creating a new one.
             
-            if (!StreetSegment.GenerateStreetSegment(from, to, null, out newSegment)) {
+            if (!SplineStreetSegment.GenerateStreetSegment(from, to, null, out newSegment)) {
                 return false;
             }
             if (!AddSplineForSegment(newSegment, out var newSpline)) {
@@ -83,7 +83,7 @@ namespace FreeFormGraph.SplineBased {
         /// <param name="newSegment"> The newly generated segment </param>
         /// <param name="newNode"> The newly generated node </param>
         /// <returns> True if the Node and the Segment was added successfully, false otherwise </returns>
-        public bool AddNewSegment(StreetNode from, Vector3 to, out StreetSegment newSegment, out StreetNode newNode) {
+        public bool AddNewSegment(SplineStreetNode from, Vector3 to, out SplineStreetSegment newSegment, out SplineStreetNode newNode) {
             Debug.Log($"Adding new segment from {from} to new Node at {to}");
 
             //grid snapping
@@ -97,7 +97,7 @@ namespace FreeFormGraph.SplineBased {
                 return false;
             }
 
-            if (Intersections.HasIntersection(newSegment, lastModifiedSpline, lastModifiedCurve, _edges, bezierIndex, out var intersection)) {
+            if (SplineIntersections.HasIntersection(newSegment, lastModifiedSpline, lastModifiedCurve, _edges, bezierIndex, out var intersection)) {
                 // TODO: maybe refactor this into a separate method?
                 Debug.Log("Intersection detected: " + intersection);
                 Debug.Assert(newNode.SplineIndices.Count() == 1 && newNode.SplineIndices.First().spline == newSegment.Spline);
@@ -112,15 +112,15 @@ namespace FreeFormGraph.SplineBased {
                 };
                 var existingSegmentToSplit = intersection.ExistingSegment;
                 existingSegmentToSplit.Spline.Insert(intersection.ExistingBezierIndex + 1, newBezierKnot, TangentMode.AutoSmooth);
-                var addedNode = new StreetNode(newBezierKnot, intersection.ExistingSegment.Spline);
+                var addedNode = new SplineStreetNode(newBezierKnot, intersection.ExistingSegment.Spline);
                 _nodes.Add(addedNode);
 
                 // 1.2 split the existing segment and replace it with two new segments
                 _edges.Remove(existingSegmentToSplit);
-                ((StreetNode)existingSegmentToSplit.NodeA).RemoveSegment(existingSegmentToSplit);
-                ((StreetNode)existingSegmentToSplit.NodeB).RemoveSegment(existingSegmentToSplit);
-                var success1 = StreetSegment.GenerateStreetSegment((StreetNode)existingSegmentToSplit.NodeA, addedNode, existingSegmentToSplit.Spline, out var splitSegment1);
-                var success2 = StreetSegment.GenerateStreetSegment(addedNode, (StreetNode)existingSegmentToSplit.NodeB, existingSegmentToSplit.Spline, out var splitSegment2);
+                ((SplineStreetNode)existingSegmentToSplit.NodeA).RemoveSegment(existingSegmentToSplit);
+                ((SplineStreetNode)existingSegmentToSplit.NodeB).RemoveSegment(existingSegmentToSplit);
+                var success1 = SplineStreetSegment.GenerateStreetSegment((SplineStreetNode)existingSegmentToSplit.NodeA, addedNode, existingSegmentToSplit.Spline, out var splitSegment1);
+                var success2 = SplineStreetSegment.GenerateStreetSegment(addedNode, (SplineStreetNode)existingSegmentToSplit.NodeB, existingSegmentToSplit.Spline, out var splitSegment2);
                 Debug.Assert(success1 && success2);
                 _edges.Add(splitSegment1);
                 _edges.Add(splitSegment2);
@@ -167,10 +167,10 @@ namespace FreeFormGraph.SplineBased {
         /// <param name="lastModifiedCurve"> The curve that was added </param>
         /// <param name="bezierIndex"> The lower index of one of the two knots of the new segment </param>
         /// <returns> True if the Node was added successfully, false otherwise </returns>
-        private bool GenerateAndConnectNewNode(StreetNode from, 
+        private bool GenerateAndConnectNewNode(SplineStreetNode from, 
                 Vector3 to, 
-                out StreetNode newNode,
-                out StreetSegment newSegment,
+                out SplineStreetNode newNode,
+                out SplineStreetSegment newSegment,
                 out Spline lastModifiedSpline,
                 out BezierCurve lastModifiedCurve,
                 out int bezierIndex) {
@@ -212,8 +212,8 @@ namespace FreeFormGraph.SplineBased {
                 }
                 
                 from.AddSpline(spline);
-                _nodes.Add(newNode = new StreetNode(newKnot, spline));
-                if (!StreetSegment.GenerateStreetSegment(from, newNode, spline, out newSegment)) {
+                _nodes.Add(newNode = new SplineStreetNode(newKnot, spline));
+                if (!SplineStreetSegment.GenerateStreetSegment(from, newNode, spline, out newSegment)) {
                     // TODO: remove the new knot from the spline
                     throw new NotImplementedException("Remove the new knot from the spline");
                     return false;
@@ -235,7 +235,7 @@ namespace FreeFormGraph.SplineBased {
                 return false;
             }
 
-            if (!StreetSegment.GenerateStreetSegment(from, newNode, null, out newSegment)) {
+            if (!SplineStreetSegment.GenerateStreetSegment(from, newNode, null, out newSegment)) {
                 // TODO: remove the new node from the nodes
                 throw new NotImplementedException("Remove the new node from the nodes");
                 return false;
@@ -271,7 +271,7 @@ namespace FreeFormGraph.SplineBased {
         /// <returns></returns>
         private bool GenerateNewUnconnectedNode(
                 Vector3 position, 
-                out StreetNode newNode, 
+                out SplineStreetNode newNode, 
                 bool generateSplineAndKnot,
                 out Spline newSpline,
                 out BezierCurve newCurve) {
@@ -289,12 +289,12 @@ namespace FreeFormGraph.SplineBased {
                     Rotation = Quaternion.Euler(270, 0, 0) // TODO set correct rotation
                 };
                 spline.Add(knot);
-                newNode = new StreetNode(knot, spline);
+                newNode = new SplineStreetNode(knot, spline);
                 newSpline = spline;
                 newCurve = spline.GetCurve(0);
             }
             else {
-                newNode = new StreetNode(position);
+                newNode = new SplineStreetNode(position);
                 newSpline = null;
                 newCurve = default;
             }
@@ -315,7 +315,7 @@ namespace FreeFormGraph.SplineBased {
         /// <param name="newSegment"> The segment for which a new spline should be created </param>
         /// <param name="newSpline"> The newly created spline </param>
         /// <returns> True if the spline was added successfully, false otherwise </returns>
-        private bool AddSplineForSegment(StreetSegment newSegment, out Spline newSpline) {
+        private bool AddSplineForSegment(SplineStreetSegment newSegment, out Spline newSpline) {
             Debug.Log("Creating new Spline for segment");
             newSpline = _splineContainer.AddSpline();
             var fromKnot = new BezierKnot(newSegment.NodeA.Position) {
@@ -329,8 +329,8 @@ namespace FreeFormGraph.SplineBased {
             
             // TODO check if the spline is valid
             
-            ((StreetNode)newSegment.NodeA).AddSpline(newSpline);
-            ((StreetNode)newSegment.NodeB).AddSpline(newSpline);
+            ((SplineStreetNode)newSegment.NodeA).AddSpline(newSpline);
+            ((SplineStreetNode)newSegment.NodeB).AddSpline(newSpline);
             newSegment.Spline = newSpline;
             return true;
         }
@@ -340,7 +340,7 @@ namespace FreeFormGraph.SplineBased {
         /// </summary>
         /// <param name="pos"> The position to find the closest node to </param>
         /// <returns> The closest node </returns>
-        public StreetNode FindClosestNode(Vector2 pos) {
+        public SplineStreetNode FindClosestNode(Vector2 pos) {
             if (NodeCount == 0) {
                 Debug.LogWarning("No nodes in the graph. Should not happen.");
                 return null;
@@ -351,7 +351,7 @@ namespace FreeFormGraph.SplineBased {
             foreach (var node in Nodes) {
                 var distance = Vector2.Distance(pos, node.Position);
                 if (distance < closestDistance) {
-                    closestNode = node as StreetNode;
+                    closestNode = node as SplineStreetNode;
                     closestDistance = distance;
                 }
             }
@@ -363,7 +363,7 @@ namespace FreeFormGraph.SplineBased {
         private void SanityChecks() {
             foreach(var n in Nodes) {
                 if(n.ConnectedEdgesCount >= 1) {
-                    Debug.Assert(((StreetNode)n).CorrespondingSplines.Count != 0, n);
+                    Debug.Assert(((SplineStreetNode)n).CorrespondingSplines.Count != 0, n);
                 }
             }
         }
