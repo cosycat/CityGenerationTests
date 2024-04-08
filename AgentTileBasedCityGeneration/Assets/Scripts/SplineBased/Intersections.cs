@@ -107,109 +107,109 @@ namespace SplineBased {
         }
     
 
-        /// <summary>
-        /// Handles intersections by splitting or merging points
-        /// TODO
-        /// </summary>
-        public static void HandleIntersections(List<CurveIntersection> intersections, 
-                List<StreetNode> nodes, 
-                List<StreetSegment> edges
-            ) {
+        // /// <summary>
+        // /// Handles intersections by splitting or merging points
+        // /// TODO
+        // /// </summary>
+        // public static void HandleIntersections(List<CurveIntersection> intersections, 
+        //         List<StreetNode> nodes, 
+        //         List<StreetSegment> edges
+        //     ) {
+        //
+        //     foreach(var i in intersections) {
+        //         var initialNodeCount = nodes.Count;
+        //         var initialEdgeCount = edges.Count;
+        //
+        //         const float minDistanceToSnapToOtherEdge = 2.0f;
+        //         var closestCPoint = GetClosest(i.OtherPositionOnCurve, i.OtherCurve.P0, i.OtherCurve.P3, out var distanceToCP);
+        //         if(distanceToCP < minDistanceToSnapToOtherEdge) {
+        //             //snap to existing node
+        //             var targetPosition = closestCPoint;
+        //             var existingNode = nodes.Where(n => n.Position == targetPosition).First();
+        //             SplitRoadSegment(nodes, 
+        //                 edges, 
+        //                 i.SourceCurve, 
+        //                 targetPosition,
+        //                 existingNode);
+        //             InsertKnotOntoSpline(i.SourceSpline, i.SourceCurve, targetPosition);
+        //         } else {
+        //             //create a new node
+        //             var newNode = SplitRoadSegment(nodes, edges, i.OtherCurve, i.OtherPositionOnCurve);
+        //             SplitRoadSegment(nodes, edges, i.SourceCurve, i.SourcePositionOnCurve, newNode);
+        //             newNode.CorrespondingSplines.Add(i.SourceSpline);
+        //             newNode.CorrespondingSplines.Add(i.OtherSpline);
+        //             
+        //             InsertKnotOntoSpline(i.OtherSpline, i.OtherCurve, i.OtherPositionOnCurve);
+        //             //we want both knots to be on the same position!
+        //             InsertKnotOntoSpline(i.SourceSpline, i.SourceCurve, i.OtherPositionOnCurve);
+        //
+        //             Debug.Assert(nodes.Count == initialNodeCount + 1);
+        //             Debug.Assert(edges.Count == initialEdgeCount + 2);
+        //         }
+        //
+        //     }
+        // }
 
-            foreach(var i in intersections) {
-                var initialNodeCount = nodes.Count;
-                var initialEdgeCount = edges.Count;
-
-                const float minDistanceToSnapToOtherEdge = 2.0f;
-                var closestCPoint = GetClosest(i.OtherPositionOnCurve, i.OtherCurve.P0, i.OtherCurve.P3, out var distanceToCP);
-                if(distanceToCP < minDistanceToSnapToOtherEdge) {
-                    //snap to existing node
-                    var targetPosition = closestCPoint;
-                    var existingNode = nodes.Where(n => n.Position == targetPosition).First();
-                    SplitRoadSegment(nodes, 
-                        edges, 
-                        i.SourceCurve, 
-                        targetPosition,
-                        existingNode);
-                    InsertKnotOntoSpline(i.SourceSpline, i.SourceCurve, targetPosition);
-                } else {
-                    //create a new node
-                    var newNode = SplitRoadSegment(nodes, edges, i.OtherCurve, i.OtherPositionOnCurve);
-                    SplitRoadSegment(nodes, edges, i.SourceCurve, i.SourcePositionOnCurve, newNode);
-                    newNode.CorrespondingSplines.Add(i.SourceSpline);
-                    newNode.CorrespondingSplines.Add(i.OtherSpline);
-                    
-                    InsertKnotOntoSpline(i.OtherSpline, i.OtherCurve, i.OtherPositionOnCurve);
-                    //we want both knots to be on the same position!
-                    InsertKnotOntoSpline(i.SourceSpline, i.SourceCurve, i.OtherPositionOnCurve);
-
-                    Debug.Assert(nodes.Count == initialNodeCount + 1);
-                    Debug.Assert(edges.Count == initialEdgeCount + 2);
-                }
-
-            }
-        }
-
-        private static StreetNode SplitRoadSegment(
-                List<StreetNode> nodes, 
-                List<StreetSegment> edges,
-                BezierCurve c,
-                Vector3 intersectionPosition,
-                StreetNode node = null
-            ) {
-            var segStart = (Vector3)c.P0;
-            var segEnd = (Vector3)c.P3;
-
-            //find the street segment that corresponds to the curve where the intersection was found
-            var roadSegment = edges
-                .FirstOrDefault(seg => (segStart == seg.From.Position && segEnd == seg.To.Position)
-                    || (segStart == seg.To.Position && segEnd == seg.From.Position));
-            
-            if(roadSegment == null) {
-                //TODO debug stuff
-                var nearest = nodes
-                    .Select(node => {
-                        var d1 = Vector3.Distance(node.Position, segStart);
-                        var d2 = Vector3.Distance(node.Position, segEnd);
-                        return (Mathf.Min(d1, d2), node);
-                    })
-                    .OrderBy(tuple => tuple.Item1)
-                    .First();
-                Debug.Log($"nearest node: {nearest.Item2} with distance {nearest.Item1} for segstart: {segStart} segend: {segEnd}");
-            }
-
-            if(node == null) {
-                node = new StreetNode(intersectionPosition);
-                nodes.Add(node);
-            }
-            //create new street segment in graph
-            roadSegment.SplitInsertNode(node, out var newLeftSegment, out var newRightSegment);
-            edges.Remove(roadSegment);
-            edges.Add(newLeftSegment);
-            edges.Add(newRightSegment);
-            return node;
-        }
-
-        private static void InsertKnotOntoSpline(
-                Spline s,
-                BezierCurve c,
-                Vector3 insertPosition
-        ) {
-            var segStart = (Vector3)c.P0;
-            var segEnd = (Vector3)c.P3;
-
-            for(var insertionIndex = 0; insertionIndex < s.Count - 1; insertionIndex++) {
-                var currentBezierKnotPos = (Vector3)s[insertionIndex].Position;
-                var nextBezierKnotPos = (Vector3)s[insertionIndex+1].Position;
-                //we need to find the index thats between point segStart and segEnd
-                if((currentBezierKnotPos == segStart || currentBezierKnotPos == segEnd)
-                && (nextBezierKnotPos == segStart || nextBezierKnotPos == segEnd)) {
-                        var k = new BezierKnot(insertPosition);
-                        s.Insert(insertionIndex+1, k, TangentMode.AutoSmooth);
-                        break;
-                }
-            }
-        }
+        // private static StreetNode SplitRoadSegment(
+        //         List<StreetNode> nodes, 
+        //         List<StreetSegment> edges,
+        //         BezierCurve c,
+        //         Vector3 intersectionPosition,
+        //         StreetNode node = null
+        //     ) {
+        //     var segStart = (Vector3)c.P0;
+        //     var segEnd = (Vector3)c.P3;
+        //
+        //     //find the street segment that corresponds to the curve where the intersection was found
+        //     var roadSegment = edges
+        //         .FirstOrDefault(seg => (segStart == seg.NodeA.Position && segEnd == seg.NodeB.Position)
+        //             || (segStart == seg.NodeB.Position && segEnd == seg.NodeA.Position));
+        //     
+        //     if(roadSegment == null) {
+        //         //TODO debug stuff
+        //         var nearest = nodes
+        //             .Select(node => {
+        //                 var d1 = Vector3.Distance(node.Position, segStart);
+        //                 var d2 = Vector3.Distance(node.Position, segEnd);
+        //                 return (Mathf.Min(d1, d2), node);
+        //             })
+        //             .OrderBy(tuple => tuple.Item1)
+        //             .First();
+        //         Debug.Log($"nearest node: {nearest.Item2} with distance {nearest.Item1} for segstart: {segStart} segend: {segEnd}");
+        //     }
+        //
+        //     if(node == null) {
+        //         node = new StreetNode(intersectionPosition);
+        //         nodes.Add(node);
+        //     }
+        //     //create new street segment in graph
+        //     roadSegment.SplitInsertNode(node, out var newLeftSegment, out var newRightSegment);
+        //     edges.Remove(roadSegment);
+        //     edges.Add(newLeftSegment);
+        //     edges.Add(newRightSegment);
+        //     return node;
+        // }
+        //
+        // private static void InsertKnotOntoSpline(
+        //         Spline s,
+        //         BezierCurve c,
+        //         Vector3 insertPosition
+        // ) {
+        //     var segStart = (Vector3)c.P0;
+        //     var segEnd = (Vector3)c.P3;
+        //
+        //     for(var insertionIndex = 0; insertionIndex < s.Count - 1; insertionIndex++) {
+        //         var currentBezierKnotPos = (Vector3)s[insertionIndex].Position;
+        //         var nextBezierKnotPos = (Vector3)s[insertionIndex+1].Position;
+        //         //we need to find the index thats between point segStart and segEnd
+        //         if((currentBezierKnotPos == segStart || currentBezierKnotPos == segEnd)
+        //         && (nextBezierKnotPos == segStart || nextBezierKnotPos == segEnd)) {
+        //                 var k = new BezierKnot(insertPosition);
+        //                 s.Insert(insertionIndex+1, k, TangentMode.AutoSmooth);
+        //                 break;
+        //         }
+        //     }
+        // }
 
         /// <summary>
         /// Checks if two Vector3 points are approximately equal within a specified epsilon value.

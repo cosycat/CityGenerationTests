@@ -1,18 +1,25 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using FreeFormGraph;
 using UnityEngine;
 using UnityEngine.Splines;
 
 namespace SplineBased {
 
-    public class StreetSegment {
-        public StreetNode From { get; }
-        public StreetNode To { get; }
+    public class StreetSegment : IStreetEdge {
+        
+        private readonly StreetNode _nodeA;
+        private readonly StreetNode _nodeB;
+        
+        public IStreetNode NodeA => _nodeA;
+        public IStreetNode NodeB => _nodeB;
 
-        private StreetSegment(StreetNode from, StreetNode to) {
-            From = from;
-            To = to;
+        public float StreetWidth { get; } = 0.3f;
+
+        private StreetSegment(StreetNode nodeA, StreetNode nodeB) {
+            _nodeA = nodeA;
+            _nodeB = nodeB;
         }
 
         /// <summary>
@@ -28,28 +35,16 @@ namespace SplineBased {
         internal static bool GenerateStreetSegment(StreetNode from, StreetNode to, out StreetSegment newSegment) {
             newSegment = new StreetSegment(from, to);
             if (!from.AddSegment(newSegment) || !to.AddSegment(newSegment)) {
-                from.ConnectedSegments.Remove(newSegment);
-                to.ConnectedSegments.Remove(newSegment); // probably not needed, but to be sure
+                from.Edges.Remove(newSegment);
+                to.Edges.Remove(newSegment); // probably not needed, but to be sure
                 return false;
             }
 
             return true;
         }
-        
-        internal bool SplitInsertNode(StreetNode node, out StreetSegment newLeftSegment, out StreetSegment newRightSegment) {
-            From.ConnectedSegments.Remove(this);
-            To.ConnectedSegments.Remove(this);
-            newLeftSegment = new StreetSegment(From, node);
-            newRightSegment = new StreetSegment(node, To);
-            From.ConnectedSegments.Add(newLeftSegment);
-            node.ConnectedSegments.Add(newLeftSegment);
-            To.ConnectedSegments.Add(newRightSegment);
-            node.ConnectedSegments.Add(newRightSegment);
-            return true; //TODO error handling
-        }
 
         public override string ToString() {
-            return $"Segment from {From.Position} to {To.Position}";
+            return $"Segment from {NodeA.Position} to {NodeB.Position}";
         }
     }
 }

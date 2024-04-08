@@ -2,22 +2,42 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ExtensionMethods;
+using FreeFormGraph;
 using UnityEngine;
 using UnityEngine.Splines;
 
 namespace SplineBased {
-    public class StreetGraph : MonoBehaviour {
-
-        public List<StreetNode> Nodes { get; } = new();
-        public List<StreetSegment> Edges { get; } = new();
-
+    public class StreetGraph : StreetGraphGameObject {
+        
         private SplineContainer _splineContainer;
         private SplineExtrude _splineExtrude;
+        private readonly List<StreetSegment> _edges;
+        private readonly List<StreetNode> _nodes;
+        
+        public override IEnumerable<IStreetNode> Nodes => _nodes;
+
+        public override IEnumerable<IStreetEdge> Edges => _edges;
+
+        public override int NodeCount => _nodes.Count;
+        public override int EdgeCount => _edges.Count;
+        public override float SnapToExistingNodeThreshold { get; set; }
+        public override float SnapToExistingEdgeThreshold { get; set; }
+        public override bool AddEdge(Vector3 from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode) {
+            return AddEdge(FindClosestNode(from), to, out newEdge, out toNode);
+        }
+
+        public override bool AddEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode) {
+            var res = AddNewSegment((StreetNode)from, to, out var newSegment, out var toNodeA);
+            newEdge = newSegment;
+            toNode = toNodeA;
+            return res;
+        }
+
 
         private void Awake() {
             _splineContainer = GetComponentInChildren<SplineContainer>();
             _splineExtrude = GetComponentInChildren<SplineExtrude>();
-            GenerateNewUnconnectedNode(Vector3.zero, out var newNode, true);
+            GenerateNewUnconnectedNode(Vector3.zero, out var newNode, true, out _, out _);
         }
 
         /// <summary>
@@ -40,7 +60,7 @@ namespace SplineBased {
 
             from.AddSpline(newSpline);
             to.AddSpline(newSpline);
-            Edges.Add(newSegment);
+            _edges.Add(newSegment);
             _splineExtrude.Rebuild();
             return true;
         }
@@ -63,7 +83,7 @@ namespace SplineBased {
             if (!GenerateAndConnectNewNode(from, to, out newNode, out newSegment, out var lastModifiedSpline, out var lastModifiedCurve)) {
                 return false;
             }
-            Edges.Add(newSegment);
+            _edges.Add(newSegment);
 
             if(lastModifiedSpline != null && lastModifiedCurve != null) {
                 //Wth do i need to cast here??
@@ -71,8 +91,8 @@ namespace SplineBased {
                     from,
                     lastModifiedSpline, 
                     (BezierCurve)lastModifiedCurve, 
-                    Nodes);
-                Intersections.HandleIntersections(intersections, Nodes, Edges);
+                    _nodes);
+                Intersections.HandleIntersections(intersections, _nodes, _edges);
             }
 
             _splineExtrude.Rebuild();
@@ -131,7 +151,7 @@ namespace SplineBased {
                 }
                 
                 from.AddSpline(spline);
-                Nodes.Add(newNode = new StreetNode(newKnot, spline));
+                _nodes.Add(newNode = new StreetNode(newKnot, spline));
                 if (!StreetSegment.GenerateStreetSegment(from, newNode, out newSegment)) {
                     // TODO: remove the new knot from the spline
                     throw new NotImplementedException("Remove the new knot from the spline");
@@ -191,7 +211,7 @@ namespace SplineBased {
             else {
                 newNode = new StreetNode(position);
             }
-            Nodes.Add(newNode);
+            _nodes.Add(newNode);
 
             return true;
         }
@@ -204,34 +224,34 @@ namespace SplineBased {
         private bool AddSplineForSegment(StreetSegment newSegment, out Spline newSpline) {
             Debug.Log("Creating new Spline for segment");
             newSpline = _splineContainer.AddSpline();
-            var fromKnot = new BezierKnot(newSegment.From.Position) {
-                Rotation = Quaternion.LookRotation(newSegment.To.Position - newSegment.From.Position, Vector3.forward)
+            var fromKnot = new BezierKnot(newSegment.NodeA.Position) {
+                Rotation = Quaternion.LookRotation(newSegment.NodeB.Position - newSegment.NodeA.Position, Vector3.forward)
             };
-            var toKnot = new BezierKnot(newSegment.To.Position) {
-                Rotation = Quaternion.LookRotation(newSegment.From.Position - newSegment.To.Position, Vector3.forward)
+            var toKnot = new BezierKnot(newSegment.NodeB.Position) {
+                Rotation = Quaternion.LookRotation(newSegment.NodeA.Position - newSegment.NodeB.Position, Vector3.forward)
             };
             newSpline.Add(fromKnot); // TODO set correct tangent rotations for the knots
             newSpline.Add(toKnot);
             
             // TODO check if the spline is valid
-            
-            newSegment.From.AddSpline(newSpline);
-            newSegment.To.AddSpline(newSpline);
+
+            ((StreetNode)newSegment.NodeA).AddSpline(newSpline);
+            ((StreetNode)newSegment.NodeB).AddSpline(newSpline);
             return true;
         }
 
         public StreetNode FindClosestNode(Vector2 pos) {
-            if (Nodes.Count == 0) {
+            if (NodeCount == 0) {
                 Debug.LogWarning("No nodes in the graph. Should not happen.");
                 return null;
             }
 
-            var closestNode = Nodes[0];
+            var closestNode = _nodes[0];
             var closestDistance = Vector2.Distance(pos, closestNode.Position);
             foreach (var node in Nodes) {
                 var distance = Vector2.Distance(pos, node.Position);
                 if (distance < closestDistance) {
-                    closestNode = node;
+                    closestNode = node as StreetNode;
                     closestDistance = distance;
                 }
             }
@@ -241,11 +261,12 @@ namespace SplineBased {
 
         private void SanityChecks() {
             foreach(var n in Nodes) {
-                if(n.ConnectedSegments.Count >= 1) {
-                    Debug.Assert(n.CorrespondingSplines.Count != 0, n);
+                if(n.ConnectedEdgesCount >= 1) {
+                    Debug.Assert(((StreetNode)n).CorrespondingSplines.Count != 0, n);
                 }
             }
         }
+        
     }
     
 }

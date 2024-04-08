@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using JetBrains.Annotations;
 using UnityEngine;
 
-namespace FreeFormGraphMain {
+namespace FreeFormGraph {
+    
     public class FreeFormStreetGraphTest : MonoBehaviour {
 
         private IStreetGraph _streetGraph;
 
-        private StreetNode? _dragStartNode;
+        [CanBeNull] private IStreetNode _dragStartNode;
         
         private bool _drawGrid = true;
         private bool _drawCurveBoxes = false;
@@ -33,17 +34,17 @@ namespace FreeFormGraphMain {
             var mousePosWorld = MouseWorldPos;
             if (Input.GetMouseButtonDown(0)) {
                 _dragStartNode = _streetGraph.FindClosestNode(mousePosWorld);
-                if (_dragStartNode.HasValue && Vector3.Distance(_dragStartNode.Value.Position, mousePosWorld) < dragThreshold) {
+                if (_dragStartNode != null && Vector3.Distance(_dragStartNode.Position, mousePosWorld) < dragThreshold) {
                     Debug.Log($"StreetGraphTest - Dragging from {_dragStartNode}");
                 } else {
                     Debug.Log($"No node found at {mousePosWorld}.");
                     _dragStartNode = null;
                 }
             } else if (Input.GetMouseButtonUp(0)) {
-                if (!_dragStartNode.HasValue) {
+                if (_dragStartNode == null) {
                     return;
                 }
-                if (!_streetGraph.AddEdge(_dragStartNode.Value.Position, mousePosWorld, out _, out _)) {
+                if (!_streetGraph.AddEdge(_dragStartNode, mousePosWorld, out _, out _)) {
                     Debug.LogError("Failed to create new node.");
                 }
 

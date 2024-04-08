@@ -3,32 +3,31 @@ using UnityEngine;
 
 namespace FreeFormGraph {
 
-    public abstract class StreetGraphGameObject<TNode, TEdge> : MonoBehaviour, IStreetGraph<TNode, TEdge>
-        where TNode : BaseStreetNode<TNode, TEdge>
-        where TEdge : BaseStreetEdge<TNode, TEdge> {
-        public abstract List<TNode> Nodes { get; }
-        public abstract List<TEdge> Edges { get; }
+    public abstract class StreetGraphGameObject : MonoBehaviour, IStreetGraph {
+        public abstract IEnumerable<IStreetNode> Nodes { get; }
+        public abstract IEnumerable<IStreetEdge> Edges { get; }
+        public abstract int NodeCount { get; }
+        public abstract int EdgeCount { get; }
         public abstract float SnapToExistingNodeThreshold { get; set; }
         public abstract float SnapToExistingEdgeThreshold { get; set; }
-        public abstract bool AddEdge(TNode from, Vector3 to, out TEdge newEdge, out TNode toNode);
+        public abstract bool AddEdge(Vector3 from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode);
+        public abstract bool AddEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode);
     }
 
-    public interface IStreetGraph<TNode, TEdge>
-        where TNode : BaseStreetNode<TNode, TEdge>
-        where TEdge : BaseStreetEdge<TNode, TEdge> {
+    public interface IStreetGraph {
         
         /// <summary>
         /// All nodes of the street graph.
         /// </summary>
-        public List<TNode> Nodes { get; }
+        public IEnumerable<IStreetNode> Nodes { get; }
         
         /// <summary>
         /// All edges of the street graph.
         /// </summary>
-        public List<TEdge> Edges { get; }
+        public IEnumerable<IStreetEdge> Edges { get; }
 
-        public int NodeCount => Nodes.Count;
-        public int EdgeCount => Edges.Count;
+        public int NodeCount { get; }
+        public int EdgeCount { get; }
         
         /// <summary>
         /// The threshold for snapping the to position to an existing node when adding a new edge.
@@ -57,7 +56,9 @@ namespace FreeFormGraph {
         /// <param name="newEdge"> The new edge that was created. </param>
         /// <param name="toNode"> The node that the edge was connected to. </param>
         /// <returns></returns>
-        public bool AddEdge(TNode from, Vector3 to, out TEdge newEdge, out TNode toNode);
+        public bool AddEdge(Vector3 from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode);
+        
+        public bool AddEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode);
 
         /// <summary>
         /// Returns the closest node to the given position.
@@ -66,8 +67,8 @@ namespace FreeFormGraph {
         /// </summary>
         /// <param name="position"> The position to find the closest node to. </param>
         /// <returns> The closest node to the position. </returns>
-        public TNode FindClosestNode(Vector3 position) {
-            var closestNode = default(TNode);
+        public IStreetNode FindClosestNode(Vector3 position) {
+            var closestNode = default(IStreetNode);
             var closestDistance = float.MaxValue;
             foreach (var node in Nodes) {
                 var distance = Vector3.Distance(node.Position, position);
@@ -81,9 +82,7 @@ namespace FreeFormGraph {
         }
     }
 
-    public abstract class BaseStreetNode<TNode, TEdge> : IStreetNode
-        where TEdge : BaseStreetEdge<TNode, TEdge> 
-        where TNode : BaseStreetNode<TNode, TEdge> {
+    public interface IStreetNode {
         
         /// <summary>
         /// The position of the node in the world.
@@ -93,12 +92,12 @@ namespace FreeFormGraph {
         /// <summary>
         /// The edges connected to this node.
         /// </summary>
-        public List<TEdge> Edges { get; }
+        public List<IStreetEdge> Edges { get; }
         
         /// <summary>
         /// How many edges can be connected to this node.
         /// </summary>
-        public int ConnectedEdgesCount => Edges.Count;
+        public int ConnectedEdgesCount { get; }
         
         /// <summary>
         /// The maximum number of edges that can be connected to this node.
@@ -110,24 +109,24 @@ namespace FreeFormGraph {
         /// </summary>
         public bool IsMaxConnectedEdgesReached => ConnectedEdgesCount >= MaxConnectedEdges;
         
-        // This should probably be specific methods using the appropriate implementation of IStreetEdge
-        /// <summary>
-        /// Adds an edge to the node.
-        ///
-        /// If the maximum number of edges that can be connected to this node has been reached, the edge will not be added.
-        /// </summary>
-        /// <param name="edge"> The edge to add. </param>
-        /// <returns> True if the edge was added, false otherwise. </returns>
-        public abstract bool AddEdge(TEdge edge);
-        
-        /// <summary>
-        /// Removes an edge from the node.
-        ///
-        /// If the edge is not connected to this node, the edge will not be removed.
-        /// </summary>
-        /// <param name="edge"> The edge to remove. </param>
-        /// <returns> True if the edge was removed, false otherwise. </returns>
-        public abstract bool RemoveEdge(TEdge edge);
+        // // This should probably be specific methods using the appropriate implementation of IStreetEdge
+        // /// <summary>
+        // /// Adds an edge to the node.
+        // ///
+        // /// If the maximum number of edges that can be connected to this node has been reached, the edge will not be added.
+        // /// </summary>
+        // /// <param name="edge"> The edge to add. </param>
+        // /// <returns> True if the edge was added, false otherwise. </returns>
+        // public abstract bool AddEdge(TEdge edge);
+        //
+        // /// <summary>
+        // /// Removes an edge from the node.
+        // ///
+        // /// If the edge is not connected to this node, the edge will not be removed.
+        // /// </summary>
+        // /// <param name="edge"> The edge to remove. </param>
+        // /// <returns> True if the edge was removed, false otherwise. </returns>
+        // public abstract bool RemoveEdge(TEdge edge);
         
         /// <summary>
         /// Returns a string representation of the node for debugging purposes.
@@ -139,9 +138,7 @@ namespace FreeFormGraph {
         
     }
 
-    public abstract class BaseStreetEdge<TNode, TEdge> : IStreetEdge
-        where TEdge : BaseStreetEdge<TNode, TEdge> 
-        where TNode : BaseStreetNode<TNode, TEdge> {
+    public interface IStreetEdge {
         
         /// <summary>
         /// The position of the first node of the street.
@@ -155,34 +152,17 @@ namespace FreeFormGraph {
         /// <summary>
         /// The first node of the street.
         /// </summary>
-        public TNode NodeA { get; }
+        public IStreetNode NodeA { get; }
 
         /// <summary>
         /// The second node of the street.
         /// </summary>
-        public TNode NodeB { get; }
+        public IStreetNode NodeB { get; }
 
         /// <summary>
         /// The street width measured from the center of the street to the edge of the street.
         /// </summary>
         public float StreetWidth { get; }
-
-        /// <summary>
-        /// Returns whether the given point is on the street.
-        /// </summary>
-        /// <param name="point"> The point to check. </param>
-        /// <returns> True if the point is on the street, false otherwise. </returns>
-        public bool IsPointOnStreet(Vector3 point) {
-            return IsPointWithinThreshold(point, StreetWidth);
-        }
-        
-        /// <summary>
-        /// Returns whether the given point is within the given threshold of the street.
-        /// </summary>
-        /// <param name="point"> The point to check. </param>
-        /// <param name="threshold"> The threshold to check, measured from the center of the street. </param>
-        /// <returns> True if the point is within the threshold of the center of the street, false otherwise. </returns>
-        public abstract bool IsPointWithinThreshold(Vector3 point, float threshold);
         
         /// <summary>
         /// Returns a string representation of the edge for debugging purposes.
@@ -193,11 +173,5 @@ namespace FreeFormGraph {
         }
     }
 
-    public interface IStreetEdge {
-        
-    }
     
-    public interface IStreetNode {
-        
-    }
 }

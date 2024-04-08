@@ -4,11 +4,11 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Splines;
 using ExtensionMethods;
+using FreeFormGraph;
 
 namespace SplineBased {
 
-    public class StreetNode {
-        private const int MaxConnectedSegments = 4;
+    public class StreetNode : IStreetNode {
         private readonly List<Spline> _correspondingSplines = new();
 
         public List<Spline> CorrespondingSplines => _correspondingSplines;
@@ -23,8 +23,10 @@ namespace SplineBased {
             
 
         public Vector3 Position { get; }
-        public List<StreetSegment> ConnectedSegments { get; } = new();
-        public bool MaxSegmentCountReached => ConnectedSegments.Count >= MaxConnectedSegments;
+        public int MaxConnectedEdges { get; }
+        public int ConnectedEdgesCount { get; }
+        public List<IStreetEdge> Edges { get; } = new();
+        public bool MaxSegmentCountReached => Edges.Count >= MaxConnectedEdges;
 
         public StreetNode(BezierKnot knot, Spline spline) {
             Debug.Assert(spline.ContainsKnotPos(knot, out _));
@@ -37,11 +39,11 @@ namespace SplineBased {
         }
 
         internal bool AddSegment(StreetSegment segment) {
-            if (ConnectedSegments.Count >= MaxConnectedSegments) {
+            if (Edges.Count >= MaxConnectedEdges) {
                 return false;
             }
 
-            ConnectedSegments.Add(segment);
+            Edges.Add(segment);
             return true;
         }
         
@@ -51,7 +53,7 @@ namespace SplineBased {
         }
 
         public override string ToString() {
-            return $"Node at {Position} with {ConnectedSegments.Count} connected segments{(ConnectedSegments.Count > 0 ? $": {string.Join(", ", ConnectedSegments)}" : "")}";
+            return $"Node at {Position} with {Edges.Count} connected segments{(Edges.Count > 0 ? $": {string.Join(", ", Edges)}" : "")}";
         }
     }
 }
