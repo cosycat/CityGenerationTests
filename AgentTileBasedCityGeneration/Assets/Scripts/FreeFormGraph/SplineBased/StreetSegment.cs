@@ -1,12 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using FreeFormGraph;
 using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.Splines;
 
-namespace SplineBased {
+namespace FreeFormGraph.SplineBased {
 
     public class StreetSegment : IStreetEdge {
         

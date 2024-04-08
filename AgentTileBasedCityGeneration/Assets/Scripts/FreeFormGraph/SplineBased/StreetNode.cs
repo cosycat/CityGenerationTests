@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ExtensionMethods;
+using FreeFormGraph.SplineBased;
 using UnityEngine;
 using UnityEngine.Splines;
-using ExtensionMethods;
-using FreeFormGraph;
 
-namespace SplineBased {
+namespace FreeFormGraph.SplineBased {
 
     public class StreetNode : IStreetNode {
         private readonly List<Spline> _correspondingSplines = new();

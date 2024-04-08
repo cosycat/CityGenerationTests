@@ -1,11 +1,11 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
-using Unity.Mathematics;
-using UnityEngine.Splines;
+using System.Linq;
+using FreeFormGraph.SplineBased;
 using UnityEngine;
+using UnityEngine.Splines;
 
-namespace SplineBased {
+namespace FreeFormGraph.SplineBased {
     public static class Intersections {
 
         //DEBUG stuff

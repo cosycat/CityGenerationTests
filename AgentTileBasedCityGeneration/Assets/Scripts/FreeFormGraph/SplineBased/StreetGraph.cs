@@ -4,11 +4,12 @@ using System.Diagnostics;
 using System.Linq;
 using ExtensionMethods;
 using FreeFormGraph;
+using FreeFormGraph.SplineBased;
 using UnityEngine;
 using UnityEngine.Splines;
 using Debug = UnityEngine.Debug;
 
-namespace SplineBased {
+namespace FreeFormGraph.SplineBased {
     public class StreetGraph : StreetGraphGameObject {
         
         [SerializeField] private bool snapToGrid = true;
