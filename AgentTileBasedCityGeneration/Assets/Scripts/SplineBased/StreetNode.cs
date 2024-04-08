@@ -23,8 +23,8 @@ namespace SplineBased {
             
 
         public Vector3 Position { get; }
-        public int MaxConnectedEdges { get; }
-        public int ConnectedEdgesCount { get; }
+        public int MaxConnectedEdges => 4;
+        public int ConnectedEdgesCount => Edges.Count;
         public List<IStreetEdge> Edges { get; } = new();
         public bool MaxSegmentCountReached => Edges.Count >= MaxConnectedEdges;
 
@@ -54,6 +54,10 @@ namespace SplineBased {
 
         public override string ToString() {
             return $"Node at {Position} with {Edges.Count} connected segments{(Edges.Count > 0 ? $": {string.Join(", ", Edges)}" : "")}";
+        }
+
+        public bool RemoveSegment(StreetSegment segment) {
+            return Edges.Remove(segment);
         }
     }
 }

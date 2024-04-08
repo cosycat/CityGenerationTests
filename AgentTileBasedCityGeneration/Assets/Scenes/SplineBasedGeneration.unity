@@ -164,10 +164,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 125459573}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 84b001b1a57b4a689d75f0fb494c7284, type: 3}
+  m_Script: {fileID: 11500000, guid: 7adc9973252f4f57a7b4742b1f427f55, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  allowMouseCreation: 1
 --- !u!1 &186890300
 GameObject:
   m_ObjectHideFlags: 0
@@ -197,6 +196,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc7c508b1dc1b440fad3e6d2c4ec19de, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  snapToGrid: 1
 --- !u!4 &186890302
 Transform:
   m_ObjectHideFlags: 0
@@ -408,7 +408,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 5
+  orthographic size: 10
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
