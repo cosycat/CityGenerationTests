@@ -1,0 +1,160 @@
+using System;
+using System.Collections.Generic;
+using JetBrains.Annotations;
+using UnityEngine;
+
+namespace FreeFormGraphMain {
+    public class FreeFormStreetGraphTest : MonoBehaviour {
+
+        private IStreetGraph _streetGraph;
+
+        private StreetNode? _dragStartNode;
+        
+        private bool _drawGrid = true;
+        private bool _drawCurveBoxes = false;
+        private bool _drawIntersectionLines = true;
+        private bool _drawLabelsEdges = true;
+        private bool _drawLabelsNodes = true;
+
+        private void Awake() {
+            _streetGraph ??= FindObjectOfType<StreetGraphGameObject>();
+            if (_streetGraph == null) {
+                Debug.LogError("No StreetGraph found in Scene.");
+                Destroy(this);
+            }
+        }
+        
+        private void Update() {
+            CheckMouseCreation();
+        }
+
+        private void CheckMouseCreation() {
+            const float dragThreshold = 0.3f;
+            var mousePosWorld = MouseWorldPos;
+            if (Input.GetMouseButtonDown(0)) {
+                _dragStartNode = _streetGraph.FindClosestNode(mousePosWorld);
+                if (_dragStartNode.HasValue && Vector3.Distance(_dragStartNode.Value.Position, mousePosWorld) < dragThreshold) {
+                    Debug.Log($"StreetGraphTest - Dragging from {_dragStartNode}");
+                } else {
+                    Debug.Log($"No node found at {mousePosWorld}.");
+                    _dragStartNode = null;
+                }
+            } else if (Input.GetMouseButtonUp(0)) {
+                if (!_dragStartNode.HasValue) {
+                    return;
+                }
+                if (!_streetGraph.AddEdge(_dragStartNode.Value.Position, mousePosWorld, out _, out _)) {
+                    Debug.LogError("Failed to create new node.");
+                }
+
+                _dragStartNode = null;
+            }
+        }
+
+        private static Vector2 MouseWorldPos => Camera.main!.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 0));
+        
+        private void OnGUI() {
+            // Contents:
+            // - A textfield to enter coordinates for a new node
+            // - Multiple buttons to create a new node at the entered coordinates:
+            //   - "Create Node Random" creates a new node connected to a random existing node
+            //   - "Create Node Closest" creates a new node connected to the closest existing node
+            //   - "Create Node Previous" creates a new node connected to the previously created node
+            
+            GUILayout.BeginArea(new Rect(10, 10, 200, 600));
+            GUILayout.Label($"Number of nodes: {_streetGraph.NodeCount}");
+            GUILayout.Label($"Number of edges: {_streetGraph.EdgeCount}");
+            if (GUILayout.Button($"Draw grid: ({_drawGrid})")) {
+                _drawGrid = !_drawGrid;
+            }
+            if (GUILayout.Button($"Bezier B-Boxes: ({_drawCurveBoxes})")) {
+                _drawCurveBoxes = !_drawCurveBoxes;
+            }
+            if (GUILayout.Button($"Intersection Lines: ({_drawIntersectionLines})")) {
+                _drawIntersectionLines = !_drawIntersectionLines;
+            }
+            GUILayout.Label("Labels:");
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button($"Nodes: ({_drawLabelsNodes})")) {
+                _drawLabelsNodes = !_drawLabelsNodes;
+            }
+            if (GUILayout.Button($"Edges: ({_drawLabelsEdges})")) {
+                _drawLabelsEdges = !_drawLabelsEdges;
+            }
+            GUILayout.EndHorizontal();
+            GUILayout.Label("Drag from one node to create a new connection or node.");
+            GUILayout.EndArea();
+        }
+
+        private void OnDrawGizmos() {
+            if (_streetGraph == null) {
+                return;
+            }
+            foreach (var node in _streetGraph.Nodes) {
+                Gizmos.color = node.IsMaxConnectedEdgesReached ? Color.red : node.ConnectedEdgesCount > 2 ? Color.yellow : Color.green;
+                Gizmos.DrawSphere(node.Position, 0.1f);
+            }
+            var edgeDrawingColors = new List<Color>() {Color.blue, Color.cyan};
+            var colorIndex = 0;
+
+            foreach (var edge in _streetGraph.Edges) {
+                Gizmos.color = edgeDrawingColors[colorIndex];
+                colorIndex = (colorIndex + 1) % edgeDrawingColors.Count;
+                Gizmos.DrawLine(edge.PosA, edge.PosB);
+            }
+            
+            Gizmos.color = Color.green;
+            if (Input.GetMouseButton(0) && _dragStartNode != null) {
+                Gizmos.DrawLine(_dragStartNode.Position, MouseWorldPos);
+            }
+
+            // if (_drawIntersectionLines) {
+            //     foreach ((var pos, var dir) in Intersections._dbg_curveSteps) {
+            //         Gizmos.color = Color.grey;
+            //         Gizmos.DrawRay(pos, Vector3.up * dir);
+            //     }
+            //
+            //     foreach (var intersection in Intersections._dbg_splineIntersectionPoints) {
+            //         Gizmos.color = Color.magenta;
+            //         Gizmos.DrawRay(intersection, Vector3.up);
+            //     }
+            // }
+
+            if(_drawGrid) {
+                Gizmos.color = new Color(0.5f, 0.5f, 0.5f, 0.5f);
+                for(int i = -100; i < 100; i++) {
+                    Gizmos.DrawRay(new Vector3(i, -100), Vector3.up * 200);
+                }
+                for(int i = -100; i < 100; i++) {
+                    Gizmos.DrawRay(new Vector3(-100, i), Vector3.right * 200);
+                }
+            }
+
+            // if(_drawCurveBoxes) {
+            //     foreach(var s in _streetGraph.Nodes.SelectMany(n => n.CorrespondingSplines).Distinct()) {
+            //         for(var i = 0; i < SplineUtility.GetCurveCount(s); i++) {
+            //             var targetCurve = s.GetCurve(i);
+            //             var bounds = Intersections.GetBoundsForCurve(targetCurve);
+            //             Gizmos.DrawRay(bounds.min, Vector3.right * (bounds.max.x - bounds.min.x));
+            //             Gizmos.DrawRay(bounds.min, Vector3.up* (bounds.max.y - bounds.min.y));
+            //             Gizmos.DrawRay(bounds.max, Vector3.left * (bounds.max.x - bounds.min.x));
+            //             Gizmos.DrawRay(bounds.max, Vector3.down* (bounds.max.y - bounds.min.y));
+            //         }
+            //     }
+            // }
+            
+            if (_drawLabelsEdges) {
+                // UnityEditor.Handles.color = Color.yellow;
+                foreach (var edge in _streetGraph.Edges) {
+                    UnityEditor.Handles.Label((edge.PosA + edge.PosB) / 2, edge.DebugString());
+                }
+            }
+            if (_drawLabelsNodes) {
+                // UnityEditor.Handles.color = Color.white;
+                foreach (var node in _streetGraph.Nodes) {
+                    UnityEditor.Handles.Label(node.Position, node.DebugString());
+                }
+            }
+        }
+    }
+}
