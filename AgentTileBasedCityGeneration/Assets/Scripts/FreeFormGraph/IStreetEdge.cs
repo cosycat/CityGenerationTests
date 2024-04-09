@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace FreeFormGraph {
@@ -34,5 +36,7 @@ namespace FreeFormGraph {
         public string DebugString() {
             return $"Edge from {NodeA}\nto {NodeB}";
         }
+
+        IEnumerable<Vector3> SplitIntoPoints(float stepSize = 0.1f);
     }
 }

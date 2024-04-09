@@ -25,6 +25,10 @@ namespace FreeFormGraph.SplineBased {
 
         public Vector3 Position { get; }
         public int MaxConnectedEdges => 4;
+        
+        // TODO this is just a placeholder:
+        public float? EntranceAngle => Vector3.Angle(Vector3.right, SplineIndices.First().spline[SplineIndices.First().index].TangentIn);
+        
         public int ConnectedEdgesCount => _edges.Count;
 
         public IEnumerable<IStreetEdge> Edges => _edges;

@@ -57,32 +57,70 @@ namespace FreeFormGraph {
                 isToNodeNew = false;
                 return false;
             }
-
+            // try to create the edge
             var success = CreateEdge(fromNode, to, out newEdge, out toNode, out isToNodeNew);
             if (success) {
                 return true;
             }
-            
+            // if the edge creation failed, remove the node if it was newly created
             if (isFromNodeNew) {
                 RemoveNode(fromNode);
             }
             return false;
         }
-
-
+        
         public bool CreateEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode,
-            out bool isToNodeNew);
+            out bool isToNodeNew) {
+            if (!GetOrCreateNode(to, SnapToExistingNodeThreshold, out toNode, out isToNodeNew)) {
+                Debug.Log("IStreetGraph::CreateEdge - Failed to create node at to position");
+                newEdge = null;
+                return false;
+            }
+            // try to create the edge
+            var success = CreateEdge(from, toNode, out newEdge);
+            if (success) {
+                return true;
+            }
+            // if the edge creation failed, remove the node if it was newly created
+            if (isToNodeNew) {
+                RemoveNode(toNode);
+            }
+            return false;
+        }
+        
+        public bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge);
         
         bool RemoveNode(IStreetNode node);
 
         /// <summary>
-        /// Returns the closest node to the given position.
-        /// 
+        /// Finds the closest node to the given position, if it is within the given threshold.
         /// </summary>
         /// <param name="position"> The position to find the closest node to. </param>
+        /// <param name="foundNode"> The closest node to the position, if it is within the threshold, null otherwise. </param>
         /// <param name="threshold"> The maximum distance to consider a node as the closest. </param>
-        /// <returns> The closest node to the position. </returns>
-        [CanBeNull] public IStreetNode FindClosestNode(Vector3 position, float threshold = float.MaxValue);
+        /// <returns> True if a node was found, false otherwise. </returns>
+        public bool TryFindClosestNode(Vector3 position, out IStreetNode foundNode,
+            float threshold = float.MaxValue);
+
+        /// <summary>
+        /// Finds the closest edge to the given position, if it is within the given threshold.
+        /// </summary>
+        /// <param name="position"> The position to find the closest edge to. </param>
+        /// <param name="foundEdge"> The closest edge to the position, if it is within the threshold, null otherwise. </param>
+        /// <param name="positionOnEdge"> The position on the edge that is closest to the given position. </param>
+        /// <param name="threshold"> The maximum distance to consider an edge as the closest. </param>
+        /// <returns> True if an edge was found, false otherwise. </returns>
+        public bool TryFindClosestEdge(Vector3 position, out IStreetEdge foundEdge, out Vector3 positionOnEdge,
+            float threshold = float.MaxValue);
+
+        /// <summary>
+        /// Returns the distance from the given position to the given edge.
+        /// </summary>
+        /// <param name="edge"> The edge to measure the distance to. </param>
+        /// <param name="position"> The position to measure the distance from. </param>
+        /// <param name="positionOnEdge"> The position on the edge that is closest to the given position. </param>
+        /// <returns> The distance from the position to the edge. </returns>
+        public float GetDistanceEdgeToPosition(IStreetEdge edge, Vector3 position, out Vector3 positionOnEdge);
 
         /// <summary>
         /// Creates a new node at the given position without connecting it to any edges.
@@ -109,14 +147,29 @@ namespace FreeFormGraph {
         /// <param name="isNewlyCreatedNode"> Whether the node was newly created or not. </param>
         /// <returns> True if a node was found or created, false otherwise. </returns>
         public bool GetOrCreateNode(Vector3 position, float threshold, out IStreetNode node, out bool isNewlyCreatedNode) {
-            node = FindClosestNode(position, threshold);
-            if (node != null) {
+            // Snap to node if possible
+            if (TryFindClosestNode(position, out node, threshold)) {
                 isNewlyCreatedNode = false;
                 return true;
             }
+            // snap to edge if possible
+            if (TryFindClosestEdge(position, out var edge, out var positionOnEdge, SnapToExistingEdgeThreshold)) {
+                // snap to existing node on edge if possible
+                if (TryFindClosestNode(positionOnEdge, out node, SnapToExistingNodeThreshold)) {
+                    isNewlyCreatedNode = false;
+                    return true;
+                }
+                // otherwise create new node on edge
+                InsertNodeOnEdge(edge, positionOnEdge, out node);
+                isNewlyCreatedNode = true;
+                return true;
+            }
+            // otherwise create new node
             var success = CreateUnconnectedNode(position, out node); // TODO for optimization: CreateUnconnectedNode will most likely call FindClosestNode again
             isNewlyCreatedNode = success;
             return success;
         }
+
+        void InsertNodeOnEdge(IStreetEdge foundEdge, Vector3 positionOnEdge, out IStreetNode node);
     }
 }

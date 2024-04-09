@@ -29,24 +29,12 @@ namespace FreeFormGraph {
         /// </summary>
         public bool IsMaxConnectedEdgesReached => ConnectedEdgesCount >= MaxConnectedEdges;
         
-        // // This should probably be specific methods using the appropriate implementation of IStreetEdge
-        // /// <summary>
-        // /// Adds an edge to the node.
-        // ///
-        // /// If the maximum number of edges that can be connected to this node has been reached, the edge will not be added.
-        // /// </summary>
-        // /// <param name="edge"> The edge to add. </param>
-        // /// <returns> True if the edge was added, false otherwise. </returns>
-        // public abstract bool AddEdge(TEdge edge);
-        //
-        // /// <summary>
-        // /// Removes an edge from the node.
-        // ///
-        // /// If the edge is not connected to this node, the edge will not be removed.
-        // /// </summary>
-        // /// <param name="edge"> The edge to remove. </param>
-        // /// <returns> True if the edge was removed, false otherwise. </returns>
-        // public abstract bool RemoveEdge(TEdge edge);
+        /// <summary>
+        /// The angle at which the first street enters this node.
+        /// Measured counter-clockwise in degrees where 0 (and 360) is the direction of the x-axis.
+        /// If no street enters this node, this value is not set.
+        /// </summary>
+        public float? EntranceAngle { get; }
         
         /// <summary>
         /// Returns a string representation of the node for debugging purposes.

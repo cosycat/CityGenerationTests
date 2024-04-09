@@ -28,12 +28,9 @@ namespace FreeFormGraph.SplineBased {
         public override float SnapToExistingNodeThreshold { get; set; }
         public override float SnapToExistingEdgeThreshold { get; set; }
 
-        public override bool CreateEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode,
-            out bool isToNodeNew) {
-            var res = AddNewSegment((SplineStreetNode)from, to, out var newSegment, out var toNodeA);
+        public override bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge) {
+            var res = AddNewSegment((SplineStreetNode)from, (SplineStreetNode)to, out var newSegment);
             newEdge = newSegment;
-            toNode = toNodeA;
-            isToNodeNew = true;
             return res;
         }
 
@@ -305,11 +302,19 @@ namespace FreeFormGraph.SplineBased {
 
             return true;
         }
-        
+
+        public override float GetDistanceEdgeToPosition(IStreetEdge edge, Vector3 position, out Vector3 positionOnEdge) {
+            throw new NotImplementedException();
+        }
+
         public override bool CreateUnconnectedNode(Vector3 position, out IStreetNode newNode) {
             var result = GenerateNewUnconnectedNode(position, out var newNodeProxy, true, out _, out _);
             newNode = newNodeProxy;
             return result;
+        }
+
+        public override void InsertNodeOnEdge(IStreetEdge foundEdge, Vector3 positionOnEdge, out IStreetNode node) {
+            throw new NotImplementedException();
         }
 
         private bool IsPositionValidForNewKnot(Vector3 position) {

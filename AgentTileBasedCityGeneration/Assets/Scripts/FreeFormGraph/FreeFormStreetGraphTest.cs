@@ -23,6 +23,9 @@ namespace FreeFormGraph {
                 Debug.LogError("No StreetGraph found in Scene.");
                 Destroy(this);
             }
+            if (FindObjectsOfType<StreetGraphGameObject>().Length > 1) {
+                Debug.LogWarning("Multiple StreetGraphs found in Scene. Using the first one found.");
+            }
         }
         
         private void Update() {
@@ -33,8 +36,8 @@ namespace FreeFormGraph {
             const float dragThreshold = 0.3f;
             var mousePosWorld = MouseWorldPos;
             if (Input.GetMouseButtonDown(0)) {
-                _dragStartNode = _streetGraph.FindClosestNode(mousePosWorld);
-                if (_dragStartNode != null && Vector3.Distance(_dragStartNode.Position, mousePosWorld) < dragThreshold) {
+                if (_streetGraph.TryFindClosestNode(mousePosWorld, out var closestNode, dragThreshold)) {
+                    _dragStartNode = closestNode;
                     Debug.Log($"FreeFormStreetGraphTest - Dragging from {_dragStartNode}");
                 } else {
                     Debug.Log($"No node found at {mousePosWorld}.");
@@ -94,6 +97,9 @@ namespace FreeFormGraph {
             foreach (var node in _streetGraph.Nodes) {
                 Gizmos.color = node.IsMaxConnectedEdgesReached ? Color.red : node.ConnectedEdgesCount > 2 ? Color.yellow : Color.green;
                 Gizmos.DrawSphere(node.Position, 0.1f);
+                Gizmos.DrawLine(node.Position, node.Position +
+                                               (Quaternion.Euler(0, 0, node.EntranceAngle ?? 0) *
+                                                (Vector3.right * 0.3f)));
             }
             var edgeDrawingColors = new List<Color>() {Color.blue, Color.cyan};
             var colorIndex = 0;
@@ -102,6 +108,9 @@ namespace FreeFormGraph {
                 Gizmos.color = edgeDrawingColors[colorIndex];
                 colorIndex = (colorIndex + 1) % edgeDrawingColors.Count;
                 Gizmos.DrawLine(edge.PosA, edge.PosB);
+                foreach (var point in edge.SplitIntoPoints()) {
+                    Gizmos.DrawSphere(point, 0.05f);
+                }
             }
             
             Gizmos.color = Color.green;

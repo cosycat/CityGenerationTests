@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.Splines;
@@ -15,6 +16,9 @@ namespace FreeFormGraph.SplineBased {
         public Spline Spline { get; internal set; }
 
         public float StreetWidth { get; } = 0.3f;
+        public IEnumerable<Vector3> SplitIntoPoints(float stepSize = 0.1f) {
+            throw new System.NotImplementedException();
+        }
 
         private SplineStreetSegment(SplineStreetNode nodeA, SplineStreetNode nodeB) {
             _nodeA = nodeA;
