@@ -54,7 +54,7 @@ namespace FreeFormGraph.SplineBased {
                 var otherSegmentEnd = otherSegment.NodeB.Position;
                 
                 var indices = otherSegment.GetIndices();
-                var otherLowerIndex = Math.Min(indices.startIndex, indices.endIndex);
+                var otherLowerIndex = Mathf.Min(indices.lowerIndex, indices.higherIndex);
                 
                 var otherCurve = otherSpline.GetCurve(otherLowerIndex);
                 // check if the other curve is starting or ending at the same point as the new segment. if so, skip it.

@@ -108,7 +108,7 @@ namespace FreeFormGraph {
                 Gizmos.color = edgeDrawingColors[colorIndex];
                 colorIndex = (colorIndex + 1) % edgeDrawingColors.Count;
                 Gizmos.DrawLine(edge.PosA, edge.PosB);
-                foreach (var point in edge.SplitIntoPoints()) {
+                foreach (var point in edge.SplitIntoEvenlySpacedPoints()) {
                     Gizmos.DrawSphere(point, 0.05f);
                 }
             }

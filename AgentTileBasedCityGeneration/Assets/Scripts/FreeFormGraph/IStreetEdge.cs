@@ -37,6 +37,6 @@ namespace FreeFormGraph {
             return $"Edge from {NodeA}\nto {NodeB}";
         }
 
-        IEnumerable<Vector3> SplitIntoPoints(float stepSize = 0.1f);
+        Vector3[] SplitIntoEvenlySpacedPoints(float stepSize = 0.1f);
     }
 }

@@ -11,7 +11,10 @@ namespace FreeFormGraph.SplineBased {
     public class SplineStreetNode : IStreetNode {
         private readonly List<Spline> _correspondingSplines = new();
         private readonly List<SplineStreetSegment> _edges = new();
-
+        
+        /// <summary>
+        /// A distinct list of all splines that contain this node.
+        /// </summary>
         public List<Spline> CorrespondingSplines => _correspondingSplines;
 
         public IEnumerable<(Spline spline, int index)> SplineIndices =>
@@ -27,7 +30,7 @@ namespace FreeFormGraph.SplineBased {
         public int MaxConnectedEdges => 4;
         
         // TODO this is just a placeholder:
-        public float? EntranceAngle => Vector3.Angle(Vector3.right, SplineIndices.First().spline[SplineIndices.First().index].TangentIn);
+        public float? EntranceAngle => _correspondingSplines.Count == 0 ? null : Vector3.Angle(Vector3.right, SplineIndices.First().spline[SplineIndices.First().index].TangentIn);
         
         public int ConnectedEdgesCount => _edges.Count;
 
@@ -56,7 +59,12 @@ namespace FreeFormGraph.SplineBased {
         
         public void AddSpline(Spline spline) {
             Debug.Assert(spline.ContainsKnotPos(Position, out _));
-            _correspondingSplines.Add(spline);
+            if (!_correspondingSplines.Contains(spline))
+                _correspondingSplines.Add(spline);
+        }
+        
+        public void RemoveSpline(Spline spline) {
+            _correspondingSplines.Remove(spline);
         }
 
         public override string ToString() {

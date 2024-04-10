@@ -154,6 +154,7 @@ namespace FreeFormGraph {
             }
             // snap to edge if possible
             if (TryFindClosestEdge(position, out var edge, out var positionOnEdge, SnapToExistingEdgeThreshold)) {
+                Debug.Log($"IStreetGraph::GetOrCreateNode - Found edge to snap to. Position on edge: {positionOnEdge}, edge: {edge}");
                 // snap to existing node on edge if possible
                 if (TryFindClosestNode(positionOnEdge, out node, SnapToExistingNodeThreshold)) {
                     isNewlyCreatedNode = false;

@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using ExtensionMethods;
-using FreeFormGraph;
-using FreeFormGraph.SplineBased;
 using UnityEngine;
 using UnityEngine.Splines;
 using Debug = UnityEngine.Debug;
@@ -25,8 +23,8 @@ namespace FreeFormGraph.SplineBased {
 
         public override int NodeCount => _nodes.Count;
         public override int EdgeCount => _edges.Count;
-        public override float SnapToExistingNodeThreshold { get; set; }
-        public override float SnapToExistingEdgeThreshold { get; set; }
+        public override float SnapToExistingNodeThreshold { get; set; } = 0.3f;
+        public override float SnapToExistingEdgeThreshold { get; set; } = 0.3f;
 
         public override bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge) {
             var res = AddNewSegment((SplineStreetNode)from, (SplineStreetNode)to, out var newSegment);
@@ -54,22 +52,110 @@ namespace FreeFormGraph.SplineBased {
         /// <returns> True if the segment was added successfully, false otherwise </returns>
         public bool AddNewSegment(SplineStreetNode from, SplineStreetNode to, out SplineStreetSegment newSegment) {
             Debug.Log($"Adding new segment between {from} to {to}");
-            // TODO if one of the Nodes has <= 1 connections, just add the segment to the existing spline, instead of creating a new one.
+
+            // if (from.ConnectedEdgesCount == 0 || to.ConnectedEdgesCount == 0) {
+            //     // at least one node has no connections. Remove the spline of that node.
+            //     var (unconnectedNode, otherNode) = from.ConnectedEdgesCount == 0 ? (from, to) : (to, from);
+            //     Debug.Assert(unconnectedNode.CorrespondingSplines.Count < 2, $"Too many splines for unconnected node {unconnectedNode}");
+            //     var splineToDelete = unconnectedNode.CorrespondingSplines.FirstOrDefault();
+            //     if (splineToDelete != null) {
+            //         unconnectedNode.RemoveSpline(splineToDelete);
+            //         _splineContainer.RemoveSpline(splineToDelete);
+            //     }
+            // }
             
-            if (!SplineStreetSegment.GenerateStreetSegment(from, to, null, out newSegment)) {
-                return false;
+            // TODO cleanup this if/else mess
+            Spline spline;
+            if (from.ConnectedEdgesCount > 1 && to.ConnectedEdgesCount > 1) {
+                // add new spline
+                if (!SplineStreetSegment.GenerateStreetSegment(from, to, null, out newSegment)) {
+                    return false;
+                }
+                if (!AddSplineForSegment(newSegment, out var newSpline)) {
+                    // TODO: remove the segment from the nodes
+                    throw new NotImplementedException("Remove the segment from the nodes");
+                    return false;
+                }
+                from.AddSpline(newSpline);
+                to.AddSpline(newSpline);
+                spline = newSpline;
             }
-            if (!AddSplineForSegment(newSegment, out var newSpline)) {
-                // TODO: remove the segment from the nodes
-                throw new NotImplementedException("Remove the segment from the nodes");
-                return false;
+            else if (from.ConnectedEdgesCount > 1 || to.ConnectedEdgesCount > 1) {
+                var (multiConnectedNode, otherNode) = from.ConnectedEdgesCount > 1 ? (from, to) : (to, from);
+                if (otherNode.ConnectedEdgesCount == 0) {
+                    // remove spline of other node
+                    Debug.Assert(otherNode.CorrespondingSplines.Count < 2, $"Too many splines for unconnected node {otherNode}");
+                    var splineToDelete = otherNode.CorrespondingSplines.FirstOrDefault();
+                    if (splineToDelete != null) {
+                        otherNode.RemoveSpline(splineToDelete);
+                        _splineContainer.RemoveSpline(splineToDelete);
+                    }
+                    // add new spline
+                    if (!SplineStreetSegment.GenerateStreetSegment(from, to, null, out newSegment)) {
+                        return false;
+                    }
+                    if (!AddSplineForSegment(newSegment, out var newSpline)) {
+                        // TODO: remove the segment from the nodes
+                        throw new NotImplementedException("Remove the segment from the nodes");
+                        return false;
+                    }
+                    from.AddSpline(newSpline);
+                    to.AddSpline(newSpline);
+                    spline = newSpline;
+                }
+                else {
+                    // TODO connect spline from other node to the multi-connected node
+                    throw new NotImplementedException($"Connect spline from other node {otherNode} to the multi-connected node {multiConnectedNode}");
+                }
             }
+            // both nodes have one or no connections.
+            else if (from.ConnectedEdgesCount == 1 && to.ConnectedEdgesCount == 1) {
+                // both nodes have exactly one connection. Check if they are connected to the same spline.
+                if (!SplineStreetSegment.GenerateStreetSegment(from, to, null, out newSegment)) {
+                    return false;
+                }
+                var (fromSpline, fromIndex) = from.SplineIndices.First();
+                var (toSpline, toIndex) = to.SplineIndices.First();
+                Debug.Assert(fromIndex == 0 || toIndex == 0);
+                if (fromSpline == toSpline) {
+                    // both nodes are connected to the same spline. Just add the new segment to that spline.
+                    spline = fromSpline;
+                    spline.Add(new BezierKnot(fromIndex == 0 ? from.Position : to.Position), TangentMode.AutoSmooth);
+                }
+                else {
+                    // both nodes are connected to different splines. Connect the nodes with one of the splines
+                    spline = fromSpline;
+                    spline.Insert(fromIndex == 0 ? 0 : spline.Count, new BezierKnot(to.Position), TangentMode.AutoSmooth);
+                    to.AddSpline(spline);
+                }
+            }
+            else {
+                // one node has 0 connections, the other 1 or 0
+                if (!SplineStreetSegment.GenerateStreetSegment(from, to, null, out newSegment)) {
+                    return false;
+                }
+                var (unconnectedNode, otherNode) = from.ConnectedEdgesCount == 0 ? (from, to) : (to, from);
+                // remove spline of unconnected node
+                Debug.Assert(unconnectedNode.CorrespondingSplines.Count < 2, $"Too many splines for unconnected node {unconnectedNode}");
+                var splineToDelete = unconnectedNode.CorrespondingSplines.FirstOrDefault();
+                if (splineToDelete != null) {
+                    unconnectedNode.RemoveSpline(splineToDelete);
+                    _splineContainer.RemoveSpline(splineToDelete);
+                }
+                // use the other node's spline to connect
+                var (s, index) = otherNode.SplineIndices.First();
+                spline = s;
+                Debug.Assert(index == 0 || index == spline.Count - 1, $"Index is {index}, but should be 0 or {spline.Count - 1}");
+                spline.Insert(index == 0 ? 0 : spline.Count, new BezierKnot(unconnectedNode.Position), TangentMode.AutoSmooth);
+            }
+            
+            newSegment.Spline = spline;
             
             // TODO check intersections as well
             // If intersection, add intersection point, split up the spline, then recursively add two new segments, from - intersection and intersection - to.
 
-            from.AddSpline(newSpline);
-            to.AddSpline(newSpline);
+            from.AddSpline(spline);
+            to.AddSpline(spline);
             _edges.Add(newSegment);
             _splineExtrude.Rebuild();
             return true;
@@ -304,7 +390,38 @@ namespace FreeFormGraph.SplineBased {
         }
 
         public override float GetDistanceEdgeToPosition(IStreetEdge edge, Vector3 position, out Vector3 positionOnEdge) {
-            throw new NotImplementedException();
+            Debug.Assert(edge is SplineStreetSegment);
+            var splineSegment = (SplineStreetSegment)edge;
+            var evenlySpacedPoints = splineSegment.SplitIntoEvenlySpacedPoints();
+            var closestPoint = Vector3.zero;
+            var secondClosestPoint = Vector3.zero;
+            var closestDistance = float.MaxValue;
+            var secondClosestDistance = float.MaxValue;
+            
+            foreach (var point in evenlySpacedPoints) {
+                var distance = Vector3.Distance(point, position);
+                if (distance < closestDistance) {
+                    secondClosestDistance = closestDistance;
+                    closestDistance = distance;
+                    secondClosestPoint = closestPoint;
+                    closestPoint = point;
+                }
+                else if (distance < secondClosestDistance) {
+                    secondClosestDistance = distance;
+                    secondClosestPoint = point;
+                }
+            }
+
+            var nearestPointOnLine = SplineMath.PointLineNearestPoint(position, closestPoint, secondClosestPoint, out var lineParameter);
+            if (lineParameter < 0) {
+                nearestPointOnLine = closestPoint;
+            }
+            else if (lineParameter > 1) {
+                nearestPointOnLine = secondClosestPoint;
+            }
+            // Debug.Assert(lineParameter is >= 0 and <= 1, $"Line parameter is {lineParameter}");
+            positionOnEdge = nearestPointOnLine;
+            return Vector3.Distance(position, nearestPointOnLine);
         }
 
         public override bool CreateUnconnectedNode(Vector3 position, out IStreetNode newNode) {

@@ -71,7 +71,7 @@ namespace FreeFormGraph.Bezier {
         public override float GetDistanceEdgeToPosition(IStreetEdge edge, Vector3 position, out Vector3 positionOnEdge) {
             var minDistance = float.MaxValue;
             positionOnEdge = default;
-            foreach (var point in edge.SplitIntoPoints()) {
+            foreach (var point in edge.SplitIntoEvenlySpacedPoints()) {
                 var distance = Vector3.Distance(point, position);
                 if (distance < minDistance) {
                     minDistance = distance;
@@ -215,7 +215,7 @@ namespace FreeFormGraph.Bezier {
             StreetWidth = streetWidth;
         }
 
-        public IEnumerable<Vector3> SplitIntoPoints(float stepSize) {
+        public Vector3[] SplitIntoEvenlySpacedPoints(float stepSize) {
             var distance = CurveUtility.ApproximateLength(Curve);
             var steps = Mathf.CeilToInt(distance / stepSize);
             var step = 1f / steps;
