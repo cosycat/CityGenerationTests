@@ -17,8 +17,8 @@ namespace FreeFormGraph {
         private bool _drawLabelsEdges = true;
         private bool _drawLabelsNodes = true;
 
-        private void Awake() {
-            _streetGraph ??= FindObjectOfType<StreetGraphGameObject>();
+        private void Start() {
+            _streetGraph ??= FindObjectOfType<StreetGraphGameObject>().graph;
             if (_streetGraph == null) {
                 Debug.LogError("No StreetGraph found in Scene.");
                 Destroy(this);

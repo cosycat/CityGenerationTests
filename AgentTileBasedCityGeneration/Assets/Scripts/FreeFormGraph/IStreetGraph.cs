@@ -100,7 +100,18 @@ namespace FreeFormGraph {
         /// <param name="threshold"> The maximum distance to consider a node as the closest. </param>
         /// <returns> True if a node was found, false otherwise. </returns>
         public bool TryFindClosestNode(Vector3 position, out IStreetNode foundNode,
-            float threshold = float.MaxValue);
+            float threshold = float.MaxValue) {
+            foundNode = null;
+            var minDistance = threshold;
+            foreach (var node in Nodes) {
+                var distance = Vector3.Distance(node.Position, position);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    foundNode = node;
+                }
+            }
+            return foundNode != null;
+        }
 
         /// <summary>
         /// Finds the closest edge to the given position, if it is within the given threshold.
@@ -111,7 +122,20 @@ namespace FreeFormGraph {
         /// <param name="threshold"> The maximum distance to consider an edge as the closest. </param>
         /// <returns> True if an edge was found, false otherwise. </returns>
         public bool TryFindClosestEdge(Vector3 position, out IStreetEdge foundEdge, out Vector3 positionOnEdge,
-            float threshold = float.MaxValue);
+            float threshold = float.MaxValue) {
+
+            foundEdge = null;
+            var minDistance = threshold;
+            positionOnEdge = default;
+            foreach (var edge in Edges) {
+                var distance = GetDistanceEdgeToPosition(edge, position, out positionOnEdge);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    foundEdge = edge;
+                }
+            }
+            return foundEdge != null;
+        }
 
         /// <summary>
         /// Returns the distance from the given position to the given edge.
@@ -160,7 +184,7 @@ namespace FreeFormGraph {
                     return true;
                 }
                 // otherwise create new node on edge
-                InsertNodeOnEdge(edge, positionOnEdge, out node);
+                InsertNodeOnEdge(edge, positionOnEdge, out node, out _, out _);
                 isNewlyCreatedNode = true;
                 return true;
             }
@@ -170,6 +194,6 @@ namespace FreeFormGraph {
             return success;
         }
 
-        void InsertNodeOnEdge(IStreetEdge foundEdge, Vector3 positionOnEdge, out IStreetNode node);
+        void InsertNodeOnEdge(IStreetEdge foundEdge, Vector3 positionOnEdge, out IStreetNode node, out IStreetEdge leftEdge, out IStreetEdge rightEdge);
     }
 }

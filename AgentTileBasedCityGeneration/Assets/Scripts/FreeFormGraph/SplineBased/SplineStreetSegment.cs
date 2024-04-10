@@ -17,7 +17,7 @@ namespace FreeFormGraph.SplineBased {
 
         public float StreetWidth { get; } = 0.3f;
         public IEnumerable<Vector3> SplitIntoPoints(float stepSize = 0.1f) {
-            throw new System.NotImplementedException();
+            return new List<Vector3>();
         }
 
         private SplineStreetSegment(SplineStreetNode nodeA, SplineStreetNode nodeB) {
