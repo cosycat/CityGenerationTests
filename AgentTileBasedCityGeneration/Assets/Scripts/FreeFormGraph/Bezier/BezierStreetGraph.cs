@@ -82,7 +82,8 @@ namespace FreeFormGraph.Bezier {
         }
 
         public bool CreateUnconnectedNode(Vector3 position, out IStreetNode newNode) {
-            if (TryFindClosestNode(position, out var closestNodeInRange, SnapToExistingNodeThreshold)) {
+            //TODO why do i need to cast here???
+            if (((IStreetGraph)this).TryFindClosestNode(position, out var closestNodeInRange, SnapToExistingNodeThreshold)) {
                 Debug.Log($"BezierStreetGraph::CreateUnconnectedNode - Node too close found: Closest node to {position} is {closestNodeInRange.Position} with distance {Vector3.Distance(position, closestNodeInRange.Position)}");
                 newNode = null;
                 return false;
