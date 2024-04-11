@@ -44,7 +44,7 @@ namespace FreeFormGraph.SplineBased {
                 .SelectMany(splineIndexA => nodeBSplineIndices
                     .Select(splineIndexB => (splineIndexA, splineIndexB)))
                 .Where(t => t.splineIndexA.index - t.splineIndexB.index is 1 or -1).ToArray();
-            Debug.Assert(indicesOneApart.Length == 1, $"Expected exactly one pair of indices one apart, but found {indicesOneApart.Length}");
+            Debug.Assert(indicesOneApart.Length == 1, $"Expected exactly one pair of indices one apart, but found {indicesOneApart.Length} on {this}.");
             return indicesOneApart[0].splineIndexA.index < indicesOneApart[0].splineIndexB.index
                 ? (indicesOneApart[0].splineIndexA.index, indicesOneApart[0].splineIndexB.index)
                 : (indicesOneApart[0].splineIndexB.index, indicesOneApart[0].splineIndexA.index);

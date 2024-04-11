@@ -48,7 +48,7 @@ namespace FreeFormGraph {
                     return;
                 }
                 if (!_streetGraph.CreateEdge(_dragStartNode, mousePosWorld, out _, out _, out _)) {
-                    Debug.LogError("FreeFormStreetGraphTest - Failed to create new edge.");
+                    Debug.LogWarning("FreeFormStreetGraphTest - Failed to create new edge.");
                 }
 
                 _dragStartNode = null;
