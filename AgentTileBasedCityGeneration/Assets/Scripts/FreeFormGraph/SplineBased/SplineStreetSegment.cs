@@ -48,27 +48,6 @@ namespace FreeFormGraph.SplineBased {
             return indicesOneApart[0].splineIndexA.index < indicesOneApart[0].splineIndexB.index
                 ? (indicesOneApart[0].splineIndexA.index, indicesOneApart[0].splineIndexB.index)
                 : (indicesOneApart[0].splineIndexB.index, indicesOneApart[0].splineIndexA.index);
-
-            // var startPos = NodeA.Position;
-            // var endPos = NodeB.Position;
-            // var indexStart = -1;
-            // var indexEnd = -1;
-            // var startDist = float.MaxValue;
-            // var endDist = float.MaxValue;
-            // for (int i = 0; i < Spline.Count; i++) {
-            //     var distStart = Vector3.Distance(Spline[i].Position, startPos);
-            //     if (distStart < startDist) {
-            //         startDist = distStart;
-            //         indexStart = i;
-            //     }
-            //     var distEnd = Vector3.Distance(Spline[i].Position, endPos);
-            //     if (distEnd < endDist) {
-            //         endDist = distEnd;
-            //         indexEnd = i;
-            //     }
-            // }
-            // Debug.Assert((indexStart - indexEnd) is 1 or -1);
-            // return (indexStart, indexEnd);
         }
 
         /// <summary>
