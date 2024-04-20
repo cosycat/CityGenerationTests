@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
 using UnityEngine;
-using FreeFormGraph.LineGraph;
+using FreeFormGraph.LineBased;
 
 namespace FreeFormGraph {
     public class StreetGraphGameObject : MonoBehaviour {
@@ -10,7 +10,7 @@ namespace FreeFormGraph {
 
         public void Awake() {
             //graph = new FreeFormGraph.SplineBased.SplineStreetGraph(this.gameObject); 
-            graph = new LineGraph.LineGraph();
+            graph = new LineGraph();
         }
     }
 }

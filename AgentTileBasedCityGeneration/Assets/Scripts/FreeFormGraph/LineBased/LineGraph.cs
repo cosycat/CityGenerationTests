@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using FreeFormGraph;
 using UnityEngine.Splines;
 
-namespace FreeFormGraph.LineGraph {
+namespace FreeFormGraph.LineBased {
     public class LineGraph : MonoBehaviour, IStreetGraph {
 
         private readonly List<LineEdge> _edges = new();
@@ -173,9 +173,9 @@ namespace FreeFormGraph.LineGraph {
         public IStreetNode NodeA { get; set;}
         public IStreetNode NodeB { get; set;}
         public float StreetWidth { get; set;} = 1;
-
-        public IEnumerable<Vector3> SplitIntoPoints(float stepSize = 0.1f) {
-            return new List<Vector3>();
+        
+        public Vector3[] SplitIntoEvenlySpacedPoints(float stepSize = 0.1f) {
+            throw new NotImplementedException();
         }
     }
 }
