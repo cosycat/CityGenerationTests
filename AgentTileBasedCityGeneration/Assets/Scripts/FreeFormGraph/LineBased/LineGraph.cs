@@ -144,7 +144,7 @@ namespace FreeFormGraph.LineBased {
         private List<LineEdge> _edges = new List<LineEdge>();
         public IEnumerable<IStreetEdge> Edges => _edges;
         
-        public int ConnectedEdgesCount { get; }
+        public int ConnectedEdgesCount => _edges.Count;
         
         public int MaxConnectedEdges { get; }
         
@@ -176,6 +176,10 @@ namespace FreeFormGraph.LineBased {
         
         public Vector3[] SplitIntoEvenlySpacedPoints(float stepSize = 0.1f) {
             return new Vector3[] {};
+        }
+
+        public override string ToString() {
+            return $"LineEdge from {PosA} to {PosB}";
         }
     }
 }
