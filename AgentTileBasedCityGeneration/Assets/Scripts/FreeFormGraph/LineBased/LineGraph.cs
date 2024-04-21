@@ -26,19 +26,20 @@ namespace FreeFormGraph.LineBased {
 
                 IStreetEdge? lastIntersectionEdge = null;
                 //check for intersections
-                //TODO: ignore source edge
-                /*foreach(var e in _edges) {
+                foreach(var e in _edges) {
+                    //skip node we are comming from to prevent finding intersection with edge we are connected to
+                    if(e.NodeA == from || e.NodeB == from) continue;
                     var A = from.Position;
                     var a = to-A;
                     var B = e.NodeA.Position;
                     var b = e.NodeB.Position - B;
                     var intersects = Intersection(A, a, B, b, out var crossPoint, out var t, out var s);
 
-                    if(intersects) {
+                    if(t > 0 && t < 1 && intersects) {
                         to = crossPoint;
                         lastIntersectionEdge = e;
                     }
-                }*/
+                }
 
                 isToNodeNew = true;
 
@@ -110,6 +111,7 @@ namespace FreeFormGraph.LineBased {
             var e = (LineEdge) foundEdge;
             ((LineNode)e.NodeA).RemoveEdge(e);
             ((LineNode)e.NodeB).RemoveEdge(e);
+            _edges.Remove(e);
 
             var lEdge = new LineEdge() {
                 NodeA = foundEdge.NodeA,
@@ -121,9 +123,12 @@ namespace FreeFormGraph.LineBased {
                 NodeB = foundEdge.NodeB
             };
             _nodes.Add(n);
-            _edges.Remove(e);
             _edges.Add(lEdge);
             _edges.Add(rEdge);
+            ((LineNode)e.NodeA).AddEdge(lEdge);
+            ((LineNode)e.NodeB).AddEdge(rEdge);
+            n.AddEdge(lEdge);
+            n.AddEdge(rEdge);
             leftEdge = lEdge;
             rightEdge = rEdge;
             node = n;
