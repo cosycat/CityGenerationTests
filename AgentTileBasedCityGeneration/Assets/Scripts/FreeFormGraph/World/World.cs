@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 using FreeFormGraph.Agent;
-using FreeFormGraph.LineGraph;
+using FreeFormGraph.LineBased;
 
 namespace FreeFormGraph.World {
     public class HeightmapWorld : MonoBehaviour, IWorld {

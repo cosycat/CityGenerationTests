@@ -175,7 +175,7 @@ namespace FreeFormGraph.LineBased {
         public float StreetWidth { get; set;} = 1;
         
         public Vector3[] SplitIntoEvenlySpacedPoints(float stepSize = 0.1f) {
-            throw new NotImplementedException();
+            return new Vector3[] {};
         }
     }
 }
