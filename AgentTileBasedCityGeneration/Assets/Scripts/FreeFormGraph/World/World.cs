@@ -9,6 +9,9 @@ namespace FreeFormGraph.World {
         public int Width { get; private set; }
         public int Height { get; private set; }
 
+        public float MaxHeight {get; private set;} = float.MinValue;
+        public float MinHeight {get; private set;} = float.MaxValue;
+
         private IStreetGraph graph;
 
         public void Start() {
@@ -19,6 +22,13 @@ namespace FreeFormGraph.World {
             PlaceGauss(Width/2, Height/2, spread: 5);
             PlaceGauss(Width/2+20, Height/2-20, spread: 15);
             PlaceGauss(Width/2, Height/2+20, spread: 15);
+
+            for (int y = 0; y < Height; y++) {
+                for (int x = 0; x < Width; x++) {
+                    MinHeight = Mathf.Min(MinHeight, heights[x,y]);
+                    MaxHeight = Mathf.Max(MaxHeight, heights[x,y]);
+                }
+            }
 
             graph = FindObjectOfType<StreetGraphGameObject>().graph;
             Debug.Assert(graph != null);
