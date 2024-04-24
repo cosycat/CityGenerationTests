@@ -128,10 +128,11 @@ namespace FreeFormGraph {
             var minDistance = threshold;
             positionOnEdge = default;
             foreach (var edge in Edges) {
-                var distance = GetDistanceEdgeToPosition(edge, position, out positionOnEdge);
+                var distance = GetDistanceEdgeToPosition(edge, position, out var posOnEdgeTmp);
                 if (distance < minDistance) {
                     minDistance = distance;
                     foundEdge = edge;
+                    positionOnEdge = posOnEdgeTmp;
                 }
             }
             return foundEdge != null;
