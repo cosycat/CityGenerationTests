@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using JetBrains.Annotations;
 using UnityEngine;
@@ -18,6 +19,8 @@ namespace FreeFormGraph {
         private bool _drawIntersectionLines = true;
         private bool _drawLabelsEdges = true;
         private bool _drawLabelsNodes = true;
+
+        private Dictionary<IStreetEdge, Color> edgeColors = new();
 
         private void Start() {
             _streetGraph ??= FindObjectOfType<StreetGraphGameObject>().graph;
@@ -80,6 +83,9 @@ namespace FreeFormGraph {
             if (GUILayout.Button($"Intersection Lines: ({_drawIntersectionLines})")) {
                 _drawIntersectionLines = !_drawIntersectionLines;
             }
+            if (GUILayout.Button($"Graph color: Recalculate colors")) {
+                GraphColoring();
+            }
             GUILayout.Label("Labels:");
             GUILayout.BeginHorizontal();
             if (GUILayout.Button($"Nodes: ({_drawLabelsNodes})")) {
@@ -93,6 +99,47 @@ namespace FreeFormGraph {
             GUILayout.EndArea();
         }
 
+        private void GraphColoring() {
+            //BFS
+            //I know there are propably better algorithms for this...
+            var colors = new List<Color>(){Color.red, Color.blue, Color.yellow, Color.green, Color.cyan, Color.magenta};
+            var queue = new Queue<IStreetNode>();
+            var visited = new HashSet<IStreetNode>();
+            queue.Enqueue(_streetGraph.Nodes.ToList()[0]);
+            visited.Add(_streetGraph.Nodes.ToList()[0]);
+
+            while(queue.Count != 0) {
+                var current = queue.Dequeue();
+                visited.Add(current);
+                var neighborColors = new HashSet<Color>();
+                //find colors of neighbors
+                foreach(var edge in current.Edges) {
+                    if(edgeColors.ContainsKey(edge)) {
+                        neighborColors.Add(edgeColors[edge]);
+                    }
+                }
+
+                //color edges
+                var usableColors = colors.Except(neighborColors).ToList();
+                var colorIndex = 0;
+                foreach(var edge in current.Edges) {
+                    if(!edgeColors.ContainsKey(edge)) {
+                        edgeColors[edge] = usableColors[colorIndex];
+                        colorIndex++;
+                    }
+                }
+
+                //enqueu new nodes
+                foreach(var edge in current.Edges) {
+                    var nextNode = edge.NodeA;
+                    if(nextNode == current) nextNode = edge.NodeB;
+                    if(!visited.Contains(nextNode)) {
+                        queue.Enqueue(nextNode);
+                    }
+                }
+            }
+        }
+
         private void OnDrawGizmos() {
             if (_streetGraph == null) {
                 return;
@@ -104,12 +151,13 @@ namespace FreeFormGraph {
                                                (Quaternion.Euler(0, 0, node.EntranceAngle ?? 0) *
                                                 (Vector3.right * 0.3f)));
             }
-            var edgeDrawingColors = new List<Color>() {Color.blue, Color.cyan};
-            var colorIndex = 0;
 
             foreach (var edge in _streetGraph.Edges) {
-                Gizmos.color = edgeDrawingColors[colorIndex];
-                colorIndex = (colorIndex + 1) % edgeDrawingColors.Count;
+                if(edgeColors.ContainsKey(edge)) {
+                    Gizmos.color = edgeColors[edge];
+                } else {
+                    Gizmos.color = Color.grey;
+                }
                 Gizmos.DrawLine(edge.PosA, edge.PosB);
                 foreach (var point in edge.SplitIntoEvenlySpacedPoints()) {
                     Gizmos.DrawSphere(point, 0.05f);
