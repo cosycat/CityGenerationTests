@@ -2,12 +2,14 @@ using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
 using UnityEngine;
+using FreeFormGraph.World;
 
 namespace FreeFormGraph {
     
     public class FreeFormStreetGraphTest : MonoBehaviour {
 
         private IStreetGraph _streetGraph;
+        private IWorld World;
 
         [CanBeNull] private IStreetNode _dragStartNode;
         
@@ -19,6 +21,7 @@ namespace FreeFormGraph {
 
         private void Start() {
             _streetGraph ??= FindObjectOfType<StreetGraphGameObject>().graph;
+            World ??= FindObjectOfType<HeightmapWorld>();
             if (_streetGraph == null) {
                 Debug.LogError("No StreetGraph found in Scene.");
                 Destroy(this);
@@ -132,11 +135,11 @@ namespace FreeFormGraph {
 
             if(_drawGrid) {
                 Gizmos.color = new Color(0.5f, 0.5f, 0.5f, 0.5f);
-                for(int i = -100; i < 100; i++) {
-                    Gizmos.DrawRay(new Vector3(i, -100), Vector3.up * 200);
+                for(int i = 0; i < World.Width; i++) {
+                    Gizmos.DrawRay(new Vector3(i, 0), Vector3.up * World.Height);
                 }
-                for(int i = -100; i < 100; i++) {
-                    Gizmos.DrawRay(new Vector3(-100, i), Vector3.right * 200);
+                for(int i = 0; i < World.Height; i++) {
+                    Gizmos.DrawRay(new Vector3(0, i), Vector3.right * World.Width);
                 }
             }
 
