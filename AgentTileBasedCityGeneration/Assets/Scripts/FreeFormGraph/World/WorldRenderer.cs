@@ -14,7 +14,7 @@ namespace FreeFormGraph.World {
                     didCreateMesh = true; //ugh
                 }
             } else {
-                World = FindObjectOfType<HeightmapWorld>();
+                World = FindObjectOfType<GaussWorld>();
             }
         }
 

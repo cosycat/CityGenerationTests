@@ -24,7 +24,7 @@ namespace FreeFormGraph {
 
         private void Start() {
             _streetGraph ??= FindObjectOfType<StreetGraphGameObject>().graph;
-            World ??= FindObjectOfType<HeightmapWorld>();
+            World ??= FindObjectOfType<GaussWorld>();
             if (_streetGraph == null) {
                 Debug.LogError("No StreetGraph found in Scene.");
                 Destroy(this);

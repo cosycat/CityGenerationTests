@@ -4,7 +4,7 @@ using FreeFormGraph.Agent;
 using FreeFormGraph.LineBased;
 
 namespace FreeFormGraph.World {
-    public class HeightmapWorld : MonoBehaviour, IWorld {
+    public class GaussWorld: MonoBehaviour, IWorld {
         private float[,] heights;
         public int Width { get; private set; }
         public int Height { get; private set; }
@@ -46,10 +46,9 @@ namespace FreeFormGraph.World {
             var dist = graph.GetDistanceEdgeToPosition(e, new Vector3(10f, 10f, 0), out var posOnEdge);
             Debug.Log($"pos on edge {posOnEdge} dist: {dist}");
 
-            //agent.AStar(new Vector3(2,2,0), new Vector3(99,99,0));
-            graph.CreateUnconnectedNode(new Vector3(99, 99, 0), out var newNode);
-            graph.CreateEdge(newNode, new Vector3(0, 95, 0), out _, out _, out _);
-            agent.AStar(new Vector3(78,70,0), new Vector3(20,97,0));
+            agent.AStar(new Vector3(50,97,0), new Vector3(50,70 ,0)); // jagged street going up the mountain
+            agent.AStar(new Vector3(40,80,0), new Vector3(80,75 ,0));
+            agent.AStar(new Vector3(20,20,0), new Vector3(90,90 ,0));
         }
 
         private void PlaceGauss(int centerX, int centerY, float amplitude = 10, float spread = 5.0f) {
