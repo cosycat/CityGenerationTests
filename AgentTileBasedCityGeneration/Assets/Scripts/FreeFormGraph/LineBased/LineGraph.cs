@@ -85,23 +85,32 @@ namespace FreeFormGraph.LineBased {
             return true;
         }
 
-        public static bool Intersection(Vector3 A, Vector3 a, Vector3 B, Vector3 b, out Vector3 intersectionPoint, out float t, out float s) 
-        {
-            float denominator = a.x * b.y - a.y * b.x;
-            
-            if (denominator == 0)  // If the lines are parallel
-            {
+        public static bool Intersection(Vector3 A, 
+                Vector3 a, 
+                Vector3 B, 
+                Vector3 b, 
+                out Vector3 intersectionPoint, 
+                out float t, 
+                out float s,
+                float eps = 0.0001f) {
+            Vector2 p = a;
+            Vector2 q = b;
+            Vector2 r = B - A;
+
+            float denom = p.y * q.x - p.x * q.y;
+
+            if (denom == 0) {
+                //line parallel
+                t = float.NaN;
+                s = float.NaN;
                 intersectionPoint = Vector3.zero;
-                t = 0;
-                s = 0;
                 return false;
             }
 
-            t = ((B.x - A.x) * b.y - (B.y - A.y) * b.x) / denominator;
-            s = ((A.x - B.x) * a.y - (A.y - B.y) * a.x) / denominator;
-
-            intersectionPoint = new Vector3(A.x + t * a.x, A.y + t * a.y, 0);
-            return true;
+            t = (r.y * q.x - r.x * q.y) / denom;
+            s = (r.y * p.x - r.x * p.y) / denom;
+            intersectionPoint = A + t * a;
+            return (t > 0 - eps && t < 1 + eps && s > 0 - eps && s < 1 + eps);
         }
 
         public void InsertNodeOnEdge(IStreetEdge foundEdge, Vector3 positionOnEdge, out IStreetNode node, out IStreetEdge leftEdge, out IStreetEdge rightEdge) {
