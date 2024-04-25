@@ -1,4 +1,5 @@
 using UnityEngine;
+using FreeFormGraph.World;
 
 namespace FreeFormGraph.World {
     public class WorldRenderer: MonoBehaviour {
@@ -10,19 +11,33 @@ namespace FreeFormGraph.World {
         void Update() {
             if(World != null) {
                 if(!didCreateMesh) {
-                    RenderHeightmap();
+                    RenderSubmaps();
                     didCreateMesh = true; //ugh
                 }
             } else {
-                World = FindObjectOfType<GaussWorld>();
+                World = FindObjectOfType<WorldGameObject>() as IWorld;
+            }
+        }
+
+        void RenderSubmaps() {
+            int meshSize = 200;
+            for(int x = 0; x < World.Width; x+=meshSize) {
+                for(int y = 0; y < World.Width; y+=meshSize) {
+                    RenderHeightmap(x,x+meshSize, y, y+meshSize);
+                }
             }
         }
 
         //chatgpt...
-        void RenderHeightmap()
+        void RenderHeightmap(int startX, int endX, int startY, int endY)
         {
-            var width = World.Width;
-            var height = World.Height;
+            Debug.Log($"Render {startX} {endX} {startY} {endY}");
+            Debug.Assert(startX < endX);
+            Debug.Assert(startY < endY);
+            endX = (int)Mathf.Min(endX, World.Width);
+            endY = (int)Mathf.Min(endY, World.Height);
+            var width = endX-startX;
+            var height = endY-startY;
             var minHeight = World.MinHeight;
             var maxHeight = World.MaxHeight;
 
@@ -33,21 +48,26 @@ namespace FreeFormGraph.World {
             var triangles = new int[(width - 1) * (height - 1) * 6];
             var triangleIndex = 0;
 
-            var startColor = new Color(0, 0.83f, 0.57f, 1f);
-            var endColor = new Color(0.839f, 0.533f, 0, 1f);
+            var startColor = new Color(0.91f, 0.83f, 0.02f, 1f);
+            var endColor = new Color(0.91f, 0, 0, 1f);
 
-            for (int y = 0; y < height; y++)
+            int worldX = startX;
+            int worldY = startY;
+            for (int meshY = 0; meshY < height; meshY++)
             {
-                for (int x = 0; x < width; x++)
+                for (int meshX = 0; meshX < width; meshX++)
                 {
-                    var index = y * width + x;
-                    var heightValue = Mathf.InverseLerp(minHeight, maxHeight, World.GetHeightAt(x, y));
-                    vertices[index] = new Vector3(x, y, 0);
+                    var index = meshY * width + meshX;
+                    if(index >= vertices.Length) {
+                        Debug.Log($"{index} {meshX} {meshY} {width} {height}");
+                    }
+                    var heightValue = Mathf.InverseLerp(minHeight, maxHeight, World.GetHeightAt(worldX, worldY));
+                    vertices[index] = new Vector3(worldX, worldY, 0);
                     normals[index] = new Vector3(0, 0, 1);
                     colors[index] = Color.Lerp(startColor, endColor, heightValue);
 
                     // Add triangles if not at the border
-                    if (x < width - 1 && y < height - 1)
+                    if (meshX < width - 1 && meshY < height - 1)
                     {
                         triangles[triangleIndex++] = index;
                         triangles[triangleIndex++] = index + width;
@@ -57,7 +77,10 @@ namespace FreeFormGraph.World {
                         triangles[triangleIndex++] = index + width + 1;
                         triangles[triangleIndex++] = index + 1;
                     }
+                    worldX++;
                 }
+                worldX = startX;
+                worldY++;
             }
 
             mesh.vertices = vertices;
