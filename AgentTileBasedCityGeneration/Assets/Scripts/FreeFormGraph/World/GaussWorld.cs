@@ -6,17 +6,26 @@ using FreeFormGraph.LineBased;
 namespace FreeFormGraph.World {
     public class GaussWorld: WorldGameObject, IWorld {
         private float[,] heights;
-        public int Width { get; private set; }
-        public int Height { get; private set; }
+        
+        private float maxHeight = float.MinValue;
+        private float minHeight = float.MaxValue;
+        private int width;
+        private int height;
 
-        public float MaxHeight {get; private set;} = float.MinValue;
-        public float MinHeight {get; private set;} = float.MaxValue;
+        public override int Width => width;
+
+        public override int Height => height;
+
+        public override float MaxHeight => maxHeight;
+
+        public override float MinHeight => minHeight;
 
         private IStreetGraph graph;
 
+
         public void Start() {
-            Width = 100;
-            Height = 100;
+            width = 100;
+            height = 100;
             heights = new float[Width, Height];
 
             PlaceGauss(Width/2, Height/2, spread: 5);
@@ -25,8 +34,8 @@ namespace FreeFormGraph.World {
 
             for (int y = 0; y < Height; y++) {
                 for (int x = 0; x < Width; x++) {
-                    MinHeight = Mathf.Min(MinHeight, heights[x,y]);
-                    MaxHeight = Mathf.Max(MaxHeight, heights[x,y]);
+                    minHeight = Mathf.Min(MinHeight, heights[x,y]);
+                    maxHeight = Mathf.Max(MaxHeight, heights[x,y]);
                 }
             }
 
@@ -72,7 +81,7 @@ namespace FreeFormGraph.World {
             graph.CreateEdge(newNode, new Vector3(0,5,0), out _, out newNode, out _);
         }
 
-        public float GetHeightAt(float x, float y)
+        public override float GetHeightAt(float x, float y)
         {
             return heights[(int)x, (int)y];
         }

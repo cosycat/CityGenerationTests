@@ -6,11 +6,19 @@ using FreeFormGraph.LineBased;
 namespace FreeFormGraph.World {
     public class HeightmapWorld: WorldGameObject, IWorld {
         private float[,] heights;
-        public int Width { get; private set; }
-        public int Height { get; private set; }
+        private float maxHeight = float.MinValue;
+        private float minHeight = float.MaxValue;
+        private int width;
+        private int height;
 
-        public float MaxHeight {get; private set;} = float.MinValue;
-        public float MinHeight {get; private set;} = float.MaxValue;
+        public override int Width => width;
+
+        public override int Height => height;
+
+        public override float MaxHeight => maxHeight;
+
+        public override float MinHeight => minHeight;
+
 
         [SerializeField]
         public Texture2D Heightmap;
@@ -20,15 +28,15 @@ namespace FreeFormGraph.World {
         public void Start() {
             if(Heightmap != null) {
                 var pixels = Heightmap.GetPixels();  
-                Width = Heightmap.width;
-                Height = Heightmap.height;
+                width = Heightmap.width;
+                height = Heightmap.height;
                 heights = new float[Width, Height];
 
                 for(int y = 0; y < Height; y++) {
                     for(int x = 0; x < Width; x++) {
                         var pixelValue = pixels[x + y * Width].grayscale * 20;
-                        if(pixelValue > MaxHeight) MaxHeight = pixelValue;
-                        if(pixelValue < MinHeight) MinHeight = pixelValue;
+                        if(pixelValue > MaxHeight) maxHeight = pixelValue;
+                        if(pixelValue < MinHeight) minHeight = pixelValue;
                         heights[x,y] = pixelValue;
                     }
                 }
@@ -46,7 +54,7 @@ namespace FreeFormGraph.World {
             agent.AStar(new Vector3(190, 200-55,0), new Vector3(80,200-180 ,0));
         }
 
-        public float GetHeightAt(float x, float y)
+        public override float GetHeightAt(float x, float y)
         {
             return heights[(int)x, (int)y];
         }
