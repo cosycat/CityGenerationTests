@@ -15,9 +15,11 @@ namespace FreeFormGraph.LineBased {
 
         public int NodeCount { get; }
         public int EdgeCount { get; }
+
+        private float eps = 0.0001f;
         
 
-        public float SnapToExistingNodeThreshold { get; set; } = 0;
+        public float SnapToExistingNodeThreshold { get; set; } = 0.2f;
         public float SnapToExistingEdgeThreshold { get; set; } = 0;
 
         public bool CreateEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode,
@@ -35,7 +37,7 @@ namespace FreeFormGraph.LineBased {
                     var b = e.NodeB.Position - B;
                     var intersects = Intersection(A, a, B, b, out var crossPoint, out var t, out var s);
 
-                    if(t > 0 && t < 1 && intersects) {
+                    if(intersects) {
                         to = crossPoint;
                         lastIntersectionEdge = e;
                     }
@@ -44,7 +46,18 @@ namespace FreeFormGraph.LineBased {
                 isToNodeNew = true;
 
                 if(lastIntersectionEdge != null) {
-                    InsertNodeOnEdge(lastIntersectionEdge, to, out toNode, out _, out _);
+                    if(Vector3.Distance(to, lastIntersectionEdge.NodeA.Position) < SnapToExistingNodeThreshold) {
+                        isToNodeNew = false;
+                        toNode = lastIntersectionEdge.NodeA;
+                    }
+                    else if(Vector3.Distance(to, lastIntersectionEdge.NodeB.Position) < SnapToExistingNodeThreshold) {
+                        isToNodeNew = false;
+                        toNode = lastIntersectionEdge.NodeB;
+                    }
+                    else {
+                        InsertNodeOnEdge(lastIntersectionEdge, to, out toNode, out _, out _);
+                    }
+
                 } else {
                     var node = new LineNode() {
                         Position = to
@@ -134,6 +147,11 @@ namespace FreeFormGraph.LineBased {
             _nodes.Add(n);
             _edges.Add(lEdge);
             _edges.Add(rEdge);
+
+            //if this fails, we would have an edge with length 0, which is weird and should not happen
+            Debug.Assert(Vector3.Distance(lEdge.NodeA.Position, lEdge.NodeB.Position) < eps);
+            Debug.Assert(Vector3.Distance(rEdge.NodeA.Position, rEdge.NodeB.Position) < eps);
+
             ((LineNode)e.NodeA).AddEdge(lEdge);
             ((LineNode)e.NodeB).AddEdge(rEdge);
             n.AddEdge(lEdge);
