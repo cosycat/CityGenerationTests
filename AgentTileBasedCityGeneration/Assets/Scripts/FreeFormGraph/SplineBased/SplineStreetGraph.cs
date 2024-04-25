@@ -10,7 +10,7 @@ using UnityEngine.Splines;
 using Debug = UnityEngine.Debug;
 
 namespace FreeFormGraph.SplineBased {
-    public class SplineStreetGraph : IStreetGraph {
+    public class SplineStreetGraph : MonoBehaviour, IStreetGraph {
         
         [SerializeField] private bool snapToGrid = true;
 

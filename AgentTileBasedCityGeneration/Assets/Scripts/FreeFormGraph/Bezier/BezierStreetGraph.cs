@@ -6,7 +6,7 @@ using UnityEngine.Splines;
 
 namespace FreeFormGraph.Bezier {
     
-    public class BezierStreetGraph : IStreetGraph {
+    public class BezierStreetGraph : MonoBehaviour, IStreetGraph {
         private readonly List<BezierStreetEdge> _edges = new();
         private readonly List<BezierStreetNode> _nodes = new();
         public IEnumerable<IStreetNode> Nodes => _nodes;
