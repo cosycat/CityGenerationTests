@@ -39,7 +39,7 @@ namespace Simulation {
         /// <summary>
         /// Limiting road density (number of road patches within each local neighborhood circle(5))
         /// </summary>
-        public float Dt { get; } = 0.1f;
+        public float Dt { get; } = 0.5f;
         /// <summary>
         /// Road density
         /// Number of road patches within each local neighborhood circle(5)
@@ -69,7 +69,7 @@ namespace Simulation {
         public bool IsWater { get; }
         public bool IsBuildable => !IsWater; // TODO maybe add more conditions like if it is too steep.
         
-        public bool IsRoadAdjacent => GetNeighbors().Exists(tile => tile.UsageType == LandUsage.Road);
+        public bool IsRoadAdjacent => GetNeighbors(false).Exists(tile => tile.UsageType == LandUsage.Road);
         
         #endregion
         
@@ -108,7 +108,7 @@ namespace Simulation {
             Elevation = elevation;
         }
 
-        public List<Tile> GetNeighbors(bool includeDiagonals = false) {
+        public List<Tile> GetNeighbors(bool includeDiagonals) {
             var neighbors = new List<Tile>();
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
@@ -183,7 +183,7 @@ namespace Simulation {
 
                 tile._distancesToUsageType[oldUsageType] = MaxDist;
                 
-                foreach (var neighbor in tile.GetNeighbors()) {
+                foreach (var neighbor in tile.GetNeighbors(false)) {
                     queue.Enqueue((neighbor, distance + 1));
                 }
             }
@@ -201,7 +201,7 @@ namespace Simulation {
                 if (tile._distancesToUsageType[newUsageType] <= distance) continue;
                 Debug.Assert((tile.UsageType != newUsageType && tile._distancesToUsageType[newUsageType] > 0) || tile.UsageType == newUsageType, $"Tile {tile.Position} has a distance of {tile._distancesToUsageType[newUsageType]} to {newUsageType} but is of type {tile.UsageType}");
                 tile._distancesToUsageType[newUsageType] = distance;
-                foreach (var neighbor in tile.GetNeighbors()) {
+                foreach (var neighbor in tile.GetNeighbors(false)) {
                     if (initialRun && neighbor.UsageType == newUsageType) {
                         queue.Enqueue((neighbor, 0)); // This is for the initial initialisation of the whole map.
                         return;
@@ -250,8 +250,8 @@ namespace Simulation {
 
         public bool IsParcelBoundary() {
             return MultiTileSite == null 
-                ? GetNeighbors().Any(n => n.MultiTileSite != null) 
-                : GetNeighbors().Any(n => n.MultiTileSite != null || n.MultiTileSite != MultiTileSite);
+                ? GetNeighbors(false).Any(n => n.MultiTileSite != null) 
+                : GetNeighbors(false).Any(n => n.MultiTileSite != null || n.MultiTileSite != MultiTileSite);
             // If this tile is part of a parcel, but the other tile is not, then only the other tile is a boundary tile.
         }
     }

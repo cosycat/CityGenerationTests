@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Utils;
 using Random = UnityEngine.Random;
 
 namespace Simulation {
@@ -70,7 +71,7 @@ namespace Simulation {
                     while((CurrTile.UsageType != LandUsage.Road || CurrTile == start) && nextPatch != null) {
                         CurrTile = nextPatch;
                         possibleRoad.Add(CurrTile);
-                        var possibleTiles = nextPatch.GetNeighbors()
+                        var possibleTiles = nextPatch.GetNeighbors(false)
                             .Where(MeetsConstraints)
                             .Where(t => !possibleRoad.Contains(t))
                             .OrderBy(t => t.Position.ManhattanDistanceTo(dest.Position))
@@ -89,6 +90,8 @@ namespace Simulation {
                         var newRoadDistance = possibleRoad.Count; 
 
                         if(currentRoadDistance / newRoadDistance <= cRatio && currentRoadDistance != 0) {
+                            //The current shortest new road is equally long as the existing road,
+                            //this means the total length of the route will not be under the define cRatio threshold
                             //The newly built road (only the new tiles, not the whole connection!) already
                             //breaks the cRatio constraint without reaching the destination.
                             //this means we can stop looking for a connection, as every road will be equally or longer
@@ -111,7 +114,7 @@ namespace Simulation {
                             CurrTile = possibleRoad[^1];
                             possibleRoad.RemoveAt(0); //remove start tile
                             possibleRoad.RemoveAt(possibleRoad.Count - 1); //due to algorithm, last tile is already a road
-                            return new RoadSegment(World, AgentUsageType, possibleRoad, World.Tick);
+                            return new RoadSegment(World, AgentUsageType, possibleRoad, World.Tick, RoadType.Tertiary);
                         }
                     }
 
@@ -155,7 +158,7 @@ namespace Simulation {
                 }
             }
 
-            if(!foundRoute) return 0;
+            if(!foundRoute) return 0; //no path was found?
 
             var pathLength = 0;
             var currentTile = dest;

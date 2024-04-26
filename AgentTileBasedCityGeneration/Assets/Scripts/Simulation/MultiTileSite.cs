@@ -50,10 +50,10 @@ namespace Simulation {
             
         }
         
-        public MultiTileSite(MultiTileSite site) {
-            World = site.World;
-            TickCreated = site.TickCreated;
-            Tiles = site.Tiles;
+        public MultiTileSite(MultiTileSite roadSegment) {
+            World = roadSegment.World;
+            TickCreated = roadSegment.TickCreated;
+            Tiles = roadSegment.Tiles;
         }
         
         public float CalcValue() {
