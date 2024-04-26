@@ -149,8 +149,8 @@ namespace FreeFormGraph.LineBased {
             _edges.Add(rEdge);
 
             //if this fails, we would have an edge with length 0, which is weird and should not happen
-            Debug.Assert(Vector3.Distance(lEdge.NodeA.Position, lEdge.NodeB.Position) < eps);
-            Debug.Assert(Vector3.Distance(rEdge.NodeA.Position, rEdge.NodeB.Position) < eps);
+            Debug.Assert(Vector3.Distance(lEdge.NodeA.Position, lEdge.NodeB.Position) > eps, $"Distance between {lEdge.NodeA.Position} and {lEdge.NodeB.Position} is {Vector3.Distance(lEdge.NodeA.Position, lEdge.NodeB.Position)}");
+            Debug.Assert(Vector3.Distance(rEdge.NodeA.Position, rEdge.NodeB.Position) > eps, $"Distance between {rEdge.NodeA.Position} and {rEdge.NodeB.Position} is {Vector3.Distance(rEdge.NodeA.Position, rEdge.NodeB.Position)}");
 
             ((LineNode)e.NodeA).AddEdge(lEdge);
             ((LineNode)e.NodeB).AddEdge(rEdge);
