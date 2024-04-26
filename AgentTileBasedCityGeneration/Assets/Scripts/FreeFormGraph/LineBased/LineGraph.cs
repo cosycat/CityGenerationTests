@@ -5,7 +5,7 @@ using FreeFormGraph;
 using UnityEngine.Splines;
 
 namespace FreeFormGraph.LineBased {
-    public class LineGraph : StreetGraphGameObject, IStreetGraph {
+    public class LineGraph : StreetGraphGameObject {
 
         private readonly List<LineEdge> _edges = new();
         private readonly List<LineNode> _nodes = new();
@@ -22,7 +22,7 @@ namespace FreeFormGraph.LineBased {
         public override float SnapToExistingNodeThreshold { get; set; } = 0.2f;
         public override float SnapToExistingEdgeThreshold { get; set; } = 0;
 
-        public bool CreateEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode,
+        public override bool CreateEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode,
             out bool isToNodeNew) {
                 
 

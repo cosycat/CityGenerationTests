@@ -6,21 +6,21 @@ using UnityEngine.Splines;
 
 namespace FreeFormGraph.Bezier {
     
-    public class BezierStreetGraph : MonoBehaviour, IStreetGraph {
+    public class BezierStreetGraph : StreetGraphGameObject {
         private readonly List<BezierStreetEdge> _edges = new();
         private readonly List<BezierStreetNode> _nodes = new();
-        public IEnumerable<IStreetNode> Nodes => _nodes;
-        public IEnumerable<IStreetEdge> Edges => _edges;
-        public int NodeCount => _nodes.Count;
-        public int EdgeCount => _edges.Count;
-        public float SnapToExistingNodeThreshold { get; set; } = 0.1f;
-        public float SnapToExistingEdgeThreshold { get; set; } = 0.1f;
+        public override IEnumerable<IStreetNode> Nodes => _nodes;
+        public override IEnumerable<IStreetEdge> Edges => _edges;
+        public override int NodeCount => _nodes.Count;
+        public override int EdgeCount => _edges.Count;
+        public override float SnapToExistingNodeThreshold { get; set; } = 0.1f;
+        public override float SnapToExistingEdgeThreshold { get; set; } = 0.1f;
 
         private void Awake() {
             CreateUnconnectedNode(Vector3.zero, out _);
         }
 
-        public bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge) {
+        public override bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge) {
             Debug.Assert(from is BezierStreetNode && to is BezierStreetNode,
                 $"Expected BezierStreetNodes, got fromNode {from.GetType()} and toNode {to.GetType()}");
             var fromNode = (BezierStreetNode)from;
@@ -68,7 +68,7 @@ namespace FreeFormGraph.Bezier {
             return true;
         }
 
-        public bool CreateUnconnectedNode(Vector3 position, out IStreetNode newNode) {
+        public override bool CreateUnconnectedNode(Vector3 position, out IStreetNode newNode) {
             //TODO why do i need to cast here???
             if (((IStreetGraph)this).TryFindClosestNode(position, out var closestNodeInRange, SnapToExistingNodeThreshold)) {
                 Debug.Log($"BezierStreetGraph::CreateUnconnectedNode - Node too close found: Closest node to {position} is {closestNodeInRange.Position} with distance {Vector3.Distance(position, closestNodeInRange.Position)}");
@@ -81,11 +81,11 @@ namespace FreeFormGraph.Bezier {
             return true;
         }
 
-        public void InsertNodeOnEdge(IStreetEdge foundEdge, Vector3 positionOnEdge, out IStreetNode node, out IStreetEdge leftEdge, out IStreetEdge rightEdge) {
+        public override void InsertNodeOnEdge(IStreetEdge foundEdge, Vector3 positionOnEdge, out IStreetNode node, out IStreetEdge leftEdge, out IStreetEdge rightEdge) {
             throw new System.NotImplementedException();
         }
 
-        public bool RemoveNode(IStreetNode node) {
+        public override bool RemoveNode(IStreetNode node) {
             Debug.Assert(node is BezierStreetNode);
             var bezierNode = (BezierStreetNode) node;
             if (!_nodes.Remove(bezierNode)) {

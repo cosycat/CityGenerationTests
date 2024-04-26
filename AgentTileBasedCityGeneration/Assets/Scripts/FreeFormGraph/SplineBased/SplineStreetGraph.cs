@@ -10,7 +10,7 @@ using UnityEngine.Splines;
 using Debug = UnityEngine.Debug;
 
 namespace FreeFormGraph.SplineBased {
-    public class SplineStreetGraph : MonoBehaviour, IStreetGraph {
+    public class SplineStreetGraph : StreetGraphGameObject {
         
         [SerializeField] private bool snapToGrid = true;
 
@@ -19,14 +19,14 @@ namespace FreeFormGraph.SplineBased {
         private readonly List<SplineStreetSegment> _edges = new();
         private readonly List<SplineStreetNode> _nodes = new();
         
-        public IEnumerable<IStreetNode> Nodes => _nodes;
+        public override IEnumerable<IStreetNode> Nodes => _nodes;
 
-        public IEnumerable<IStreetEdge> Edges => _edges;
+        public override IEnumerable<IStreetEdge> Edges => _edges;
 
-        public int NodeCount => _nodes.Count;
-        public int EdgeCount => _edges.Count;
-        public float SnapToExistingNodeThreshold { get; set; }
-        public float SnapToExistingEdgeThreshold { get; set; }
+        public override int NodeCount => _nodes.Count;
+        public override int EdgeCount => _edges.Count;
+        public override float SnapToExistingNodeThreshold { get; set; }
+        public override float SnapToExistingEdgeThreshold { get; set; }
 
         public GameObject gameObject;
 
@@ -38,13 +38,13 @@ namespace FreeFormGraph.SplineBased {
             Debug.Assert(_splineExtrude != null);
         }
 
-        public bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge) {
+        public override bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge) {
             var res = AddNewSegment((SplineStreetNode)from, (SplineStreetNode)to, out var newSegment);
             newEdge = newSegment;
             return res;
         }
 
-        public bool RemoveNode(IStreetNode node) {
+        public override bool RemoveNode(IStreetNode node) {
             Debug.Assert(node is SplineStreetNode);
             var splineNode = (SplineStreetNode)node;
             if (node.ConnectedEdgesCount == 0) {
@@ -407,7 +407,7 @@ namespace FreeFormGraph.SplineBased {
             return true;
         }
 
-        public bool CreateUnconnectedNode(Vector3 position, out IStreetNode newNode) {
+        public override bool CreateUnconnectedNode(Vector3 position, out IStreetNode newNode) {
             var result = GenerateNewUnconnectedNode(position, out var newNodeProxy, true, out _, out _);
             newNode = newNodeProxy;
             return result;
@@ -473,7 +473,7 @@ namespace FreeFormGraph.SplineBased {
             return closestNode;
         }
 
-        public void InsertNodeOnEdge(IStreetEdge foundEdge, Vector3 positionOnEdge, out IStreetNode node, out IStreetEdge leftEdge, out IStreetEdge rightEdge) {
+        public override void InsertNodeOnEdge(IStreetEdge foundEdge, Vector3 positionOnEdge, out IStreetNode node, out IStreetEdge leftEdge, out IStreetEdge rightEdge) {
             throw new NotImplementedException();
         }
 
