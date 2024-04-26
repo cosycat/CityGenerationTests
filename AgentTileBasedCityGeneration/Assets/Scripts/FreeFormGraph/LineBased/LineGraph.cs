@@ -5,7 +5,7 @@ using FreeFormGraph;
 using UnityEngine.Splines;
 
 namespace FreeFormGraph.LineBased {
-    public class LineGraph : StreetGraphGameObject {
+    public class LineGraph : StreetGraphGameObject, IStreetGraph {
 
         private readonly List<LineEdge> _edges = new();
         private readonly List<LineNode> _nodes = new();
