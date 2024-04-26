@@ -13,8 +13,8 @@ namespace FreeFormGraph.LineBased {
         public IEnumerable<IStreetEdge> Edges => _edges;
 
 
-        public int NodeCount { get; }
-        public int EdgeCount { get; }
+        public int NodeCount => _nodes.Count;
+        public int EdgeCount => _edges.Count;
 
         private float eps = 0.0001f;
         
