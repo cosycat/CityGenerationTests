@@ -15,8 +15,7 @@ namespace Utils {
         /// <param name="resolution"> The resolution with which to sample the actual points on the spline (steps of t). </param>
         /// <returns> An array of evenly spaced points on the spline. </returns>
         public static Vector3[] CalculateEvenlySpacedPoints(this Spline spline, float spacing, float resolution = 1f) {
-            var evenlySpacedPoints = new List<Vector3>();
-            evenlySpacedPoints.Add(spline[0].Position);
+            var evenlySpacedPoints = new List<Vector3> { spline[0].Position };
             var prevPoint = (Vector3)spline[0].Position;
             var dstSinceLastEvenPoint = 0f;
 
@@ -56,8 +55,7 @@ namespace Utils {
         /// <param name="useLengthApproximation"> Whether to use the approximate length of the curve to calculate the points, or calculate the length more accurately with the given resolution. </param>
         /// <returns> An array of evenly spaced points on the curve. </returns>
         public static Vector3[] CalculateEvenlySpacedPoints(this BezierCurve curve, float spacing, int resolution = 10, bool useLengthApproximation = true) {
-            var evenlySpacedPoints = new List<Vector3>();
-            evenlySpacedPoints.Add(curve.P0);
+            var evenlySpacedPoints = new List<Vector3> { curve.P0 };
             var prevPoint = (Vector3)curve.P0;
             var dstSinceLastEvenPoint = 0f;
 

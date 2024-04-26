@@ -12,7 +12,7 @@ namespace Visualisation {
     public class RoadSplineVisualizer : MonoBehaviour {
         
         [CanBeNull]
-        private SplineContainer _splineContainer;
+        private SplineContainer splineContainer;
         
         public void VisualizeRoadsFromCurrentWorld() {
             VisualizeRoads(World.Instance.GetAllTilesOfType(LandUsage.Road));
@@ -79,14 +79,14 @@ namespace Visualisation {
         }
         
         private void VisualizeGraph(Graph graph) {
-            if (_splineContainer != null) {
-                Destroy(_splineContainer.gameObject);
+            if (splineContainer != null) {
+                Destroy(splineContainer.gameObject);
             }
-            _splineContainer = new GameObject("RoadSplines").AddComponent<SplineContainer>();
+            splineContainer = new GameObject("RoadSplines").AddComponent<SplineContainer>();
             
             // connect all the tiles
             foreach (var edge in graph.Edges) {
-                var spline = _splineContainer.AddSpline();
+                var spline = splineContainer.AddSpline();
                 for (var i = 0; i < edge.Tiles.Count; i++) {
                     var tile = edge.Tiles[i];
                     // only add a tile if it is not in a corner. But add crossings and dead ends.
@@ -98,11 +98,11 @@ namespace Visualisation {
 
                     var prevTile = edge.Tiles[i - 1];
                     var nextTile = edge.Tiles[i + 1];
-                    Debug.Assert(tile.GetNeighbors().Count(n => n.UsageType == LandUsage.Road) == 2 // it is neither a crossing nor a dead end
+                    Debug.Assert(tile.GetNeighbors(false).Count(n => n.UsageType == LandUsage.Road) == 2 // it is neither a crossing nor a dead end
                                  && tile.GetNeighbors(false).Where(n => n.UsageType == LandUsage.Road).Contains(prevTile) // it is connected to the previous tile
                                  && tile.GetNeighbors(false).Where(n => n.UsageType == LandUsage.Road).Contains(nextTile)); // it is connected to the next tile
 
-                    var currTilePos = TilePosToVector3(tile);
+                    var currTilePosition = TilePositionToVector3(tile);
                     if (prevTile.Position.x != nextTile.Position.x && prevTile.Position.y != nextTile.Position.y) {
                         // The tile is in a corner. Skip it.
                         continue;
@@ -110,15 +110,15 @@ namespace Visualisation {
 
                     // The tangent is the direction from the previous tile to the next tile, so in case of a corner, the tangent is the direction of the corner, providing a smooth curve.
                     spline.Add(new BezierKnot(new Vector3(tile.Position.x, tile.Position.y, 0),
-                            TilePosToVector3(prevTile) - currTilePos,
-                            TilePosToVector3(nextTile) - currTilePos),
+                            TilePositionToVector3(prevTile) - currTilePosition,
+                            TilePositionToVector3(nextTile) - currTilePosition),
                         TangentMode.Mirrored);
                 }
             }
 
             return;
 
-            float3 TilePosToVector3(Tile tile) {
+            float3 TilePositionToVector3(Tile tile) {
                 return new Vector3(tile.Position.x, tile.Position.y, 0);
             }
             

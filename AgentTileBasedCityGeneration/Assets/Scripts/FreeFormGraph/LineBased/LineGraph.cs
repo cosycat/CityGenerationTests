@@ -194,8 +194,8 @@ namespace FreeFormGraph.LineBased {
     }
 
     public class LineEdge: IStreetEdge {
-        public Vector3 PosA => NodeA.Position;
-        public Vector3 PosB => NodeB.Position;
+        public Vector3 PositionNodeA => NodeA.Position;
+        public Vector3 PositionNodeB => NodeB.Position;
         public IStreetNode NodeA { get; set;}
         public IStreetNode NodeB { get; set;}
         public float StreetWidth { get; set;} = 1;
@@ -210,7 +210,7 @@ namespace FreeFormGraph.LineBased {
         }
 
         public override string ToString() {
-            return $"LineEdge from {PosA} to {PosB}";
+            return $"LineEdge from {PositionNodeA} to {PositionNodeB}";
         }
     }
 }

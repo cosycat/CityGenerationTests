@@ -8,9 +8,9 @@ namespace FreeFormGraph.SplineBased {
     public static class SplineIntersections {
 
         //DEBUG stuff
-        public static List<Vector3> _dbg_splineIntersectionPoints = new();
+        public static List<Vector3> DbgSplineIntersectionPoints = new();
         //DEBUG stuff
-        public static List<(Vector3 pos, float length)> _dbg_curveSteps = new();
+        public static List<(Vector3 pos, float length)> DbgCurveSteps = new();
         
 
         /// <summary>
@@ -23,8 +23,8 @@ namespace FreeFormGraph.SplineBased {
         /// <param name="intersection"> The intersection that was found, if any </param>
         /// <returns> True if an intersection was found, false otherwise </returns>
         public static bool HasIntersection(SplineStreetSegment newSegment, List<SplineStreetSegment> allSegments, out Intersection intersection) {
-            _dbg_curveSteps.Clear();
-            _dbg_splineIntersectionPoints.Clear();
+            DbgCurveSteps.Clear();
+            DbgSplineIntersectionPoints.Clear();
             
             var segmentSpline = newSegment.Spline;
             var curveOfNewSegment = newSegment.Curve;
@@ -75,7 +75,7 @@ namespace FreeFormGraph.SplineBased {
                                 otherTangent
                                 ));
                             // DEBUG
-                            _dbg_splineIntersectionPoints.Add(intersectionPoint);
+                            DbgSplineIntersectionPoints.Add(intersectionPoint);
                             if (foundIntersections.Count == 1) {
                                 Debug.Log($"Found intersection at {intersectionPoint} between {newSegment} and {otherSegment}, otherLowerIndex: {otherLowerIndex} (indices: {indices})");
                             }
@@ -98,7 +98,7 @@ namespace FreeFormGraph.SplineBased {
             });
             
             intersection = foundIntersections[0];
-            _dbg_splineIntersectionPoints.Add(intersection.IntersectionPoint);
+            DbgSplineIntersectionPoints.Add(intersection.IntersectionPoint);
             Debug.Log($"Found intersection at {intersection.IntersectionPoint} between {newSegment} and {intersection.ExistingSegment}, otherLowerIndex: {intersection.ExistingBezierIndex}");
             return true;
         }
@@ -171,8 +171,8 @@ namespace FreeFormGraph.SplineBased {
                 .Distinct();
 
             stepSize = stepSize / CurveUtility.CalculateLength(c);
-            _dbg_curveSteps.Clear();
-            _dbg_splineIntersectionPoints.Clear();
+            DbgCurveSteps.Clear();
+            DbgSplineIntersectionPoints.Clear();
 
             List<CurveIntersection> intersections = new();
             Vector3 lastNearestPoint = new Vector3(float.MaxValue, float.MaxValue, 0);
@@ -197,7 +197,7 @@ namespace FreeFormGraph.SplineBased {
                         var ray = new Ray(currentPosOnSplineWorldCoords, currentTangent);
                         CurveUtility.GetNearestPoint(targetCurve, ray, out var nearest, out var nearestInterpolation);
 
-                        _dbg_curveSteps.Add((currentPosOnSplineWorldCoords, 1));
+                        DbgCurveSteps.Add((currentPosOnSplineWorldCoords, 1));
 
                         if(Vector3.Distance(nearest, currentPosOnSplineWorldCoords) < minDistanceForHit
                             && Vector3.Distance(nearest, lastNearestPoint) > minDistanceForHit //cheap mans non-max-supression
@@ -211,7 +211,7 @@ namespace FreeFormGraph.SplineBased {
                                 nearest = CurveUtility.EvaluatePosition(targetCurve, nearestInterpolation);
                             }
 
-                            _dbg_splineIntersectionPoints.Add(nearest);
+                            DbgSplineIntersectionPoints.Add(nearest);
                             lastNearestPoint = nearest;
                             var newIntersection = new CurveIntersection(
                                 intersectionPosition: nearest,

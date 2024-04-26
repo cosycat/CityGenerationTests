@@ -9,11 +9,11 @@ namespace FreeFormGraph.SplineBased {
 
     public class SplineStreetSegment : IStreetEdge {
         
-        private readonly SplineStreetNode _nodeA;
-        private readonly SplineStreetNode _nodeB;
+        private readonly SplineStreetNode nodeA;
+        private readonly SplineStreetNode nodeB;
         
-        public IStreetNode NodeA => _nodeA;
-        public IStreetNode NodeB => _nodeB;
+        public IStreetNode NodeA => nodeA;
+        public IStreetNode NodeB => nodeB;
         
         public Spline Spline { get; internal set; }
         
@@ -26,8 +26,8 @@ namespace FreeFormGraph.SplineBased {
         }
 
         private SplineStreetSegment(SplineStreetNode nodeA, SplineStreetNode nodeB) {
-            _nodeA = nodeA;
-            _nodeB = nodeB;
+            this.nodeA = nodeA;
+            this.nodeB = nodeB;
         }
         
         
@@ -38,8 +38,8 @@ namespace FreeFormGraph.SplineBased {
         /// </summary>
         /// <returns> The indices of the spline knots that are connected by this segment. </returns>
         public (int lowerIndex, int higherIndex) GetIndices() {
-            var nodeASplineIndices = _nodeA.SplineIndices.Where(t => t.spline == Spline);
-            var nodeBSplineIndices = _nodeB.SplineIndices.Where(t => t.spline == Spline);
+            var nodeASplineIndices = nodeA.SplineIndices.Where(t => t.spline == Spline);
+            var nodeBSplineIndices = nodeB.SplineIndices.Where(t => t.spline == Spline);
             var indicesOneApart = nodeASplineIndices
                 .SelectMany(splineIndexA => nodeBSplineIndices
                     .Select(splineIndexB => (splineIndexA, splineIndexB)))

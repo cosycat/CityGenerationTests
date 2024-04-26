@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Utils;
 using Random = UnityEngine.Random;
 
 namespace Simulation {
@@ -62,7 +63,7 @@ namespace Simulation {
                     while((CurrTile.UsageType != LandUsage.Road || CurrTile == start) && nextPatch != null) {
                         CurrTile = nextPatch;
                         possibleRoad.Add(CurrTile);
-                        var possibleTiles = nextPatch.GetNeighbors()
+                        var possibleTiles = nextPatch.GetNeighbors(false)
                             .Where(MeetsConstraints)
                             .Where(t => !possibleRoad.Contains(t))
                             .OrderBy(t => t.Position.ManhattanDistanceTo(dest.Position))

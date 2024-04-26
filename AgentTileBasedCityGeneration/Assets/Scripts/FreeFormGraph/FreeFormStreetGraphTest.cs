@@ -2,30 +2,29 @@ using System.Collections.Generic;
 using System.Linq;
 using FreeFormGraph.World;
 using JetBrains.Annotations;
-using UnityEditor;
 using UnityEngine;
 
 namespace FreeFormGraph {
     
     public class FreeFormStreetGraphTest : MonoBehaviour {
 
-        private IStreetGraph _streetGraph;
-        private IWorld World;
+        private IStreetGraph streetGraph;
+        private IWorld world;
 
-        [CanBeNull] private IStreetNode _dragStartNode;
+        [CanBeNull] private IStreetNode dragStartNode;
         
-        private bool _drawGrid = true;
-        private bool _drawCurveBoxes;
-        private bool _drawIntersectionLines = true;
-        private bool _drawLabelsEdges = true;
-        private bool _drawLabelsNodes = true;
+        private bool drawGrid = true;
+        private bool drawCurveBoxes;
+        private bool drawIntersectionLines = true;
+        private bool drawLabelsEdges = true;
+        private bool drawLabelsNodes = true;
 
-        private Dictionary<IStreetEdge, Color> edgeColors = new();
+        private readonly Dictionary<IStreetEdge, Color> edgeColors = new();
 
         private void Start() {
-            _streetGraph ??= FindObjectOfType<StreetGraphGameObject>();
-            World = FindObjectOfType<WorldGameObject>();
-            if (_streetGraph == null) {
+            streetGraph ??= FindObjectOfType<StreetGraphGameObject>();
+            world = FindObjectOfType<WorldGameObject>();
+            if (streetGraph == null) {
                 Debug.LogError("No StreetGraph found in Scene.");
                 Destroy(this);
             }
@@ -40,28 +39,28 @@ namespace FreeFormGraph {
 
         private void CheckMouseCreation() {
             const float dragThreshold = 0.3f;
-            var mousePosWorld = MouseWorldPos;
+            var mousePositionWorld = MouseWorldPosition;
             if (Input.GetMouseButtonDown(0)) {
-                if (_streetGraph.TryFindClosestNode(mousePosWorld, out var closestNode, dragThreshold)) {
-                    _dragStartNode = closestNode;
-                    Debug.Log($"FreeFormStreetGraphTest - Dragging from {_dragStartNode}");
+                if (streetGraph.TryFindClosestNode(mousePositionWorld, out var closestNode, dragThreshold)) {
+                    dragStartNode = closestNode;
+                    Debug.Log($"FreeFormStreetGraphTest - Dragging from {dragStartNode}");
                 } else {
-                    Debug.Log($"No node found at {mousePosWorld}.");
-                    _dragStartNode = null;
+                    Debug.Log($"No node found at {mousePositionWorld}.");
+                    dragStartNode = null;
                 }
             } else if (Input.GetMouseButtonUp(0)) {
-                if (_dragStartNode == null) {
+                if (dragStartNode == null) {
                     return;
                 }
-                if (!_streetGraph.CreateEdge(_dragStartNode, mousePosWorld, out _, out _, out _)) {
+                if (!streetGraph.CreateEdge(dragStartNode, mousePositionWorld, out _, out _, out _)) {
                     Debug.LogWarning("FreeFormStreetGraphTest - Failed to create new edge.");
                 }
 
-                _dragStartNode = null;
+                dragStartNode = null;
             }
         }
 
-        private static Vector2 MouseWorldPos => Camera.main!.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 0));
+        private static Vector2 MouseWorldPosition => Camera.main!.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 0));
         
         private void OnGUI() {
             // Contents:
@@ -72,27 +71,27 @@ namespace FreeFormGraph {
             //   - "Create Node Previous" creates a new node connected to the previously created node
             
             GUILayout.BeginArea(new Rect(10, 10, 200, 600));
-            GUILayout.Label($"Number of nodes: {_streetGraph.NodeCount}");
-            GUILayout.Label($"Number of edges: {_streetGraph.EdgeCount}");
-            if (GUILayout.Button($"Draw grid: ({_drawGrid})")) {
-                _drawGrid = !_drawGrid;
+            GUILayout.Label($"Number of nodes: {streetGraph.NodeCount}");
+            GUILayout.Label($"Number of edges: {streetGraph.EdgeCount}");
+            if (GUILayout.Button($"Draw grid: ({drawGrid})")) {
+                drawGrid = !drawGrid;
             }
-            if (GUILayout.Button($"Bezier B-Boxes: ({_drawCurveBoxes})")) {
-                _drawCurveBoxes = !_drawCurveBoxes;
+            if (GUILayout.Button($"Bezier B-Boxes: ({drawCurveBoxes})")) {
+                drawCurveBoxes = !drawCurveBoxes;
             }
-            if (GUILayout.Button($"Intersection Lines: ({_drawIntersectionLines})")) {
-                _drawIntersectionLines = !_drawIntersectionLines;
+            if (GUILayout.Button($"Intersection Lines: ({drawIntersectionLines})")) {
+                drawIntersectionLines = !drawIntersectionLines;
             }
             if (GUILayout.Button($"Graph color: Recalculate colors")) {
                 GraphColoring();
             }
             GUILayout.Label("Labels:");
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button($"Nodes: ({_drawLabelsNodes})")) {
-                _drawLabelsNodes = !_drawLabelsNodes;
+            if (GUILayout.Button($"Nodes: ({drawLabelsNodes})")) {
+                drawLabelsNodes = !drawLabelsNodes;
             }
-            if (GUILayout.Button($"Edges: ({_drawLabelsEdges})")) {
-                _drawLabelsEdges = !_drawLabelsEdges;
+            if (GUILayout.Button($"Edges: ({drawLabelsEdges})")) {
+                drawLabelsEdges = !drawLabelsEdges;
             }
             GUILayout.EndHorizontal();
             GUILayout.Label("Drag from one node to create a new connection or node.");
@@ -101,12 +100,12 @@ namespace FreeFormGraph {
 
         private void GraphColoring() {
             //BFS
-            //I know there are propably better algorithms for this...
+            //I know there are probably better algorithms for this...
             var colors = new List<Color>(){Color.red, Color.blue, Color.yellow, Color.green, Color.cyan, Color.magenta};
             var queue = new Queue<IStreetNode>();
             var visited = new HashSet<IStreetNode>();
-            queue.Enqueue(_streetGraph.Nodes.ToList()[0]);
-            visited.Add(_streetGraph.Nodes.ToList()[0]);
+            queue.Enqueue(streetGraph.Nodes.ToList()[0]);
+            visited.Add(streetGraph.Nodes.ToList()[0]);
 
             while(queue.Count != 0) {
                 var current = queue.Dequeue();
@@ -114,8 +113,8 @@ namespace FreeFormGraph {
                 var neighborColors = new HashSet<Color>();
                 //find colors of neighbors
                 foreach(var edge in current.Edges) {
-                    if(edgeColors.ContainsKey(edge)) {
-                        neighborColors.Add(edgeColors[edge]);
+                    if(edgeColors.TryGetValue(edge, out var color)) {
+                        neighborColors.Add(color);
                     }
                 }
 
@@ -129,7 +128,7 @@ namespace FreeFormGraph {
                     }
                 }
 
-                //enqueu new nodes
+                //enqueue new nodes
                 foreach(var edge in current.Edges) {
                     var nextNode = edge.NodeA;
                     if(nextNode == current) nextNode = edge.NodeB;
@@ -141,10 +140,10 @@ namespace FreeFormGraph {
         }
 
         private void OnDrawGizmos() {
-            if (_streetGraph == null) {
+            if (streetGraph == null) {
                 return;
             }
-            foreach (var node in _streetGraph.Nodes) {
+            foreach (var node in streetGraph.Nodes) {
                 Gizmos.color = node.IsMaxConnectedEdgesReached ? Color.red : node.ConnectedEdgesCount > 2 ? Color.yellow : Color.green;
                 Gizmos.DrawSphere(node.Position, 0.1f);
                 Gizmos.DrawLine(node.Position, node.Position +
@@ -152,27 +151,23 @@ namespace FreeFormGraph {
                                                 (Vector3.right * 0.3f)));
             }
 
-            foreach (var edge in _streetGraph.Edges) {
-                if(edgeColors.ContainsKey(edge)) {
-                    Gizmos.color = edgeColors[edge];
-                } else {
-                    Gizmos.color = Color.grey;
-                }
-                Gizmos.DrawLine(edge.PosA, edge.PosB);
+            foreach (var edge in streetGraph.Edges) {
+                Gizmos.color = edgeColors.TryGetValue(edge, out var color) ? color : Color.grey;
+                Gizmos.DrawLine(edge.PositionNodeA, edge.PositionNodeB);
                 foreach (var point in edge.SplitIntoEvenlySpacedPoints()) {
                     Gizmos.DrawSphere(point, 0.05f);
                 }
             }
             
             Gizmos.color = Color.green;
-            if (Input.GetMouseButton(0) && _dragStartNode != null) {
-                Gizmos.DrawLine(_dragStartNode.Position, MouseWorldPos);
+            if (Input.GetMouseButton(0) && dragStartNode != null) {
+                Gizmos.DrawLine(dragStartNode.Position, MouseWorldPosition);
             }
 
             // if (_drawIntersectionLines) {
-            //     foreach ((var pos, var dir) in Intersections._dbg_curveSteps) {
+            //     foreach ((var position, var dir) in Intersections._dbg_curveSteps) {
             //         Gizmos.color = Color.grey;
-            //         Gizmos.DrawRay(pos, Vector3.up * dir);
+            //         Gizmos.DrawRay(position, Vector3.up * dir);
             //     }
             //
             //     foreach (var intersection in Intersections._dbg_splineIntersectionPoints) {
@@ -181,13 +176,13 @@ namespace FreeFormGraph {
             //     }
             // }
 
-            if(_drawGrid) {
+            if(drawGrid) {
                 Gizmos.color = new Color(0.5f, 0.5f, 0.5f, 0.5f);
-                for(int i = 0; i < World.Width; i++) {
-                    Gizmos.DrawRay(new Vector3(i, 0), Vector3.up * World.Height);
+                for(int i = 0; i < world.Width; i++) {
+                    Gizmos.DrawRay(new Vector3(i, 0), Vector3.up * world.Height);
                 }
-                for(int i = 0; i < World.Height; i++) {
-                    Gizmos.DrawRay(new Vector3(0, i), Vector3.right * World.Width);
+                for(int i = 0; i < world.Height; i++) {
+                    Gizmos.DrawRay(new Vector3(0, i), Vector3.right * world.Width);
                 }
             }
 
@@ -204,15 +199,15 @@ namespace FreeFormGraph {
             //     }
             // }
             
-            if (_drawLabelsEdges) {
+            if (drawLabelsEdges) {
                 // UnityEditor.Handles.color = Color.yellow;
-                foreach (var edge in _streetGraph.Edges) {
-                    UnityEditor.Handles.Label((edge.PosA + edge.PosB) / 2, edge.DebugString());
+                foreach (var edge in streetGraph.Edges) {
+                    UnityEditor.Handles.Label((edge.PositionNodeA + edge.PositionNodeB) / 2, edge.DebugString());
                 }
             }
-            if (_drawLabelsNodes) {
+            if (drawLabelsNodes) {
                 // UnityEditor.Handles.color = Color.white;
-                foreach (var node in _streetGraph.Nodes) {
+                foreach (var node in streetGraph.Nodes) {
                     UnityEditor.Handles.Label(node.Position, node.DebugString());
                 }
             }

@@ -1,6 +1,3 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace FreeFormGraph {
@@ -9,11 +6,11 @@ namespace FreeFormGraph {
         /// <summary>
         /// The position of the first node of the street.
         /// </summary>
-        public Vector3 PosA => NodeA.Position;
+        public Vector3 PositionNodeA => NodeA.Position;
         /// <summary>
         /// The position of the second node of the street.
         /// </summary>
-        public Vector3 PosB => NodeB.Position;
+        public Vector3 PositionNodeB => NodeB.Position;
 
         /// <summary>
         /// The first node of the street.

@@ -1,3 +1,4 @@
+#nullable enable
 using System.Collections.Generic;
 using System.Linq;
 using FreeFormGraph.World;
@@ -51,7 +52,7 @@ namespace FreeFormGraph.Agent {
 
                     var next = nextWaypoint;
 
-                    if(q_set.Contains(next)) continue; //now that we move the position around it's possible that we would enqueue the same target again
+                    if(q_set.Contains(next)) continue; //now that we move the position around, it's possible that we would enqueue the same target again
 
                     var new_cost = cost_so_far[current] + Cost(current, next);
                     if(!cost_so_far.ContainsKey(next) || new_cost < cost_so_far[next]) {

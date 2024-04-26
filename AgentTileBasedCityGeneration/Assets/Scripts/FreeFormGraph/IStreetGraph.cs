@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using JetBrains.Annotations;
 using UnityEngine;
 
 namespace FreeFormGraph {
@@ -22,7 +20,7 @@ namespace FreeFormGraph {
         /// <summary>
         /// The threshold for snapping the to position to an existing node when adding a new edge.
         ///
-        /// When the to position is outside of <see cref="SnapToExistingNodeThreshold"/>, but within <see cref="SnapToExistingEdgeThreshold"/>
+        /// When the to position is outside <see cref="SnapToExistingNodeThreshold"/>, but within <see cref="SnapToExistingEdgeThreshold"/>
         /// of an existing edge, and the position on the edge is within <see cref="SnapToExistingNodeThreshold"/> of an existing node,
         /// the to position will still be snapped to the existing node.
         /// </summary>

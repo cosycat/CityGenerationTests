@@ -1,18 +1,16 @@
-using System;
 using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.Splines;
 
 namespace FreeFormGraph.Bezier {
     
     public class BezierStreetGraph : StreetGraphGameObject {
-        private readonly List<BezierStreetEdge> _edges = new();
-        private readonly List<BezierStreetNode> _nodes = new();
-        public override IEnumerable<IStreetNode> Nodes => _nodes;
-        public override IEnumerable<IStreetEdge> Edges => _edges;
-        public override int NodeCount => _nodes.Count;
-        public override int EdgeCount => _edges.Count;
+        private readonly List<BezierStreetEdge> edges = new();
+        private readonly List<BezierStreetNode> nodes = new();
+        public override IEnumerable<IStreetNode> Nodes => nodes;
+        public override IEnumerable<IStreetEdge> Edges => edges;
+        public override int NodeCount => nodes.Count;
+        public override int EdgeCount => edges.Count;
         public override float SnapToExistingNodeThreshold { get; set; } = 0.1f;
         public override float SnapToExistingEdgeThreshold { get; set; } = 0.1f;
 
@@ -63,7 +61,7 @@ namespace FreeFormGraph.Bezier {
                 return false;
             }
 
-            _edges.Add(edge);
+            edges.Add(edge);
             newEdge = edge;
             return true;
         }
@@ -76,7 +74,7 @@ namespace FreeFormGraph.Bezier {
                 return false;
             }
             var node = new BezierStreetNode(position);
-            _nodes.Add(node);
+            nodes.Add(node);
             newNode = node;
             return true;
         }
@@ -88,12 +86,12 @@ namespace FreeFormGraph.Bezier {
         public override bool RemoveNode(IStreetNode node) {
             Debug.Assert(node is BezierStreetNode);
             var bezierNode = (BezierStreetNode) node;
-            if (!_nodes.Remove(bezierNode)) {
+            if (!nodes.Remove(bezierNode)) {
                 return false;
             }
             foreach (var edge in bezierNode.BezierEdges) {
                 Debug.Assert(edge.NodeA == bezierNode || edge.NodeB == bezierNode);
-                if (!_edges.Remove(edge)) {
+                if (!edges.Remove(edge)) {
                     Debug.LogError($"Failed to remove edge {edge} from graph, but node was in graph and removed.");
                 }
                 if (edge.BezierNodeA == bezierNode) {
@@ -135,14 +133,14 @@ namespace FreeFormGraph.Bezier {
     }
 
     public class BezierStreetNode : IStreetNode {
-        private readonly List<BezierStreetEdge> _edges = new();
+        private readonly List<BezierStreetEdge> edges = new();
         public Vector3 Position { get; }
         
-        internal IEnumerable<BezierStreetEdge> BezierEdges => _edges;
+        internal IEnumerable<BezierStreetEdge> BezierEdges => edges;
 
-        public IEnumerable<IStreetEdge> Edges => _edges;
+        public IEnumerable<IStreetEdge> Edges => edges;
 
-        public int ConnectedEdgesCount => _edges.Count;
+        public int ConnectedEdgesCount => edges.Count;
 
         public int MaxConnectedEdges => 4;
         
@@ -163,7 +161,7 @@ namespace FreeFormGraph.Bezier {
             if (ConnectedEdgesCount >= MaxConnectedEdges) {
                 return false;
             }
-            _edges.Add(edge);
+            edges.Add(edge);
             if (EntranceAngle.HasValue == false) {
                 var edgeDir = edge.BezierNodeA == this ? edge.TangentA : edge.TangentB;
                 EntranceAngle = Vector3.Angle(Vector3.right, edgeDir);
@@ -172,33 +170,33 @@ namespace FreeFormGraph.Bezier {
         }
 
         internal void RemoveEdge(BezierStreetEdge edge) {
-            _edges.Remove(edge);
+            edges.Remove(edge);
         }
     }
     
     public class BezierStreetEdge : IStreetEdge {
-        private readonly BezierStreetNode _nodeA;
-        private readonly BezierStreetNode _nodeB;
+        private readonly BezierStreetNode nodeA;
+        private readonly BezierStreetNode nodeB;
 
         public BezierCurve Curve { get; }
         
-        internal BezierStreetNode BezierNodeA => _nodeA;
-        internal BezierStreetNode BezierNodeB => _nodeB;
+        internal BezierStreetNode BezierNodeA => nodeA;
+        internal BezierStreetNode BezierNodeB => nodeB;
 
         internal Vector3 TangentA => Curve.Tangent0;
         internal Vector3 TangentB => Curve.Tangent1;
 
-        public IStreetNode NodeA => _nodeA;
+        public IStreetNode NodeA => nodeA;
 
-        public IStreetNode NodeB => _nodeB;
+        public IStreetNode NodeB => nodeB;
 
         public float StreetWidth { get; }
 
         public BezierStreetEdge(BezierStreetNode nodeA, BezierStreetNode nodeB, BezierCurve curve, float streetWidth = 0.3f) {
             Debug.Assert(Vector3.Distance(curve.P0, nodeA.Position) < 0.01f, $"Distance from {curve.P0} to {nodeA.Position} is {Vector3.Distance(curve.P0, nodeA.Position)}");
             Debug.Assert(Vector3.Distance(curve.P3, nodeB.Position) < 0.01f, $"Distance from {curve.P3} to {nodeB.Position} is {Vector3.Distance(curve.P3, nodeB.Position)}");
-            _nodeA = nodeA;
-            _nodeB = nodeB;
+            this.nodeA = nodeA;
+            this.nodeB = nodeB;
             Curve = curve;
             StreetWidth = streetWidth;
         }
