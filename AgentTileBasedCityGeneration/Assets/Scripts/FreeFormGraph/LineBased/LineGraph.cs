@@ -5,73 +5,69 @@ using FreeFormGraph;
 using UnityEngine.Splines;
 
 namespace FreeFormGraph.LineBased {
-    public class LineGraph : MonoBehaviour, IStreetGraph {
+    public class LineGraph : StreetGraphGameObject, IStreetGraph {
 
         private readonly List<LineEdge> _edges = new();
         private readonly List<LineNode> _nodes = new();
-        public IEnumerable<IStreetNode> Nodes => _nodes;
-        public IEnumerable<IStreetEdge> Edges => _edges;
+        public override IEnumerable<IStreetNode> Nodes => _nodes;
+        public override IEnumerable<IStreetEdge> Edges => _edges;
 
 
-        public int NodeCount => _nodes.Count;
-        public int EdgeCount => _edges.Count;
+        public override int NodeCount => _nodes.Count;
+        public override int EdgeCount => _edges.Count;
 
         private float eps = 0.0001f;
         
 
-        public float SnapToExistingNodeThreshold { get; set; } = 0.2f;
-        public float SnapToExistingEdgeThreshold { get; set; } = 0;
-
-        public bool CreateEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode,
-            out bool isToNodeNew) {
-                
-
-                IStreetEdge? lastIntersectionEdge = null;
-                //check for intersections
-                foreach(var e in _edges) {
-                    //skip node we are comming from to prevent finding intersection with edge we are connected to
-                    if(e.NodeA == from || e.NodeB == from) continue;
-                    var A = from.Position;
-                    var a = to-A;
-                    var B = e.NodeA.Position;
-                    var b = e.NodeB.Position - B;
-                    var intersects = Intersection(A, a, B, b, out var crossPoint, out var t, out var s);
-
-                    if(intersects) {
-                        to = crossPoint;
-                        lastIntersectionEdge = e;
-                    }
+        public override float SnapToExistingNodeThreshold { get; set; } = 0.2f;
+        public override float SnapToExistingEdgeThreshold { get; set; } = 0;
+        
+        public bool CreateEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode, out bool isToNodeNew) {
+            IStreetEdge? lastIntersectionEdge = null;
+            //check for intersections
+            foreach (var e in _edges) {
+                //skip node we are comming from to prevent finding intersection with edge we are connected to
+                if (e.NodeA == from || e.NodeB == from) continue;
+                var A = from.Position;
+                var a = to - A;
+                var B = e.NodeA.Position;
+                var b = e.NodeB.Position - B;
+                var intersects = Intersection(A, a, B, b, out var crossPoint, out var t, out var s);
+        
+                if (intersects) {
+                    to = crossPoint;
+                    lastIntersectionEdge = e;
                 }
-
-                isToNodeNew = true;
-
-                if(lastIntersectionEdge != null) {
-                    if(Vector3.Distance(to, lastIntersectionEdge.NodeA.Position) < SnapToExistingNodeThreshold) {
-                        isToNodeNew = false;
-                        toNode = lastIntersectionEdge.NodeA;
-                    }
-                    else if(Vector3.Distance(to, lastIntersectionEdge.NodeB.Position) < SnapToExistingNodeThreshold) {
-                        isToNodeNew = false;
-                        toNode = lastIntersectionEdge.NodeB;
-                    }
-                    else {
-                        InsertNodeOnEdge(lastIntersectionEdge, to, out toNode, out _, out _);
-                    }
-
-                } else {
-                    var node = new LineNode() {
-                        Position = to
-                    };
-                    _nodes.Add(node);
-                    toNode = node;
-                }
-
-
-
-                return CreateEdge(from, toNode, out newEdge);
             }
         
-        public bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge) {
+            isToNodeNew = true;
+        
+            if (lastIntersectionEdge != null) {
+                if (Vector3.Distance(to, lastIntersectionEdge.NodeA.Position) < SnapToExistingNodeThreshold) {
+                    isToNodeNew = false;
+                    toNode = lastIntersectionEdge.NodeA;
+                }
+                else if (Vector3.Distance(to, lastIntersectionEdge.NodeB.Position) < SnapToExistingNodeThreshold) {
+                    isToNodeNew = false;
+                    toNode = lastIntersectionEdge.NodeB;
+                }
+                else {
+                    InsertNodeOnEdge(lastIntersectionEdge, to, out toNode, out _, out _);
+                }
+            }
+            else {
+                var node = new LineNode() {
+                    Position = to
+                };
+                _nodes.Add(node);
+                toNode = node;
+            }
+        
+        
+            return CreateEdge(from, toNode, out newEdge);
+        }
+        
+        public override bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge) {
             var fromNode = (LineNode)from; //why...
             var toNode = (LineNode)to;
             var edge = new LineEdge() {
@@ -85,11 +81,11 @@ namespace FreeFormGraph.LineBased {
             return true;
         }
 
-        public bool RemoveNode(IStreetNode node) {
+        public override bool RemoveNode(IStreetNode node) {
             throw new NotImplementedException();
         }
 
-        public bool CreateUnconnectedNode(Vector3 position, out IStreetNode newNode) {
+        public override bool CreateUnconnectedNode(Vector3 position, out IStreetNode newNode) {
             var n = new LineNode() {
                 Position = position
             };
@@ -126,7 +122,7 @@ namespace FreeFormGraph.LineBased {
             return (t > 0 - eps && t < 1 + eps && s > 0 - eps && s < 1 + eps);
         }
 
-        public void InsertNodeOnEdge(IStreetEdge foundEdge, Vector3 positionOnEdge, out IStreetNode node, out IStreetEdge leftEdge, out IStreetEdge rightEdge) {
+        public override void InsertNodeOnEdge(IStreetEdge foundEdge, Vector3 positionOnEdge, out IStreetNode node, out IStreetEdge leftEdge, out IStreetEdge rightEdge) {
             var n = new LineNode() {
                 Position = positionOnEdge
             };
@@ -161,7 +157,7 @@ namespace FreeFormGraph.LineBased {
             node = n;
         }
 
-        public float GetDistanceEdgeToPosition(IStreetEdge edge, Vector3 position, out Vector3 positionOnEdge) {
+        public override float GetDistanceEdgeToPosition(IStreetEdge edge, Vector3 position, out Vector3 positionOnEdge) {
             positionOnEdge = SplineMath.PointLineNearestPoint(position, edge.NodeA.Position, edge.NodeB.Position, out _);
             return Vector3.Distance(position, positionOnEdge);
         }

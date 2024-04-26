@@ -39,7 +39,7 @@ namespace FreeFormGraph.World {
                 }
             }
 
-            graph = FindObjectOfType<StreetGraphGameObject>().graph;
+            graph = FindObjectOfType<StreetGraphGameObject>();
             Debug.Assert(graph != null);
             //ExampleGraph();
 

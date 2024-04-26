@@ -23,7 +23,7 @@ namespace FreeFormGraph {
         private Dictionary<IStreetEdge, Color> edgeColors = new();
 
         private void Start() {
-            _streetGraph ??= FindObjectOfType<StreetGraphGameObject>().graph;
+            _streetGraph ??= FindObjectOfType<StreetGraphGameObject>();
             World = FindObjectOfType<World.WorldGameObject>() as IWorld;
             if (_streetGraph == null) {
                 Debug.LogError("No StreetGraph found in Scene.");
