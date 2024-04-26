@@ -196,6 +196,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc7c508b1dc1b440fad3e6d2c4ec19de, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  snapToGrid: 0
+  gameObject: {fileID: 0}
 --- !u!4 &186890302
 Transform:
   m_ObjectHideFlags: 0
@@ -552,7 +554,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: da9f69bfbf1e01c5ca6b3805d3423af7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  material: {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
 --- !u!4 &1497499297
 Transform:
   m_ObjectHideFlags: 0
@@ -624,6 +625,7 @@ GameObject:
   - component: {fileID: 2046705061}
   - component: {fileID: 2046705060}
   - component: {fileID: 2046705059}
+  - component: {fileID: 2046705062}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -705,6 +707,24 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2046705062
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2046705058}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b976473cc7b84462bad95cac28ede19d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  <CameraSpeed>k__BackingField: 30
+  <ZoomSpeed>k__BackingField: 5
+  <ZoomSpeedMultiplicator>k__BackingField: 10
+  <MinZoom>k__BackingField: 2
+  <MaxZoom>k__BackingField: 20
+  <AllowedBounds>k__BackingField: 2
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
