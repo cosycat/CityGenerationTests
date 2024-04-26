@@ -5,22 +5,22 @@ using FreeFormGraph;
 using UnityEngine.Splines;
 
 namespace FreeFormGraph.LineBased {
-    public class LineGraph : MonoBehaviour, IStreetGraph {
+    public class LineGraph : StreetGraphGameObject {
 
         private readonly List<LineEdge> _edges = new();
         private readonly List<LineNode> _nodes = new();
-        public IEnumerable<IStreetNode> Nodes => _nodes;
-        public IEnumerable<IStreetEdge> Edges => _edges;
+        public override IEnumerable<IStreetNode> Nodes => _nodes;
+        public override IEnumerable<IStreetEdge> Edges => _edges;
 
 
-        public int NodeCount { get; }
-        public int EdgeCount { get; }
+        public override int NodeCount { get; }
+        public override int EdgeCount { get; }
 
         private float eps = 0.0001f;
         
 
-        public float SnapToExistingNodeThreshold { get; set; } = 0.2f;
-        public float SnapToExistingEdgeThreshold { get; set; } = 0;
+        public override float SnapToExistingNodeThreshold { get; set; } = 0.2f;
+        public override float SnapToExistingEdgeThreshold { get; set; } = 0;
 
         public bool CreateEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode,
             out bool isToNodeNew) {
@@ -71,7 +71,7 @@ namespace FreeFormGraph.LineBased {
                 return CreateEdge(from, toNode, out newEdge);
             }
         
-        public bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge) {
+        public override bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge) {
             var fromNode = (LineNode)from; //why...
             var toNode = (LineNode)to;
             var edge = new LineEdge() {
@@ -85,11 +85,11 @@ namespace FreeFormGraph.LineBased {
             return true;
         }
 
-        public bool RemoveNode(IStreetNode node) {
+        public override bool RemoveNode(IStreetNode node) {
             throw new NotImplementedException();
         }
 
-        public bool CreateUnconnectedNode(Vector3 position, out IStreetNode newNode) {
+        public override bool CreateUnconnectedNode(Vector3 position, out IStreetNode newNode) {
             var n = new LineNode() {
                 Position = position
             };
@@ -126,7 +126,7 @@ namespace FreeFormGraph.LineBased {
             return (t > 0 - eps && t < 1 + eps && s > 0 - eps && s < 1 + eps);
         }
 
-        public void InsertNodeOnEdge(IStreetEdge foundEdge, Vector3 positionOnEdge, out IStreetNode node, out IStreetEdge leftEdge, out IStreetEdge rightEdge) {
+        public override void InsertNodeOnEdge(IStreetEdge foundEdge, Vector3 positionOnEdge, out IStreetNode node, out IStreetEdge leftEdge, out IStreetEdge rightEdge) {
             var n = new LineNode() {
                 Position = positionOnEdge
             };
@@ -149,8 +149,8 @@ namespace FreeFormGraph.LineBased {
             _edges.Add(rEdge);
 
             //if this fails, we would have an edge with length 0, which is weird and should not happen
-            Debug.Assert(Vector3.Distance(lEdge.NodeA.Position, lEdge.NodeB.Position) < eps);
-            Debug.Assert(Vector3.Distance(rEdge.NodeA.Position, rEdge.NodeB.Position) < eps);
+            Debug.Assert(Vector3.Distance(lEdge.NodeA.Position, lEdge.NodeB.Position) > eps);
+            Debug.Assert(Vector3.Distance(rEdge.NodeA.Position, rEdge.NodeB.Position) > eps, $"Distance between {rEdge.NodeA.Position} and {rEdge.NodeB.Position} is {Vector3.Distance(rEdge.NodeA.Position, rEdge.NodeB.Position)}");
 
             ((LineNode)e.NodeA).AddEdge(lEdge);
             ((LineNode)e.NodeB).AddEdge(rEdge);
@@ -159,11 +159,6 @@ namespace FreeFormGraph.LineBased {
             leftEdge = lEdge;
             rightEdge = rEdge;
             node = n;
-        }
-
-        public float GetDistanceEdgeToPosition(IStreetEdge edge, Vector3 position, out Vector3 positionOnEdge) {
-            positionOnEdge = SplineMath.PointLineNearestPoint(position, edge.NodeA.Position, edge.NodeB.Position, out _);
-            return Vector3.Distance(position, positionOnEdge);
         }
 
         
@@ -208,6 +203,11 @@ namespace FreeFormGraph.LineBased {
         
         public Vector3[] SplitIntoEvenlySpacedPoints(float stepSize = 0.1f) {
             return new Vector3[] {};
+        }
+
+        public float GetDistanceEdgeToPosition(Vector3 position, out Vector3 positionOnEdge) {
+            positionOnEdge = SplineMath.PointLineNearestPoint(position, NodeA.Position, NodeB.Position, out _);
+            return Vector3.Distance(position, positionOnEdge);
         }
 
         public override string ToString() {

@@ -92,6 +92,39 @@ namespace FreeFormGraph.SplineBased {
 
             return true;
         }
+        
+        public float GetDistanceEdgeToPosition(Vector3 position, out Vector3 positionOnEdge) {
+            var evenlySpacedPoints = SplitIntoEvenlySpacedPoints();
+            var closestPoint = Vector3.zero;
+            var secondClosestPoint = Vector3.zero;
+            var closestDistance = float.MaxValue;
+            var secondClosestDistance = float.MaxValue;
+            
+            foreach (var point in evenlySpacedPoints) {
+                var distance = Vector3.Distance(point, position);
+                if (distance < closestDistance) {
+                    secondClosestDistance = closestDistance;
+                    closestDistance = distance;
+                    secondClosestPoint = closestPoint;
+                    closestPoint = point;
+                }
+                else if (distance < secondClosestDistance) {
+                    secondClosestDistance = distance;
+                    secondClosestPoint = point;
+                }
+            }
+
+            var nearestPointOnLine = SplineMath.PointLineNearestPoint(position, closestPoint, secondClosestPoint, out var lineParameter);
+            if (lineParameter < 0) {
+                nearestPointOnLine = closestPoint;
+            }
+            else if (lineParameter > 1) {
+                nearestPointOnLine = secondClosestPoint;
+            }
+            // Debug.Assert(lineParameter is >= 0 and <= 1, $"Line parameter is {lineParameter}");
+            positionOnEdge = nearestPointOnLine;
+            return Vector3.Distance(position, nearestPointOnLine);
+        }
 
         public override string ToString() {
             return $"Segment from {NodeA.Position} to {NodeB.Position}";

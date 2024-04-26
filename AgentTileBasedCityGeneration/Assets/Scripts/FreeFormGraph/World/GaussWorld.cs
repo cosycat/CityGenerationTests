@@ -39,7 +39,7 @@ namespace FreeFormGraph.World {
                 }
             }
 
-            graph = FindObjectOfType<StreetGraphGameObject>().graph;
+            graph = FindObjectOfType<StreetGraphGameObject>();
             Debug.Assert(graph != null);
             //ExampleGraph();
 
@@ -52,7 +52,7 @@ namespace FreeFormGraph.World {
                 NodeA = new LineNode() { Position = new Vector3(0,0,0) },
                 NodeB = new LineNode() { Position = new Vector3(5,0,0) },
             };
-            var dist = graph.GetDistanceEdgeToPosition(e, new Vector3(10f, 10f, 0), out var posOnEdge);
+            var dist = e.GetDistanceEdgeToPosition(new Vector3(10f, 10f, 0), out var posOnEdge);
             Debug.Log($"pos on edge {posOnEdge} dist: {dist}");
 
             agent.AStar(new Vector3(50,97,0), new Vector3(50,70 ,0)); // jagged street going up the mountain

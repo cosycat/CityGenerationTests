@@ -68,19 +68,6 @@ namespace FreeFormGraph.Bezier {
             return true;
         }
 
-        public float GetDistanceEdgeToPosition(IStreetEdge edge, Vector3 position, out Vector3 positionOnEdge) {
-            var minDistance = float.MaxValue;
-            positionOnEdge = default;
-            foreach (var point in edge.SplitIntoEvenlySpacedPoints()) {
-                var distance = Vector3.Distance(point, position);
-                if (distance < minDistance) {
-                    minDistance = distance;
-                    positionOnEdge = point;
-                }
-            }
-            return minDistance;
-        }
-
         public bool CreateUnconnectedNode(Vector3 position, out IStreetNode newNode) {
             //TODO why do i need to cast here???
             if (((IStreetGraph)this).TryFindClosestNode(position, out var closestNodeInRange, SnapToExistingNodeThreshold)) {
@@ -216,7 +203,7 @@ namespace FreeFormGraph.Bezier {
             StreetWidth = streetWidth;
         }
 
-        public Vector3[] SplitIntoEvenlySpacedPoints(float stepSize) {
+        public Vector3[] SplitIntoEvenlySpacedPoints(float stepSize = 0.1f) {
             var distance = CurveUtility.ApproximateLength(Curve);
             var steps = Mathf.CeilToInt(distance / stepSize);
             var step = 1f / steps;
@@ -225,6 +212,19 @@ namespace FreeFormGraph.Bezier {
                 points[i] = CurveUtility.EvaluatePosition(Curve, i * step);
             }
             return points;
+        }
+        
+        public float GetDistanceEdgeToPosition(Vector3 position, out Vector3 positionOnEdge) {
+            var minDistance = float.MaxValue;
+            positionOnEdge = default;
+            foreach (var point in SplitIntoEvenlySpacedPoints()) {
+                var distance = Vector3.Distance(point, position);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    positionOnEdge = point;
+                }
+            }
+            return minDistance;
         }
     }
 }

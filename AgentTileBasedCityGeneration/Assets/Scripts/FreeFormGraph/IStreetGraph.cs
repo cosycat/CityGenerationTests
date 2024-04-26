@@ -89,7 +89,7 @@ namespace FreeFormGraph {
         }
         
         public bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge);
-        
+
         bool RemoveNode(IStreetNode node);
 
         /// <summary>
@@ -128,7 +128,7 @@ namespace FreeFormGraph {
             var minDistance = threshold;
             positionOnEdge = default;
             foreach (var edge in Edges) {
-                var distance = GetDistanceEdgeToPosition(edge, position, out var posOnEdgeTmp);
+                var distance = edge.GetDistanceEdgeToPosition(position, out var posOnEdgeTmp);
                 if (distance < minDistance) {
                     minDistance = distance;
                     foundEdge = edge;
@@ -137,15 +137,6 @@ namespace FreeFormGraph {
             }
             return foundEdge != null;
         }
-
-        /// <summary>
-        /// Returns the distance from the given position to the given edge.
-        /// </summary>
-        /// <param name="edge"> The edge to measure the distance to. </param>
-        /// <param name="position"> The position to measure the distance from. </param>
-        /// <param name="positionOnEdge"> The position on the edge that is closest to the given position. </param>
-        /// <returns> The distance from the position to the edge. </returns>
-        public float GetDistanceEdgeToPosition(IStreetEdge edge, Vector3 position, out Vector3 positionOnEdge);
 
         /// <summary>
         /// Creates a new node at the given position without connecting it to any edges.

@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -38,5 +39,13 @@ namespace FreeFormGraph {
         }
 
         Vector3[] SplitIntoEvenlySpacedPoints(float stepSize = 0.1f);
+        
+        /// <summary>
+        /// Returns the distance from the given position to the edge.
+        /// </summary>
+        /// <param name="position"> The position to measure the distance from. </param>
+        /// <param name="positionOnEdge"> The position on the edge that is closest to the given position. </param>
+        /// <returns> The distance from the position to the edge. </returns>
+        public float GetDistanceEdgeToPosition(Vector3 position, out Vector3 positionOnEdge);
     }
 }

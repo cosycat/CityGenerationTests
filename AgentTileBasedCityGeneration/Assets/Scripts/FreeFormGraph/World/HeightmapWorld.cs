@@ -44,7 +44,7 @@ namespace FreeFormGraph.World {
                 Debug.Log($"Min {MinHeight}");
             }
 
-            graph = FindObjectOfType<StreetGraphGameObject>().graph;
+            graph = FindObjectOfType<StreetGraphGameObject>();
             var agent = new LandRoadAgent() {
                 StreetGraph = graph,
                 World = this

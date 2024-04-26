@@ -1,9 +1,9 @@
-using System;
-using System.Linq;
 using System.Collections.Generic;
-using JetBrains.Annotations;
-using UnityEngine;
+using System.Linq;
 using FreeFormGraph.World;
+using JetBrains.Annotations;
+using UnityEditor;
+using UnityEngine;
 
 namespace FreeFormGraph {
     
@@ -15,7 +15,7 @@ namespace FreeFormGraph {
         [CanBeNull] private IStreetNode _dragStartNode;
         
         private bool _drawGrid = true;
-        private bool _drawCurveBoxes = false;
+        private bool _drawCurveBoxes;
         private bool _drawIntersectionLines = true;
         private bool _drawLabelsEdges = true;
         private bool _drawLabelsNodes = true;
@@ -23,8 +23,8 @@ namespace FreeFormGraph {
         private Dictionary<IStreetEdge, Color> edgeColors = new();
 
         private void Start() {
-            _streetGraph ??= FindObjectOfType<StreetGraphGameObject>().graph;
-            World = FindObjectOfType<World.WorldGameObject>() as IWorld;
+            _streetGraph ??= FindObjectOfType<StreetGraphGameObject>();
+            World = FindObjectOfType<WorldGameObject>();
             if (_streetGraph == null) {
                 Debug.LogError("No StreetGraph found in Scene.");
                 Destroy(this);

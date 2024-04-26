@@ -196,6 +196,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc7c508b1dc1b440fad3e6d2c4ec19de, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  snapToGrid: 0
+  gameObject: {fileID: 0}
 --- !u!4 &186890302
 Transform:
   m_ObjectHideFlags: 0
@@ -552,7 +554,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: da9f69bfbf1e01c5ca6b3805d3423af7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  material: {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
 --- !u!4 &1497499297
 Transform:
   m_ObjectHideFlags: 0
@@ -579,7 +580,7 @@ GameObject:
   - component: {fileID: 1566204071}
   - component: {fileID: 1566204072}
   m_Layer: 0
-  m_Name: StreetGraph
+  m_Name: LineGraph
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -610,7 +611,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1566204070}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4aa0d468fc604903bb65d7be2aec987b, type: 3}
+  m_Script: {fileID: 11500000, guid: 9632195e16bf4cf1abb4ffdb4399f1e2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &2046705058
