@@ -1,7 +1,6 @@
 using System;
 using UnityEngine;
 using System.Collections.Generic;
-using FreeFormGraph;
 using UnityEngine.Splines;
 
 namespace FreeFormGraph.LineBased {
@@ -13,8 +12,8 @@ namespace FreeFormGraph.LineBased {
         public override IEnumerable<IStreetEdge> Edges => _edges;
 
 
-        public override int NodeCount { get; }
-        public override int EdgeCount { get; }
+        public override int NodeCount => _nodes.Count;
+        public override int EdgeCount => _edges.Count;
 
         private float eps = 0.0001f;
         

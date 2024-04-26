@@ -1,16 +1,15 @@
 using System;
 using System.Collections.Generic;
-using JetBrains.Annotations;
+using System.Linq;
 using UnityEngine;
-using FreeFormGraph.LineBased;
 
 namespace FreeFormGraph {
     public abstract class StreetGraphGameObject : MonoBehaviour, IStreetGraph {
 
         public abstract IEnumerable<IStreetNode> Nodes { get; }
         public abstract IEnumerable<IStreetEdge> Edges { get; }
-        public abstract int NodeCount { get; }
-        public abstract int EdgeCount { get; }
+        public virtual int NodeCount => Nodes.Count();
+        public virtual int EdgeCount => Edges.Count();
         public abstract float SnapToExistingNodeThreshold { get; set; }
         public abstract float SnapToExistingEdgeThreshold { get; set; }
         
