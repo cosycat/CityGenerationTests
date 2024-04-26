@@ -3,7 +3,7 @@ using FreeFormGraph.Agent;
 using FreeFormGraph.LineBased;
 
 namespace FreeFormGraph.World {
-    public class GaussWorld: WorldGameObject, IWorld {
+    public class GaussWorld: WorldGameObject {
         private float[,] heights;
         
         private float maxHeight = float.MinValue;

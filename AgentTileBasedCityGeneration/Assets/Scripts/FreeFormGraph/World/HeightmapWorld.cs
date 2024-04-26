@@ -2,7 +2,7 @@ using UnityEngine;
 using FreeFormGraph.Agent;
 
 namespace FreeFormGraph.World {
-    public class HeightmapWorld: WorldGameObject, IWorld {
+    public class HeightmapWorld: WorldGameObject {
         private float[,] heights;
         private float maxHeight = float.MinValue;
         private float minHeight = float.MaxValue;
