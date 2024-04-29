@@ -1,6 +1,7 @@
 #nullable enable
 using System.Collections.Generic;
 using System.Linq;
+using System;
 using FreeFormGraph.World;
 using FreeFormGraph;
 using UnityEngine;
@@ -15,8 +16,16 @@ namespace FreeFormGraph.Agent {
         private float SnapFactorEdge { get; set; } = 1.0f;
         //ideally, Node factor should be higher than edge factor TODO explain
         private float SnapFactorNode { get; set; } = 1.5f;
+        private int NeighborK = 4;
 
         public void AStar(Vector3 start, Vector3 target) {
+            var path = AStar(start, target, wp => GetNeighbors(wp, SnapFactorNode, SnapFactorEdge, NeighborK));
+            if(path != null) {
+                BuildPath2(path);
+            }
+        }
+
+        public List<Waypoint> AStar(Vector3 start, Vector3 target, Func<Waypoint, List<Waypoint>> GetNeighbors) {
 
             var q = new PriorityQueue<Waypoint, float>();
             var q_set = new HashSet<Waypoint>();
@@ -67,9 +76,9 @@ namespace FreeFormGraph.Agent {
 
             Debug.Log($"Nodes checked {nodesChecked}");
             if(targetwaypoint != null) {
-                BuildPath2(GetShortestPath(startWaypoint, targetwaypoint, came_from));
+                return GetShortestPath(startWaypoint, targetwaypoint, came_from);
             } else {
-                Debug.LogWarning("No A* path found");
+                return null;
             }
         }
 
@@ -134,16 +143,17 @@ namespace FreeFormGraph.Agent {
                     //ensure only one state at a time
                     Debug.Assert(wp.GraphEdge != null ^ wp.GraphNode != null);
                 }
-                if(lastWp.IsConnectedToOtherWaypoint(wp)) {
+
+                var roadConnection = AStarStreetOnly(lastWp, wp);
+                if(roadConnection != null) {
                     currentWaypointIndex++;
                     lastWp = wp;
-                    Debug.Assert(wp.GraphNode != null);
+                    Debug.Assert(wp.GraphNode != null ^ wp.GraphEdge != null);
                     lastNode = wp.GraphNode;
                 } else {
                     StreetGraph.CreateEdge(lastNode, wp.Pos, out var newEdge, out lastNode, out var isNewNode);
 
-                    if(lastNode.Position != wp.Pos) {
-                        //TODO handle small distances to next waypoint?
+                    if(Vector3.Distance(lastNode.Position, wp.Pos) > 0.001f) {
                         //found an intersection, keep next waypoint
                     } else {
                         currentWaypointIndex++;
@@ -181,7 +191,7 @@ namespace FreeFormGraph.Agent {
             return Vector3.Distance(target, current);
         }
 
-        public List<Waypoint> GetNeighbors(Waypoint n, int k = 4) {
+        public List<Waypoint> GetNeighbors(Waypoint n, float SnapFactorNode, float SnapFactorEdge, int k) {
             var list = new List<Waypoint>(); //list of new waypoint to be explored in A*
             var skipEdge = new List<IStreetEdge>();
             var skipNode = new List<IStreetNode>();
@@ -268,6 +278,28 @@ namespace FreeFormGraph.Agent {
             return GCD(q, r);
         }
 
+        public List<Waypoint> AStarStreetOnly(Waypoint start, Waypoint target) {
+            var startPos = start.Pos;
+            var endPos = target.Pos;
+            //a bit hacky, pathfinding on roads only makes only sense between nodes -> move position on edge to closest node :)
+            if(start.GraphEdge != null) {
+                if(Vector3.Distance(startPos, start.GraphEdge.NodeA.Position) < Vector3.Distance(startPos, start.GraphEdge.NodeB.Position)) {
+                    startPos = start.GraphEdge.NodeA.Position;
+                } else {
+                    startPos = start.GraphEdge.NodeB.Position;
+                }
+            }
+            if(target.GraphEdge != null) {
+                if(Vector3.Distance(endPos, target.GraphEdge.NodeA.Position) < Vector3.Distance(endPos, target.GraphEdge.NodeB.Position)) {
+                    endPos = target.GraphEdge.NodeA.Position;
+                } else {
+                    endPos = target.GraphEdge.NodeB.Position;
+                }
+            }
+
+            //TODO refactor AStar to pass waypoint
+            return AStar(startPos, endPos, wp => GetNeighbors(wp, 0, 0, 0));
+        }
 
         public class Waypoint {
             public Vector3 Pos {get; set;}
@@ -281,44 +313,6 @@ namespace FreeFormGraph.Agent {
                 GraphEdge = null;
                 GraphNode = null;
                 CameFrom = null;
-            }
-
-            //Check if this waypoint is connected to another waypoint via an edge.
-            //Connected here means a connection which at maximum one edge away.
-            //Example:
-            //A ----- B ----- C: (A,B) has a connection
-            //A ----- B ----- C: (A,C) has no connection
-            //A --q-- B ----- C: (A,q) (waypoint q lies on edge) has connection
-            //A ----- B --q-- C: (A,q) (waypoint q lies on edge) has no connection
-            //A --q-- B --r-- C: (q,r) has no connection TODO why?
-            //
-            //This is important to determine where we need to build a road and where
-            //we want to travel the existing road
-            public bool IsConnectedToOtherWaypoint(Waypoint wp) {
-                if(this.GraphNode != null) {
-                    if(wp.GraphNode != null) {
-                        foreach(var e in this.GraphNode.Edges) {
-                            if(e.NodeA == wp.GraphNode || e.NodeB == wp.GraphNode) {
-                                return true;
-                            }
-                        }
-                    } else if(wp.GraphEdge != null) {
-                        foreach(var e in this.GraphNode.Edges) {
-                            if(e == wp.GraphEdge) {
-                                return true;
-                            }
-                        }
-                    }
-                }
-                if(this.GraphEdge != null) {
-                    //current wp is on edge
-                    if(wp.GraphEdge != null) return false; //case 5
-                    if(wp.GraphNode != null) {
-                        //case 3, 4
-                        return (this.GraphEdge.NodeA == wp.GraphNode || this.GraphEdge.NodeB == wp.GraphNode);
-                    }
-                }
-                return false; 
             }
 
             public override string ToString() {
