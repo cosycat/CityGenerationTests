@@ -212,5 +212,9 @@ namespace FreeFormGraph.LineBased {
         public override string ToString() {
             return $"LineEdge from {PositionNodeA} to {PositionNodeB}";
         }
+
+        public float Length() {
+            return Vector3.Distance(PositionNodeA, PositionNodeB);
+        }
     }
 }

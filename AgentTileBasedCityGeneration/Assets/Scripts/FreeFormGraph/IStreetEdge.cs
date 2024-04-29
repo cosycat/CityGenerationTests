@@ -44,5 +44,11 @@ namespace FreeFormGraph {
         /// <param name="positionOnEdge"> The position on the edge that is closest to the given position. </param>
         /// <returns> The distance from the position to the edge. </returns>
         public float GetDistanceEdgeToPosition(Vector3 position, out Vector3 positionOnEdge);
+
+        /// <summary>
+        /// Returns the length of this street segment which can be different depending on the geometry used.
+        /// </summary>
+        /// <returns> Length of this road segment. </returns>
+        public float Length();
     }
 }

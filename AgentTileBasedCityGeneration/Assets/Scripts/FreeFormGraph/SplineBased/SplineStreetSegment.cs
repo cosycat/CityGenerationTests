@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System;
 using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.Splines;
@@ -128,6 +129,10 @@ namespace FreeFormGraph.SplineBased {
 
         public override string ToString() {
             return $"Segment from {NodeA.Position} to {NodeB.Position}";
+        }
+        
+        public float Length() {
+            throw new NotImplementedException();
         }
     }
 }
