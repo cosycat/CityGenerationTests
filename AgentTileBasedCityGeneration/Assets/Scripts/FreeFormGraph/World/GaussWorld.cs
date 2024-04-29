@@ -42,7 +42,7 @@ namespace FreeFormGraph.World {
             Debug.Assert(graph != null);
             //ExampleGraph();
 
-            var agent = new LandRoadAgent() {
+            var agent = new Pathfinding() {
                 StreetGraph = graph,
                 World = this
             };
@@ -71,7 +71,7 @@ namespace FreeFormGraph.World {
         }
 
         public void ExampleGraph() {
-            var agent = new LandRoadAgent();
+            var agent = new Pathfinding();
             agent.StreetGraph = graph;
             graph.CreateUnconnectedNode(new Vector3(0,0,0), out var newNode);
             graph.CreateEdge(newNode, new Vector3(3,5,0), out _, out newNode, out _);

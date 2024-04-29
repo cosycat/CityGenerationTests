@@ -43,7 +43,7 @@ namespace FreeFormGraph.World {
             }
 
             graph = FindObjectOfType<StreetGraphGameObject>();
-            var agent = new LandRoadAgent() {
+            var agent = new Pathfinding() {
                 StreetGraph = graph,
                 World = this
             };

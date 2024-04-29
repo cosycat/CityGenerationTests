@@ -8,7 +8,7 @@ using Utils;
 
 namespace FreeFormGraph.Agent {
 
-    public class LandRoadAgent {
+    public class Pathfinding {
         public IStreetGraph StreetGraph;
         public IWorld World;
 
