@@ -40,19 +40,11 @@ namespace FreeFormGraph.World {
 
             graph = FindObjectOfType<StreetGraphGameObject>();
             Debug.Assert(graph != null);
-            //ExampleGraph();
 
             var agent = new Pathfinding() {
                 StreetGraph = graph,
                 World = this
             };
-
-            var e = new LineEdge() {
-                NodeA = new LineNode() { Position = new Vector3(0,0,0) },
-                NodeB = new LineNode() { Position = new Vector3(5,0,0) },
-            };
-            var dist = e.GetDistanceEdgeToPosition(new Vector3(10f, 10f, 0), out var posOnEdge);
-            Debug.Log($"pos on edge {posOnEdge} dist: {dist}");
 
             agent.AStar(new Vector3(50,97,0), new Vector3(50,70 ,0)); // jagged street going up the mountain
             agent.AStar(new Vector3(40,80,0), new Vector3(80,75 ,0));
@@ -68,16 +60,6 @@ namespace FreeFormGraph.World {
                     heights[x, y] += amplitude * Mathf.Exp(-((distanceX + distanceY) / (2 * spread * spread)));
                 }
             }
-        }
-
-        public void ExampleGraph() {
-            var agent = new Pathfinding();
-            agent.StreetGraph = graph;
-            graph.CreateUnconnectedNode(new Vector3(0,0,0), out var newNode);
-            graph.CreateEdge(newNode, new Vector3(3,5,0), out _, out newNode, out _);
-
-            graph.CreateUnconnectedNode(new Vector3(3,0,0), out newNode);
-            graph.CreateEdge(newNode, new Vector3(0,5,0), out _, out newNode, out _);
         }
 
         public override float GetHeightAt(float x, float y)
