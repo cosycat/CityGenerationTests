@@ -4,8 +4,6 @@ using FreeFormGraph.Agent;
 namespace FreeFormGraph.World {
     public class HeightmapWorld: WorldGameObject {
         private float[,] heights;
-        private float maxHeight = float.MinValue;
-        private float minHeight = float.MaxValue;
         private int width;
         private int height;
 
@@ -13,9 +11,12 @@ namespace FreeFormGraph.World {
 
         public override int Height => height;
 
-        public override float MaxHeight => maxHeight;
+        public override float MaxHeight => MaxHeightMeters / Constants.METERS_PER_UNIT;
 
-        public override float MinHeight => minHeight;
+        public override float MinHeight => MinHeightMeters / Constants.METERS_PER_UNIT;
+
+        public float MaxHeightMeters = 1000;
+        public float MinHeightMeters = 100;
 
 
         [SerializeField]
@@ -30,16 +31,32 @@ namespace FreeFormGraph.World {
                 height = Heightmap.height;
                 heights = new float[Width, Height];
 
+                float maxHeightTexture = float.MinValue;
+                float minHeightTexture = float.MaxValue;
+
                 for(int y = 0; y < Height; y++) {
                     for(int x = 0; x < Width; x++) {
-                        var pixelValue = pixels[x + y * Width].grayscale * 20;
-                        if(pixelValue > MaxHeight) maxHeight = pixelValue;
-                        if(pixelValue < MinHeight) minHeight = pixelValue;
+                        var pixelValue = pixels[x + y * Width].grayscale;
+                        if(pixelValue > maxHeightTexture) maxHeightTexture = pixelValue;
+                        if(pixelValue < minHeightTexture) minHeightTexture = pixelValue;
                         heights[x,y] = pixelValue;
                     }
                 }
-                Debug.Log($"Max {MaxHeight}");
-                Debug.Log($"Min {MinHeight}");
+                Debug.Log($"Max pixel value of heightmap: {maxHeightTexture}");
+                Debug.Log($"Min pixel value of heightmap: {minHeightTexture}");
+
+                for(int y = 0; y < Height; y++) {
+                    for(int x = 0; x < Width; x++) {
+                        heights[x,y] = Mathf.Lerp(MinHeightMeters, MaxHeightMeters, Mathf.InverseLerp(minHeightTexture, maxHeightTexture, heights[x,y])) / Constants.METERS_PER_UNIT;
+                    }
+                }
+
+                for(int y = 0; y < Height; y++) {
+                    for(int x = 0; x < Width; x++) {
+                        Debug.Assert(heights[x,y] <= MaxHeight);
+                        Debug.Assert(heights[x,y] >= MinHeight);
+                    }
+                }
             }
 
             graph = FindObjectOfType<StreetGraphGameObject>();
