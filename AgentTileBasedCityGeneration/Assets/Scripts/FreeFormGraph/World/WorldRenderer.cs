@@ -8,6 +8,11 @@ namespace FreeFormGraph.World {
         public Material material;
         private bool didCreateMesh = false;
 
+        [SerializeField]
+        private Color startColor = new Color(0.91f, 0.83f, 0.02f, 1f);
+        [SerializeField]
+        private Color endColor = new Color(0.91f, 0, 0, 1f);
+
         void Update() {
             if(World != null) {
                 if(!didCreateMesh) {
