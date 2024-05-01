@@ -65,8 +65,11 @@ namespace FreeFormGraph.World {
                 World = this
             };
 
+            agent.AStar(new Vector3(10, 185,0), new Vector3(20, 192 ,0));
             agent.AStar(new Vector3(10, 200-10,0), new Vector3(140,200-150 ,0));
             agent.AStar(new Vector3(190, 200-55,0), new Vector3(80,200-180 ,0));
+            agent.AStar(new Vector3(4, 4,0), new Vector3(140, 200-150 ,0));
+            agent.AStar(new Vector3(4, 4,0), new Vector3(80,20,0));
         }
 
         public override float GetHeightAt(float x, float y)
