@@ -316,7 +316,9 @@ namespace FreeFormGraph.Agent {
             }
 
             public override string ToString() {
-                return $"Node {Pos}";
+                var hasNode = GraphNode != null ? " With node" : "";
+                var hasEdge = GraphEdge != null ? " With edge" : "";
+                return $"Waypoint {Pos}{hasNode}{hasEdge}";
             }
 
             public override bool Equals(object obj)
