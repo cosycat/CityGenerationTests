@@ -229,10 +229,12 @@ namespace FreeFormGraph.Agent {
             //we are sitting on a edge
             if(n.GraphEdge != null) { //TODO assert that only one of them is active
                 list.Add(new Waypoint(n.GraphEdge.NodeA.Position) {
-                    GraphNode = n.GraphEdge.NodeA
+                    GraphNode = n.GraphEdge.NodeA,
+                    CameFrom = n
                 });
                 list.Add(new Waypoint(n.GraphEdge.NodeB.Position) {
-                    GraphNode = n.GraphEdge.NodeB
+                    GraphNode = n.GraphEdge.NodeB,
+                    CameFrom = n
                 });
                 skipEdge.Add(n.GraphEdge);
                 skipNode.Add(n.GraphEdge.NodeA);
