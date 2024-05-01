@@ -112,7 +112,9 @@ namespace FreeFormGraph.Agent {
             Debug.Assert(waypoints.Count >= 2);
             //TODO assert waypoints unique
 
-            var thresholdWp = 3.0f;
+            //#24
+            var thresholdWpExistingConnection = 2.0f;
+
             waypoints.Reverse(); //easier to debug TODO
 
             var currentWaypointIndex = 0;
@@ -132,6 +134,7 @@ namespace FreeFormGraph.Agent {
             int breakCounter = 0;
 
             while(currentWaypointIndex < waypoints.Count) {
+                Debug.Assert(lastNode != null);
                 wp = waypoints[currentWaypointIndex];
                 breakCounter++;
                 if(breakCounter > 10000) {
@@ -144,12 +147,20 @@ namespace FreeFormGraph.Agent {
                     Debug.Assert(wp.GraphEdge != null ^ wp.GraphNode != null);
                 }
 
+                //pathfinding does not handle intersections well. It's possible that the chosen path
+                //generates new roads which connects two points which are already connected (the new path would be shorter tho).
+                //#24
                 var roadConnection = AStarStreetOnly(lastWp, wp);
-                if(roadConnection != null) {
+                if(roadConnection != null && GetPathLength(roadConnection) / Vector3.Distance(lastWp.Pos, wp.Pos) < thresholdWpExistingConnection) {
                     currentWaypointIndex++;
                     lastWp = wp;
                     Debug.Assert(wp.GraphNode != null ^ wp.GraphEdge != null);
-                    lastNode = wp.GraphNode;
+
+                    if(wp.GraphEdge != null) {
+                        StreetGraph.InsertNodeOnEdge(wp.GraphEdge, wp.Pos, out lastNode, out _, out _);
+                    } else {
+                        lastNode = wp.GraphNode;
+                    }
                 } else {
                     StreetGraph.CreateEdge(lastNode, wp.Pos, out var newEdge, out lastNode, out var isNewNode);
 
@@ -299,6 +310,16 @@ namespace FreeFormGraph.Agent {
 
             //TODO refactor AStar to pass waypoint
             return AStar(startPos, endPos, wp => GetNeighbors(wp, 0, 0, 0));
+        }
+
+        public float GetPathLength(List<Waypoint> waypoints) {
+            float length = 0;
+            for(var i = 0; i < waypoints.Count-1; i++) {
+                //calculating total length via geometry is not possible here
+                //because there is no geometry yet (i.e. Length() from IStreetEdge)!
+                length += Vector3.Distance(waypoints[i].Pos, waypoints[i+1].Pos);
+            }
+            return length;
         }
 
         public class Waypoint {
