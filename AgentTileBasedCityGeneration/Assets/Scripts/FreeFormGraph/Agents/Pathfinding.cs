@@ -354,12 +354,14 @@ namespace FreeFormGraph.Agent {
             public override int GetHashCode() => this.Pos.GetHashCode();
 
             public static bool operator ==(Waypoint c1, Waypoint c2) {
-                if(c1 is null) return false;    
+                if(c1 is null && c2 is null) return true;
+                if(c1 is null && c2 is not null) return false;
                 return c1.Equals(c2); 
             }
 
             public static bool operator !=(Waypoint c1, Waypoint c2) { 
-                if(c1 is null) return false;
+                if(c1 is null && c2 is null) return false;
+                if(c1 is null && c2 is not null) return true;
                 return !c1.Equals(c2); 
             }
         }
