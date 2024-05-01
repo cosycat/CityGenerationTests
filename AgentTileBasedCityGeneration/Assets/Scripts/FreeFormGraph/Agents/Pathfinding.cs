@@ -179,26 +179,43 @@ namespace FreeFormGraph.Agent {
         }
 
         private float Cost(Waypoint current, Waypoint next) {
-            var cost = Vector3.Distance(current.Pos, next.Pos)*2;
+            var cost = Vector3.Distance(current.Pos, next.Pos);
             /*if(cost <= 1.01f) {
                 cost += 0.1f; //make short segments more costly to force fewer nodes
             }*/
-            if(next.GraphEdge != null || next.GraphNode != null) {
-                cost /= 2;
+            
+            var costPenaltyForRoad = 1.3f;
+            float slopeCost = 0;
+            if(next.CameFrom == current) {
+                //we are walking over an existing road. make it cheap
+                costPenaltyForRoad = 1.0f;
             }
-            if(next.CameFrom != null && next.CameFrom == current) {
-                //we walked over an existing edge!
-                //cost *= 0.1f;
-                //cost = 0;
+            else if(next.GraphEdge != null || next.GraphNode != null) {
+                costPenaltyForRoad = 1.1f;
+            } 
+            cost *= costPenaltyForRoad;
+
+            if(World.GetHeightAt(next.Pos.x, next.Pos.y) > 500) {
+                return float.PositiveInfinity;
             }
-            var slopeCost = SlopeCost(current, next);
-            return cost + slopeCost;
+
+            if(next.CameFrom != current) {
+                //no slope penalty for existing roads
+                slopeCost = SlopeCost(World, current, next);
+            }
+
+            var heightPenalty = World.GetHeightAt(next.Pos.y, next.Pos.x) * 0.5f;
+            var totalCost = cost + slopeCost + heightPenalty;
+            Debug.Assert(Heuristic(current.Pos, next.Pos) <= totalCost);
+            return totalCost;
         }
 
-        private float SlopeCost(Waypoint a, Waypoint b) {
-            var cost = Mathf.Abs(World.GetHeightAt(a.Pos.x, a.Pos.y) - World.GetHeightAt(b.Pos.x, b.Pos.y)) * 3;
+        public static float SlopeCost(IWorld w, Waypoint a, Waypoint b) {
+            var cost = Mathf.Abs(w.GetHeightAt(a.Pos.x, a.Pos.y) - w.GetHeightAt(b.Pos.x, b.Pos.y)) / Vector3.Distance(a.Pos, b.Pos);
+            //0.5f = 50 % slope
+            if(cost > 0.5f) return float.PositiveInfinity; //TODO return inf
             cost = cost * cost;
-            if(cost >= 3.0f) return float.MaxValue;
+            cost *= 3;
             return cost;
         }
 
