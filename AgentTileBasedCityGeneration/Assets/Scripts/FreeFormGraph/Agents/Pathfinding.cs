@@ -48,6 +48,10 @@ namespace FreeFormGraph.Agent {
                     targetwaypoint = current;
                     break;
                 }
+
+                if(cost_so_far.ContainsKey(current) && cost_so_far[current] == float.PositiveInfinity) {
+                    continue;
+                }
                 
                 foreach(var i in GetNeighbors(current)) {
                     var nextWaypoint = i;
