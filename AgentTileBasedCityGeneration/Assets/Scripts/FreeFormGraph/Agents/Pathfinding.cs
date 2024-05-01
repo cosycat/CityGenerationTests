@@ -66,7 +66,7 @@ namespace FreeFormGraph.Agent {
                     var new_cost = cost_so_far[current] + Cost(current, next);
                     if(!cost_so_far.ContainsKey(next) || new_cost < cost_so_far[next]) {
                         cost_so_far[next] = new_cost;
-                        var prio = new_cost + Heuristic(start, target, next.Pos);
+                        var prio = new_cost + Heuristic(target, next.Pos);
                         q.Enqueue(next, prio);
                         came_from[next] = current;
                     }
@@ -187,7 +187,7 @@ namespace FreeFormGraph.Agent {
             return cost;
         }
 
-        private float Heuristic(Vector3 start, Vector3 target, Vector3 current) {
+        private float Heuristic(Vector3 target, Vector3 current) {
             return Vector3.Distance(target, current);
         }
 
