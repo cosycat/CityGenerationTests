@@ -1,8 +1,13 @@
 using UnityEngine;
 using FreeFormGraph.Agent;
+using FreeFormGraph.Agents;
+using FreeFormGraph.World.PoI;
 
 namespace FreeFormGraph.World {
     public class HeightmapWorld: WorldGameObject {
+        [SerializeField] private bool doPathfinding = false;
+        [SerializeField] private bool doPointOfInterest = false;
+        
         private float[,] heights;
         private int width;
         private int height;
@@ -12,12 +17,13 @@ namespace FreeFormGraph.World {
         public override int Height => height;
 
         public override float MaxHeight => MaxHeightMeters / Constants.METERS_PER_UNIT;
-
+        
         public override float MinHeight => MinHeightMeters / Constants.METERS_PER_UNIT;
 
         public float MaxHeightMeters = 1000;
         public float MinHeightMeters = 100;
 
+        public override IPointOfInterestCollection PointsOfInterest { get; } = new PointOfInterestCollection();
 
         [SerializeField]
         public Texture2D Heightmap;
@@ -64,12 +70,22 @@ namespace FreeFormGraph.World {
                 StreetGraph = graph,
                 World = this
             };
+            
+            var poiAgent = new PointOfInterestAgent(this);
+            if (doPointOfInterest) {
+                poiAgent.CreateNewPointOfInterest(registerInWorld: true);
+                poiAgent.CreateNewPointOfInterest(registerInWorld: true);
+                poiAgent.CreateNewPointOfInterest(registerInWorld: true);
+            }
 
-            agent.AStar(new Vector3(10, 185,0), new Vector3(20, 192 ,0));
-            agent.AStar(new Vector3(10, 200-10,0), new Vector3(140,200-150 ,0));
-            agent.AStar(new Vector3(190, 200-55,0), new Vector3(80,200-180 ,0));
-            agent.AStar(new Vector3(4, 4,0), new Vector3(140, 200-150 ,0));
-            agent.AStar(new Vector3(4, 4,0), new Vector3(80,20,0));
+            if (doPathfinding) {
+                agent.AStar(new Vector3(10, 185, 0), new Vector3(20, 192, 0));
+                agent.AStar(new Vector3(10, 200 - 10, 0), new Vector3(140, 200 - 150, 0));
+                agent.AStar(new Vector3(190, 200 - 55, 0), new Vector3(80, 200 - 180, 0));
+                agent.AStar(new Vector3(4, 4, 0), new Vector3(140, 200 - 150, 0));
+                agent.AStar(new Vector3(4, 4, 0), new Vector3(80, 20, 0));
+            }
+            
         }
 
         public override float GetHeightAt(float x, float y)
