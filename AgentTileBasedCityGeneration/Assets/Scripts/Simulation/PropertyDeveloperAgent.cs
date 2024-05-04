@@ -10,10 +10,10 @@ namespace Simulation {
         
         private List<ISite> DevSites { get; set; } = new();
         private List<Tile> DevTiles { get; set; } = new();
-        private readonly RangeInt _sizeRange;
+        private readonly RangeInt sizeRange;
         
-        private int _ticksSinceCreatedNewSite = 0;
-        private int _ticksSinceRelocated = 0;
+        private int ticksSinceCreatedNewSite = 0;
+        // private int ticksSinceRelocated = 0;
         /// <summary>
         /// How many ticks without any newly created sites before relocating to a new area
         /// </summary>
@@ -21,11 +21,11 @@ namespace Simulation {
 
 
         public PropertyDeveloperAgent(LandUsage type, RangeInt sizeRange, Tile startTile) : base(type, startTile) {
-            _sizeRange = sizeRange;
+            this.sizeRange = sizeRange;
         }
 
         protected internal override void UpdateTick() {
-            _ticksSinceCreatedNewSite++;
+            ticksSinceCreatedNewSite++;
             Debug.Assert(AgentUsageType is LandUsage.Commercial or LandUsage.Industrial or LandUsage.Residential or LandUsage.Park);
             Prospect(DevSites);
             foreach (var devSite in DevSites) {
@@ -33,7 +33,7 @@ namespace Simulation {
                 if (Profitable(newDev, devSite)) {
                     Commit(newDev, devSite);
                     if (buildType == BuildType.New) {
-                        _ticksSinceCreatedNewSite = 0;
+                        ticksSinceCreatedNewSite = 0;
                     }
                 }
             }
@@ -41,7 +41,7 @@ namespace Simulation {
 
         private void Prospect(List<ISite> devSites) {
             Debug.Assert(!devSites.Exists(site => site is null or Tile { MultiTileSite: null, IsRoadAdjacent: false }), $"devSites: {string.Join(", ", devSites)}");
-            if (devSites.Count > 0 && _ticksSinceCreatedNewSite < TicksUntilRelocate) {
+            if (devSites.Count > 0 && ticksSinceCreatedNewSite < TicksUntilRelocate) {
                 // move locally
                 CurrTile = devSites.OrderBy(site => site.CalcValueForType(AgentUsageType)).First().CorrespondingTile;
             }
@@ -61,8 +61,8 @@ namespace Simulation {
                 Debug.Assert(allDevSitesOrdered.Count > 0, "No developable sites found");
                 CurrTile = allDevSitesOrdered[UnityEngine.Random.Range(0, allDevSitesOrdered.Count)];
                 DevTiles = new List<Tile>();
-                _ticksSinceRelocated = 0;
-                _ticksSinceCreatedNewSite = 0;
+                // ticksSinceRelocated = 0;
+                ticksSinceCreatedNewSite = 0;
             }
             // We take the best 90% of the tiles and add them to the list of tiles to develop
             DevSites = ((ISite)CurrTile).GetSitesInCircle(5)
