@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using FreeFormGraph.World.PoI;
 using UnityEngine;
 
 namespace FreeFormGraph.World {
@@ -8,5 +10,7 @@ namespace FreeFormGraph.World {
         public abstract int Height { get; }
         public abstract float MaxHeight { get; }
         public abstract float MinHeight { get; }
+        
+        public abstract IPointOfInterestCollection PointsOfInterest { get; }
     }
 }

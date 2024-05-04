@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using UnityEngine;
 using FreeFormGraph.Agent;
+using FreeFormGraph.World.PoI;
 
 namespace FreeFormGraph.World {
     public class HeightmapWorld: WorldGameObject {
@@ -16,6 +18,8 @@ namespace FreeFormGraph.World {
         public override float MaxHeight => maxHeight;
 
         public override float MinHeight => minHeight;
+        
+        public override IPointOfInterestCollection PointsOfInterest { get; } = new PointOfInterestCollection();
 
 
         [SerializeField]

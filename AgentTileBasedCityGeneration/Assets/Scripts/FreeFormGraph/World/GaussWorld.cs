@@ -1,6 +1,8 @@
+using System.Collections.Generic;
 using UnityEngine;
 using FreeFormGraph.Agent;
 using FreeFormGraph.LineBased;
+using FreeFormGraph.World.PoI;
 
 namespace FreeFormGraph.World {
     public class GaussWorld: WorldGameObject {
@@ -18,6 +20,8 @@ namespace FreeFormGraph.World {
         public override float MaxHeight => maxHeight;
 
         public override float MinHeight => minHeight;
+        public override IPointOfInterestCollection PointsOfInterest { get; } = new PointOfInterestCollection();
+
 
         private IStreetGraph graph;
 
