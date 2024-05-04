@@ -1,11 +1,15 @@
 using System.Collections.Generic;
 using UnityEngine;
 using FreeFormGraph.Agent;
+using FreeFormGraph.Agents;
 using FreeFormGraph.LineBased;
 using FreeFormGraph.World.PoI;
 
 namespace FreeFormGraph.World {
     public class GaussWorld: WorldGameObject {
+        [SerializeField] private bool doPathfinding = false;
+        [SerializeField] private bool doPointOfInterest = false;
+        
         private float[,] heights;
         
         private float maxHeight = float.MinValue;
@@ -49,10 +53,21 @@ namespace FreeFormGraph.World {
                 StreetGraph = graph,
                 World = this
             };
+            
+            var poiAgent = new PointOfInterestAgent(this);
+            if (doPointOfInterest) {
+                poiAgent.CreateNewPointOfInterest(registerInWorld: true);
+                poiAgent.CreateNewPointOfInterest(registerInWorld: true);
+                poiAgent.CreateNewPointOfInterest(registerInWorld: true);
+            }
+            
 
-            agent.AStar(new Vector3(50,97,0), new Vector3(50,70 ,0)); // jagged street going up the mountain
-            agent.AStar(new Vector3(40,80,0), new Vector3(80,75 ,0));
-            agent.AStar(new Vector3(20,60,0), new Vector3(90,90 ,0));
+            if (doPathfinding) {
+                agent.AStar(new Vector3(50,97,0), new Vector3(50,70 ,0)); // jagged street going up the mountain
+                agent.AStar(new Vector3(40,80,0), new Vector3(80,75 ,0));
+                agent.AStar(new Vector3(20,60,0), new Vector3(90,90 ,0));
+            }
+            
         }
 
         private void PlaceGauss(int centerX, int centerY, float amplitude = 10, float spread = 5.0f) {

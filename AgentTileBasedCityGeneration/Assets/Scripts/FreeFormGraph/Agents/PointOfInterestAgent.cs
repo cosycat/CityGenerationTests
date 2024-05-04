@@ -6,14 +6,13 @@ using FreeFormGraph.World.PoI;
 namespace FreeFormGraph.Agents {
 
     public class PointOfInterestAgent {
-        
-        public IWorld World { get; set; }
+        private IWorld World { get; }
         
         public PointOfInterestAgent(IWorld world) {
             World = world;
         }
         
-        public IPointOfInterest CreateNewPointOfInterest() {
+        public IPointOfInterest CreateNewPointOfInterest(bool registerInWorld) {
             // for now just randomly create a spherical point of interest
             var type = (PointOfInterestType)UnityEngine.Random.Range(0, 3);
             var radiusRange = GetRadiusForPointOfInterestType(type);
@@ -25,6 +24,9 @@ namespace FreeFormGraph.Agents {
             var y = UnityEngine.Random.Range(radius, World.Height - radius);
             
             var pointOfInterest = new SpherePointOfInterest(new UnityEngine.Vector2(x, y), type, radius);
+            if (registerInWorld) {
+                World.PointsOfInterest.AddPointOfInterest(pointOfInterest);
+            }
             return pointOfInterest;
         }
         
@@ -37,9 +39,9 @@ namespace FreeFormGraph.Agents {
         public static (float min, float max) GetRadiusForPointOfInterestType(PointOfInterestType type) {
             // TODO this should be moved to a more appropriate place
             return type switch {
-                PointOfInterestType.Village => (10, 20),
-                PointOfInterestType.Town => (20, 40),
-                PointOfInterestType.City => (40, 60),
+                PointOfInterestType.Village => (5, 10),
+                PointOfInterestType.Town => (10, 15),
+                PointOfInterestType.City => (15, 20),
                 _ => throw new System.ArgumentOutOfRangeException(nameof(type), type, "Invalid PointOfInterestType value.")
             };
         }

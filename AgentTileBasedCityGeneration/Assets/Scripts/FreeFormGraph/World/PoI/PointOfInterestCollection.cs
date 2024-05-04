@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
 using UnityEngine;
@@ -9,10 +10,12 @@ namespace FreeFormGraph.World.PoI {
 
         public void AddPointOfInterest(IPointOfInterest pointOfInterest) {
             PointsOfInterest.Add(pointOfInterest);
+            OnPointOfInterestAdded(pointOfInterest);
         }
 
         public void RemovePointOfInterest(IPointOfInterest pointOfInterest) {
             PointsOfInterest.Remove(pointOfInterest);
+            OnPointOfInterestRemoved(pointOfInterest);
         }
 
         [CanBeNull]
@@ -39,6 +42,17 @@ namespace FreeFormGraph.World.PoI {
             }
 
             return pointsOfInterest.Count > 0;
+        }
+
+        public event EventHandler<PointOfInterestEventArgs> PointOfInterestAddedEvent;
+        public event EventHandler<PointOfInterestEventArgs> PointOfInterestRemovedEvent;
+
+        protected virtual void OnPointOfInterestAdded(IPointOfInterest poi) {
+            PointOfInterestAddedEvent?.Invoke(this, new PointOfInterestEventArgs(poi));
+        }
+
+        protected virtual void OnPointOfInterestRemoved(IPointOfInterest poi) {
+            PointOfInterestRemovedEvent?.Invoke(this, new PointOfInterestEventArgs(poi));
         }
     }
 }
