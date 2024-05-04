@@ -1,6 +1,7 @@
 using UnityEngine;
 
 namespace FreeFormGraph.World.PoI {
+    
     public class SpherePointOfInterest : IPointOfInterest {
         
         public Vector2 Position { get; }
