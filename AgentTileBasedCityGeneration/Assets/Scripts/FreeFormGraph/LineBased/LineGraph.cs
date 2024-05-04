@@ -23,7 +23,7 @@ namespace FreeFormGraph.LineBased {
 
         public override bool CreateEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode,
             out bool isToNodeNew) {
-                
+                Debug.Assert(from != null, $"CreateEdge: From node is null, to position: {to}");
 
                 IStreetEdge? lastIntersectionEdge = null;
                 //check for intersections
@@ -211,6 +211,10 @@ namespace FreeFormGraph.LineBased {
 
         public override string ToString() {
             return $"LineEdge from {PositionNodeA} to {PositionNodeB}";
+        }
+
+        public float Length() {
+            return Vector3.Distance(PositionNodeA, PositionNodeB);
         }
     }
 }

@@ -207,8 +207,9 @@ namespace FreeFormGraph {
             }
             if (drawLabelsNodes) {
                 // UnityEditor.Handles.color = Color.white;
-                foreach (var node in streetGraph.Nodes) {
-                    UnityEditor.Handles.Label(node.Position, node.DebugString());
+                for (var i = 0; i < streetGraph.Nodes.Count(); i++) {
+                    var node = streetGraph.Nodes.ToList()[i];
+                    UnityEditor.Handles.Label(node.Position, $"(Idx: {i}) {node.DebugString()}");
                 }
             }
         }

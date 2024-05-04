@@ -224,5 +224,9 @@ namespace FreeFormGraph.Bezier {
             }
             return minDistance;
         }
+
+        public float Length() {
+            throw new System.NotImplementedException();
+        }
     }
 }
