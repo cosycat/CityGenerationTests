@@ -1,13 +1,12 @@
 using UnityEngine;
-using FreeFormGraph.Agent;
 using FreeFormGraph.Agents;
 using FreeFormGraph.World.PoI;
 using Utils;
 
 namespace FreeFormGraph.World {
     public class HeightmapWorld: WorldGameObject {
-        [SerializeField] private bool doPathfinding = false;
-        [SerializeField] private bool doPointOfInterest = false;
+        [SerializeField] private bool doPathfinding;
+        [SerializeField] private bool doPointOfInterest;
         
         private float[,] heights;
         private int width;
@@ -17,24 +16,24 @@ namespace FreeFormGraph.World {
 
         public override int Height => height;
 
-        public override float MaxHeight => MaxHeightMeters / Constants.METERS_PER_UNIT;
+        public override float MaxHeight => maxHeightMeters / Constants.METERS_PER_UNIT;
         
-        public override float MinHeight => MinHeightMeters / Constants.METERS_PER_UNIT;
+        public override float MinHeight => minHeightMeters / Constants.METERS_PER_UNIT;
 
-        public float MaxHeightMeters = 1000;
-        public float MinHeightMeters = 100;
+        public float maxHeightMeters = 1000;
+        public float minHeightMeters = 100;
 
         public override IPointOfInterestCollection PointsOfInterest { get; } = new PointOfInterestCollection();
 
-        [SerializeField] public Texture2D Heightmap;
+        [SerializeField] public Texture2D heightmap;
 
         private IStreetGraph graph;
 
         public void Start() {
-            if(Heightmap != null) {
-                var pixels = Heightmap.GetPixels();  
-                width = Heightmap.width;
-                height = Heightmap.height;
+            if(heightmap != null) {
+                var pixels = heightmap.GetPixels();  
+                width = heightmap.width;
+                height = heightmap.height;
                 heights = new float[Width, Height];
 
                 float maxHeightTexture = float.MinValue;
@@ -53,7 +52,7 @@ namespace FreeFormGraph.World {
 
                 for(int y = 0; y < Height; y++) {
                     for(int x = 0; x < Width; x++) {
-                        heights[x,y] = Mathf.Lerp(MinHeightMeters, MaxHeightMeters, Mathf.InverseLerp(minHeightTexture, maxHeightTexture, heights[x,y])) / Constants.METERS_PER_UNIT;
+                        heights[x,y] = Mathf.Lerp(minHeightMeters, maxHeightMeters, Mathf.InverseLerp(minHeightTexture, maxHeightTexture, heights[x,y])) / Constants.METERS_PER_UNIT;
                     }
                 }
 
@@ -66,10 +65,7 @@ namespace FreeFormGraph.World {
             }
 
             graph = FindObjectOfType<StreetGraphGameObject>();
-            var agent = new Pathfinding() {
-                StreetGraph = graph,
-                World = this
-            };
+            var agent = new Pathfinding(streetGraph: graph, world: this);
             
             var poiAgent = new PointOfInterestAgent(this);
             if (doPointOfInterest) {

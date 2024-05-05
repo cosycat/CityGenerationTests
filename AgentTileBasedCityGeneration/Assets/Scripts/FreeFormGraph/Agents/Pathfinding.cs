@@ -1,13 +1,11 @@
 #nullable enable
-using System.Collections.Generic;
-using System.Linq;
 using System;
+using System.Collections.Generic;
 using FreeFormGraph.World;
-using FreeFormGraph;
 using UnityEngine;
 using Utils;
 
-namespace FreeFormGraph.Agent {
+namespace FreeFormGraph.Agents {
 
     public class Pathfinding {
         public IStreetGraph StreetGraph;
@@ -16,11 +14,16 @@ namespace FreeFormGraph.Agent {
         private float SnapFactorEdge { get; set; } = 1.0f;
         //ideally, Node factor should be higher than edge factor TODO explain
         private float SnapFactorNode { get; set; } = 1.5f;
-        private int NeighborK = 4;
+        private int neighborK = 4;
+
+        public Pathfinding(IStreetGraph streetGraph, IWorld world) {
+            StreetGraph = streetGraph;
+            World = world;
+        }
 
         public void AStar(Vector3 start, Vector3 target) {
             Debug.Log("Start pathfinding");
-            var path = AStar(start, target, wp => GetNeighbors(wp, SnapFactorNode, SnapFactorEdge, NeighborK));
+            var path = AStar(start, target, wp => GetNeighbors(wp, SnapFactorNode, SnapFactorEdge, neighborK));
             if(path != null) {
                 BuildPath2(path);
             }
@@ -123,7 +126,7 @@ namespace FreeFormGraph.Agent {
             waypoints.Reverse(); //easier to debug TODO
 
             var currentWaypointIndex = 0;
-            IStreetNode lastNode = default;
+            IStreetNode lastNode;
             var wp = waypoints[currentWaypointIndex];
             if(wp.GraphNode != null) {
                 //no need to build node
@@ -375,16 +378,18 @@ namespace FreeFormGraph.Agent {
 
             public override int GetHashCode() => this.Pos.GetHashCode();
 
-            public static bool operator ==(Waypoint c1, Waypoint c2) {
+            public static bool operator ==(Waypoint? c1, Waypoint? c2) {
                 if(c1 is null && c2 is null) return true;
                 if(c1 is null && c2 is not null) return false;
-                return c1.Equals(c2); 
+                if(c1 is not null && c2 is null) return false;
+                return c1!.Equals(c2!); 
             }
 
-            public static bool operator !=(Waypoint c1, Waypoint c2) { 
+            public static bool operator !=(Waypoint? c1, Waypoint? c2) { 
                 if(c1 is null && c2 is null) return false;
                 if(c1 is null && c2 is not null) return true;
-                return !c1.Equals(c2); 
+                if(c1 is not null && c2 is null) return true;
+                return !c1!.Equals(c2!); 
             }
         }
 

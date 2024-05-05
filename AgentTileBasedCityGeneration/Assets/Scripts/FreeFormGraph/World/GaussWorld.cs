@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
-using FreeFormGraph.Agent;
 using FreeFormGraph.Agents;
 using FreeFormGraph.World.PoI;
 using Utils;
@@ -49,10 +48,7 @@ namespace FreeFormGraph.World {
             graph = FindObjectOfType<StreetGraphGameObject>();
             Debug.Assert(graph != null);
 
-            var agent = new Pathfinding() {
-                StreetGraph = graph,
-                World = this
-            };
+            var agent = new Pathfinding(streetGraph: graph, world: this);
             
             var poiAgent = new PointOfInterestAgent(this);
             if (doPointOfInterest) {

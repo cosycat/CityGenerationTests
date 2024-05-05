@@ -1,6 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
-using FreeFormGraph.Agent;
+using FreeFormGraph.Agents;
 
 namespace FreeFormGraph.World {
     public class SlopeDebugger: MonoBehaviour {

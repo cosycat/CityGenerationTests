@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using FreeFormGraph.World.PoI;
 
 namespace FreeFormGraph.World {

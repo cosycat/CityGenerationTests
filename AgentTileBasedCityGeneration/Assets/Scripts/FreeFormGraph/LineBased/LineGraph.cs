@@ -6,14 +6,14 @@ using UnityEngine.Splines;
 namespace FreeFormGraph.LineBased {
     public class LineGraph : StreetGraphGameObject {
 
-        private readonly List<LineEdge> _edges = new();
-        private readonly List<LineNode> _nodes = new();
-        public override IEnumerable<IStreetNode> Nodes => _nodes;
-        public override IEnumerable<IStreetEdge> Edges => _edges;
+        private readonly List<LineEdge> edges = new();
+        private readonly List<LineNode> nodes = new();
+        public override IEnumerable<IStreetNode> Nodes => nodes;
+        public override IEnumerable<IStreetEdge> Edges => edges;
 
 
-        public override int NodeCount => _nodes.Count;
-        public override int EdgeCount => _edges.Count;
+        public override int NodeCount => nodes.Count;
+        public override int EdgeCount => edges.Count;
 
         private float eps = 0.0001f;
         
@@ -25,9 +25,9 @@ namespace FreeFormGraph.LineBased {
             out bool isToNodeNew) {
                 Debug.Assert(from != null, $"CreateEdge: From node is null, to position: {to}");
 
-                IStreetEdge? lastIntersectionEdge = null;
+                IStreetEdge lastIntersectionEdge = null;
                 //check for intersections
-                foreach(var e in _edges) {
+                foreach(var e in edges) {
                     //skip node we are comming from to prevent finding intersection with edge we are connected to
                     if(e.NodeA == from || e.NodeB == from) continue;
                     var A = from.Position;
@@ -61,7 +61,7 @@ namespace FreeFormGraph.LineBased {
                     var node = new LineNode() {
                         Position = to
                     };
-                    _nodes.Add(node);
+                    nodes.Add(node);
                     toNode = node;
                 }
 
@@ -77,7 +77,7 @@ namespace FreeFormGraph.LineBased {
                 NodeA = fromNode,
                 NodeB = toNode
             };
-            _edges.Add(edge);
+            edges.Add(edge);
             fromNode.AddEdge(edge);
             toNode.AddEdge(edge);
             newEdge = edge;
@@ -92,7 +92,7 @@ namespace FreeFormGraph.LineBased {
             var n = new LineNode() {
                 Position = position
             };
-            _nodes.Add(n);
+            nodes.Add(n);
             newNode = n;
             return true;
         }
@@ -132,7 +132,7 @@ namespace FreeFormGraph.LineBased {
             var e = (LineEdge) foundEdge;
             ((LineNode)e.NodeA).RemoveEdge(e);
             ((LineNode)e.NodeB).RemoveEdge(e);
-            _edges.Remove(e);
+            edges.Remove(e);
 
             var lEdge = new LineEdge() {
                 NodeA = foundEdge.NodeA,
@@ -143,9 +143,9 @@ namespace FreeFormGraph.LineBased {
                 NodeA = n,
                 NodeB = foundEdge.NodeB
             };
-            _nodes.Add(n);
-            _edges.Add(lEdge);
-            _edges.Add(rEdge);
+            nodes.Add(n);
+            edges.Add(lEdge);
+            edges.Add(rEdge);
 
             //if this fails, we would have an edge with length 0, which is weird and should not happen
             Debug.Assert(Vector3.Distance(lEdge.NodeA.Position, lEdge.NodeB.Position) > eps);
