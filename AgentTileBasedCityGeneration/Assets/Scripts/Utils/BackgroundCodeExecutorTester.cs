@@ -1,25 +1,19 @@
 using System;
-using System.Collections;
-using System.Threading;
 using UnityEngine;
 
 namespace Utils {
     public class BackgroundCodeExecutorTester : MonoBehaviour {
-        
-        // private void Update() {
-        //     Debug.Log("Update");
-        // }
 
         private void Start() {
             // Testing the BackgroundCodeExecutor
             Debug.Log("Start");
-            ScheduleLongMethod(false);
+            ScheduleLongMethod();
             ScheduleLongMethod(true);
-            var cancellationTokenSource = ScheduleLongMethod(false);
-            cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(0.5f));
+            var backgroundTask = ScheduleLongMethod();
+            backgroundTask.CancelAfter(TimeSpan.FromSeconds(0.5f));
         }
 
-        private static CancellationTokenSource ScheduleLongMethod(bool throwException = false) {
+        private static BackgroundTask ScheduleLongMethod(bool throwException = false) {
             var sum = 0L;
             return BackgroundCodeExecutor.ExecuteInBackground((cancelToken) => {
                 Debug.Log("Task started");
@@ -32,12 +26,13 @@ namespace Utils {
                         cancelToken.ThrowIfCancellationRequested();
                     }
                     if (throwException && i == 5_000_000_000) {
-                        throw new System.Exception("Exception in task");
+                        throw new Exception("Exception in task");
                     }
                 }
                 Debug.Log("Task done: " + sum);
             }, () => {
-                var go = new GameObject("Finished BackgroundCodeExecutor Task");
+                // ReSharper disable once ObjectCreationAsStatement
+                new GameObject("Finished BackgroundCodeExecutor Task");
                 Debug.Log("OnComplete: " + sum);
             }, exception => {
                 Debug.Log("OnError: " + exception);

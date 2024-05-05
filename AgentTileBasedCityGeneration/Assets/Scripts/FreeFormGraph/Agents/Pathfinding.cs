@@ -19,13 +19,14 @@ namespace FreeFormGraph.Agent {
         private int NeighborK = 4;
 
         public void AStar(Vector3 start, Vector3 target) {
+            Debug.Log("Start pathfinding");
             var path = AStar(start, target, wp => GetNeighbors(wp, SnapFactorNode, SnapFactorEdge, NeighborK));
             if(path != null) {
                 BuildPath2(path);
             }
         }
 
-        public List<Waypoint> AStar(Vector3 start, Vector3 target, Func<Waypoint, List<Waypoint>> GetNeighbors) {
+        public List<Waypoint>? AStar(Vector3 start, Vector3 target, Func<Waypoint, List<Waypoint>> GetNeighbors) {
 
             var q = new PriorityQueue<Waypoint, float>();
             var q_set = new HashSet<Waypoint>();
@@ -33,7 +34,7 @@ namespace FreeFormGraph.Agent {
             var cost_so_far = new Dictionary<Waypoint, float>();
 
             var startWaypoint = GetWaypoint(start); //Start position might be on edge or node already
-            Waypoint targetwaypoint = default;
+            Waypoint? targetWaypoint = default;
             cost_so_far.Add(startWaypoint, 0);
             came_from.Add(startWaypoint, startWaypoint);
             q.Enqueue(startWaypoint, 0.0f);
@@ -45,11 +46,11 @@ namespace FreeFormGraph.Agent {
                 q_set.Remove(current);
                 nodesChecked++;
                 if(current.Pos == target) {
-                    targetwaypoint = current;
+                    targetWaypoint = current;
                     break;
                 }
 
-                if(cost_so_far.ContainsKey(current) && cost_so_far[current] == float.PositiveInfinity) {
+                if(cost_so_far.ContainsKey(current) && float.IsPositiveInfinity(cost_so_far[current])) {
                     continue;
                 }
                 
@@ -60,8 +61,8 @@ namespace FreeFormGraph.Agent {
                         || nextWaypoint.Pos.x >= World.Width
                         || nextWaypoint.Pos.y < 0
                         || nextWaypoint.Pos.y >= World.Height) {
-                            continue;
-                        }
+                        continue;
+                    }
 
                     var next = nextWaypoint;
 
@@ -79,8 +80,8 @@ namespace FreeFormGraph.Agent {
             }
 
             Debug.Log($"Nodes checked {nodesChecked}");
-            if(targetwaypoint != null) {
-                return GetShortestPath(startWaypoint, targetwaypoint, came_from);
+            if (targetWaypoint != null) {
+                return GetShortestPath(startWaypoint, targetWaypoint, came_from);
             } else {
                 return null;
             }
@@ -103,7 +104,7 @@ namespace FreeFormGraph.Agent {
 
         private List<Waypoint> GetShortestPath(Waypoint startNode, Waypoint targetNode, Dictionary<Waypoint, Waypoint> came_from) {
             var current = targetNode;
-            List<Waypoint> path = new();
+            List<Waypoint>? path = new();
             while(current != startNode) {
                 path.Add(current);
                 current = came_from[current];
@@ -303,16 +304,14 @@ namespace FreeFormGraph.Agent {
             if(p == 0) return q;
             if(q == 0) return p;
             if(p < q) {
-                var tmp = p;
-                p = q;
-                q = tmp;
+                (p, q) = (q, p);
             }
 
             int r = p % q;
             return GCD(q, r);
         }
 
-        public List<Waypoint> AStarStreetOnly(Waypoint start, Waypoint target) {
+        public List<Waypoint>? AStarStreetOnly(Waypoint start, Waypoint target) {
             var startPos = start.Pos;
             var endPos = target.Pos;
             //a bit hacky, pathfinding on roads only makes only sense between nodes -> move position on edge to closest node :)

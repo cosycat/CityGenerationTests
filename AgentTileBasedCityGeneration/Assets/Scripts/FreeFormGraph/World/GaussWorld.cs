@@ -1,21 +1,23 @@
+using System;
 using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
 using FreeFormGraph.Agent;
 using FreeFormGraph.Agents;
-using FreeFormGraph.LineBased;
 using FreeFormGraph.World.PoI;
+using Utils;
 
 namespace FreeFormGraph.World {
     public class GaussWorld: WorldGameObject {
-        [SerializeField] private bool doPathfinding = false;
-        [SerializeField] private bool doPointOfInterest = false;
+        [SerializeField] private bool doPathfinding;
+        [SerializeField] private bool doPointOfInterest;
         
         private float[,] heights;
         
         private float maxHeight = float.MinValue;
         private float minHeight = float.MaxValue;
-        private int width;
-        private int height;
+        [SerializeField] private int width = 100;
+        [SerializeField] private int height = 100;
 
         public override int Width => width;
 
@@ -31,8 +33,6 @@ namespace FreeFormGraph.World {
 
 
         public void Start() {
-            width = 100;
-            height = 100;
             heights = new float[Width, Height];
 
             PlaceGauss(Width/2, Height/2, spread: 5);
@@ -63,9 +63,29 @@ namespace FreeFormGraph.World {
             
 
             if (doPathfinding) {
-                agent.AStar(new Vector3(50,97,0), new Vector3(50,70 ,0)); // jagged street going up the mountain
-                agent.AStar(new Vector3(40,80,0), new Vector3(80,75 ,0));
-                agent.AStar(new Vector3(20,60,0), new Vector3(90,90 ,0));
+                BackgroundCodeExecutor.ExecuteInBackground((cancellationToken) => {
+                    // diagonal
+                    agent.AStar(new Vector3(10, 10), new Vector3(width - 10, height - 10));
+                    agent.AStar(new Vector3(width - 10, 10), new Vector3(10, height - 10));
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    // straight
+                    agent.AStar(new Vector3(10, 10), new Vector3(width - 10, 10));
+                    agent.AStar(new Vector3(10, 10), new Vector3(10, height - 10));
+                    agent.AStar(new Vector3(10, height - 10), new Vector3(width - 10, height - 10));
+                    agent.AStar(new Vector3(width - 10, 10), new Vector3(width - 10, height - 10));
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    // jagged street going up the mountain
+                    agent.AStar(new Vector3(50,97,0), new Vector3(50,70 ,0)); 
+                    agent.AStar(new Vector3(40,80,0), new Vector3(80,75 ,0));
+                    agent.AStar(new Vector3(20,60,0), new Vector3(90,90 ,0));
+                    cancellationToken.ThrowIfCancellationRequested();
+                }, () => {
+                    Debug.Log("Pathfinding done");
+                    // TODO: restart all other pathfinding tasks, as the world has changed. Maybe with a flag?
+                });
+                
             }
             
         }
@@ -85,14 +105,7 @@ namespace FreeFormGraph.World {
         {
             return heights[(int)x, (int)y];
         }
-
-        private void OnDrawGizmos() {
-            /*for(int y = 0; y < Height; y++) {
-                for(int x = 0; x < Width; x++) {
-                    Gizmos.DrawRay(new Vector3(x,y,0), Vector3.forward * heights[x,y]);
-                }
-            }*/
-        }
+        
     }
 
 }

@@ -230,7 +230,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &406749787
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -243,7 +243,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7bf2ff83202fbe0dc8f505746627e055, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  doPathfinding: 0
+  doPathfinding: 1
   doPointOfInterest: 1
   MaxHeightMeters: 1000
   MinHeightMeters: 100
@@ -279,7 +279,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &854330591
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -292,8 +292,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 02880200fb431f2d4b837ea8cb75dee6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  doPathfinding: 0
+  doPathfinding: 1
   doPointOfInterest: 1
+  width: 100
+  height: 100
 --- !u!4 &854330592
 Transform:
   m_ObjectHideFlags: 0
@@ -369,7 +371,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1188869380
 Transform:
   m_ObjectHideFlags: 0

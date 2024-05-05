@@ -2,6 +2,7 @@ using UnityEngine;
 using FreeFormGraph.Agent;
 using FreeFormGraph.Agents;
 using FreeFormGraph.World.PoI;
+using Utils;
 
 namespace FreeFormGraph.World {
     public class HeightmapWorld: WorldGameObject {
@@ -25,8 +26,7 @@ namespace FreeFormGraph.World {
 
         public override IPointOfInterestCollection PointsOfInterest { get; } = new PointOfInterestCollection();
 
-        [SerializeField]
-        public Texture2D Heightmap;
+        [SerializeField] public Texture2D Heightmap;
 
         private IStreetGraph graph;
 
@@ -77,13 +77,32 @@ namespace FreeFormGraph.World {
                 poiAgent.CreateNewPointOfInterest(registerInWorld: true);
                 poiAgent.CreateNewPointOfInterest(registerInWorld: true);
             }
-
+            
             if (doPathfinding) {
-                agent.AStar(new Vector3(10, 185, 0), new Vector3(20, 192, 0));
-                agent.AStar(new Vector3(10, 200 - 10, 0), new Vector3(140, 200 - 150, 0));
-                agent.AStar(new Vector3(190, 200 - 55, 0), new Vector3(80, 200 - 180, 0));
-                agent.AStar(new Vector3(4, 4, 0), new Vector3(140, 200 - 150, 0));
-                agent.AStar(new Vector3(4, 4, 0), new Vector3(80, 20, 0));
+                BackgroundCodeExecutor.ExecuteInBackground((cancellationToken) => {
+                    // diagonal
+                    agent.AStar(new Vector3(10, 10), new Vector3(width - 10, height - 10));
+                    agent.AStar(new Vector3(width - 10, 10), new Vector3(10, height - 10));
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    // straight
+                    agent.AStar(new Vector3(10, 10), new Vector3(width - 10, 10));
+                    agent.AStar(new Vector3(10, 10), new Vector3(10, height - 10));
+                    agent.AStar(new Vector3(10, height - 10), new Vector3(width - 10, height - 10));
+                    agent.AStar(new Vector3(width - 10, 10), new Vector3(width - 10, height - 10));
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    agent.AStar(new Vector3(10, 185, 0), new Vector3(20, 192, 0));
+                    agent.AStar(new Vector3(10, 200 - 10, 0), new Vector3(140, 200 - 150, 0));
+                    agent.AStar(new Vector3(190, 200 - 55, 0), new Vector3(80, 200 - 180, 0));
+                    agent.AStar(new Vector3(4, 4, 0), new Vector3(140, 200 - 150, 0));
+                    agent.AStar(new Vector3(4, 4, 0), new Vector3(80, 20, 0));
+                    cancellationToken.ThrowIfCancellationRequested();
+                }, () => {
+                    Debug.Log("Pathfinding done");
+                    // TODO: restart all other pathfinding tasks, as the world has changed. Maybe with a flag?
+                });
+                
             }
             
         }
