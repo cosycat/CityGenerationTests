@@ -143,7 +143,12 @@ namespace FreeFormGraph {
             if (streetGraph == null) {
                 return;
             }
-            foreach (var node in streetGraph.Nodes) {
+
+            // copy them, so if they change in the meantime on another thread, it doesn't throw an error.
+            var nodes = streetGraph.Nodes.ToList();
+            var edges = streetGraph.Edges.ToList();
+
+            foreach (var node in nodes) {
                 Gizmos.color = node.IsMaxConnectedEdgesReached ? Color.red : node.ConnectedEdgesCount > 2 ? Color.yellow : Color.green;
                 Gizmos.DrawSphere(node.Position, 0.1f);
                 Gizmos.DrawLine(node.Position, node.Position +
@@ -151,7 +156,7 @@ namespace FreeFormGraph {
                                                 (Vector3.right * 0.3f)));
             }
 
-            foreach (var edge in streetGraph.Edges) {
+            foreach (var edge in edges) {
                 Gizmos.color = edgeColors.TryGetValue(edge, out var color) ? color : Color.grey;
                 Gizmos.DrawLine(edge.PositionNodeA, edge.PositionNodeB);
                 foreach (var point in edge.SplitIntoEvenlySpacedPoints()) {
@@ -201,14 +206,14 @@ namespace FreeFormGraph {
             
             if (drawLabelsEdges) {
                 // UnityEditor.Handles.color = Color.yellow;
-                foreach (var edge in streetGraph.Edges) {
+                foreach (var edge in edges) {
                     UnityEditor.Handles.Label((edge.PositionNodeA + edge.PositionNodeB) / 2, edge.DebugString());
                 }
             }
             if (drawLabelsNodes) {
                 // UnityEditor.Handles.color = Color.white;
-                for (var i = 0; i < streetGraph.Nodes.Count(); i++) {
-                    var node = streetGraph.Nodes.ToList()[i];
+                for (var i = 0; i < nodes.Count; i++) {
+                    var node = nodes[i];
                     UnityEditor.Handles.Label(node.Position, $"(Idx: {i}) {node.DebugString()}");
                 }
             }
