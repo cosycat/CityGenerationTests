@@ -26,6 +26,7 @@ namespace FreeFormGraph.Agents {
         private IWorld world;
 
         private void Start() {
+            world = FindObjectOfType<WorldGameObject>();
             GenerateAgents();
             HandleNextAgent();
         }
