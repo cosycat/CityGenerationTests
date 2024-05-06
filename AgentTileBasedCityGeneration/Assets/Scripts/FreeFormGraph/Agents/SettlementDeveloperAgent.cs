@@ -37,12 +37,13 @@ namespace FreeFormGraph.Agents {
         private void GrowRoadNetwork(IWorld world) {
             var node = GetRandomNode();
             Debug.Assert(node != null, $"PoIDeveloperAgent: Node is null.");
-            var averageInPosition = GetAverageInPosition(node);
+            var averageInPosition = GetAverageInPosition(node); // TODO take a random incoming edge as direction
             var direction = node.Position - averageInPosition;
             var angle = Mathf.Atan2(direction.x, direction.y);
             var angleRandom = (float)random.NextDouble() * 2f * angleRandomMax - angleRandomMax; //UnityEngine.Random.Range(-angleRandomMax, angleRandomMax);
             var length = (float)random.NextDouble() * (maxStreetLength - minStreetLength) + minStreetLength; //UnityEngine.Random.Range(minStreetLength, maxStreetLength);
             var newPoint = new Vector2(node.Position.x + Mathf.Sin(angle + angleOffset + angleRandom) * length, node.Position.y + Mathf.Cos(angle + angleOffset + angleRandom) * length);
+            // TODO check if the new angle is in a legal range for every edge
             if(world.StreetGraph.TryFindClosestNode(newPoint, out var closestNode, length)) {
                 Debug.Log($"PoIDeveloperAgent: New point {newPoint} is too close to an existing node: {closestNode.Position}");
                 // the new point is too close to an existing node, discard it
