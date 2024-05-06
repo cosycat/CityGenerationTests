@@ -8,8 +8,10 @@ using UnityEngine;
 
 namespace FreeFormGraph.Agents {
     public class AgentManager : MonoBehaviour {
+        
+        public static AgentManager Instance { get; private set; }
 
-        private readonly List<IAgent> agents = new();
+        [ItemNotNull] private readonly List<IAgent> agents = new();
 
         private readonly object stopRequestLock = new();
 
@@ -25,6 +27,14 @@ namespace FreeFormGraph.Agents {
         
         private IWorld world;
 
+        private void Awake() {
+            if (Instance != null) {
+                Destroy(gameObject);
+                return;
+            }
+            Instance = this;
+        }
+
         private void Start() {
             world = FindObjectOfType<WorldGameObject>();
             GenerateAgents();
@@ -33,6 +43,14 @@ namespace FreeFormGraph.Agents {
 
         private void OnDestroy() {
             RequestStopAgents(() => { Debug.Log("OnDestroy stopped");});
+        }
+
+        private void OnDisable() {
+            RequestStopAgents(() => { Debug.Log("OnDisable stopped");});
+        }
+        
+        private void OnApplicationQuit() {
+            RequestStopAgents(() => { Debug.Log("OnApplicationQuit stopped");});
         }
 
         private void HandleNextAgent() {
