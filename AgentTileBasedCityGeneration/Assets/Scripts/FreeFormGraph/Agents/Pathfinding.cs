@@ -17,19 +17,22 @@ namespace FreeFormGraph.Agents {
         private int neighborK = 4;
 
         public Pathfinding(IStreetGraph streetGraph, IWorld world) {
+            Debug.Assert(streetGraph != null);
+            Debug.Assert(world != null);
             StreetGraph = streetGraph;
             World = world;
         }
 
-        public void AStar(Vector3 start, Vector3 target) {
-            Debug.Log("Start pathfinding");
-            var path = AStar(start, target, wp => GetNeighbors(wp, SnapFactorNode, SnapFactorEdge, neighborK));
-            if(path != null) {
-                BuildPath2(path);
-            }
+        public List<Waypoint>? AStar(Vector3 start, Vector3 target) {
+            return AStar(start, target, wp => GetNeighbors(wp, SnapFactorNode, SnapFactorEdge, neighborK), () => false);
         }
 
-        public List<Waypoint>? AStar(Vector3 start, Vector3 target, Func<Waypoint, List<Waypoint>> GetNeighbors) {
+        public List<Waypoint>? AStar(Vector3 start, Vector3 target, Func<bool> isCancelled) {
+            Debug.Log("Start pathfinding");
+            return AStar(start, target, wp => GetNeighbors(wp, SnapFactorNode, SnapFactorEdge, neighborK), isCancelled);
+        }
+
+        public List<Waypoint>? AStar(Vector3 start, Vector3 target, Func<Waypoint, List<Waypoint>> GetNeighbors, Func<bool> isCancelled) {
 
             var q = new PriorityQueue<Waypoint, float>();
             var q_set = new HashSet<Waypoint>();
@@ -45,6 +48,8 @@ namespace FreeFormGraph.Agents {
             
             var nodesChecked = 0;
             while(q.Count != 0) {
+                if(isCancelled()) return null;
+
                 var current = q.Dequeue();
                 q_set.Remove(current);
                 nodesChecked++;
@@ -116,7 +121,7 @@ namespace FreeFormGraph.Agents {
             return path;
         }
 
-        private void BuildPath2(List<Waypoint> waypoints) {
+        public void BuildPath2(List<Waypoint> waypoints) {
             Debug.Assert(waypoints.Count >= 2);
             //TODO assert waypoints unique
 
@@ -158,7 +163,7 @@ namespace FreeFormGraph.Agents {
                 //pathfinding does not handle intersections well. It's possible that the chosen path
                 //generates new roads which connects two points which are already connected (the new path would be shorter tho).
                 //#24
-                var roadConnection = AStarStreetOnly(lastWp, wp);
+                var roadConnection = AStarStreetOnly(lastWp, wp, () => false);
                 if(roadConnection != null && GetPathLength(roadConnection) / Vector3.Distance(lastWp.Pos, wp.Pos) < thresholdWpExistingConnection) {
                     currentWaypointIndex++;
                     lastWp = wp;
@@ -314,7 +319,7 @@ namespace FreeFormGraph.Agents {
             return GCD(q, r);
         }
 
-        public List<Waypoint>? AStarStreetOnly(Waypoint start, Waypoint target) {
+        public List<Waypoint>? AStarStreetOnly(Waypoint start, Waypoint target, Func<bool> isCancelled) {
             var startPos = start.Pos;
             var endPos = target.Pos;
             //a bit hacky, pathfinding on roads only makes only sense between nodes -> move position on edge to closest node :)
@@ -334,7 +339,7 @@ namespace FreeFormGraph.Agents {
             }
 
             //TODO refactor AStar to pass waypoint
-            return AStar(startPos, endPos, wp => GetNeighbors(wp, 0, 0, 0));
+            return AStar(startPos, endPos, wp => GetNeighbors(wp, 0, 0, 0), isCancelled);
         }
 
         public float GetPathLength(List<Waypoint> waypoints) {
