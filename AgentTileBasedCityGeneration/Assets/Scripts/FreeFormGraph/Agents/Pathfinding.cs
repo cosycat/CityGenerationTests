@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using FreeFormGraph.World;
 using UnityEngine;
@@ -16,6 +17,15 @@ namespace FreeFormGraph.Agents {
         private float SnapFactorNode { get; set; } = 1.5f;
         private int neighborK = 4;
 
+        private PriorityQueue<Waypoint, float> q = new();
+        private HashSet<Waypoint> q_set = new();
+        private Dictionary<Waypoint, Waypoint> came_from = new();
+        private Dictionary<Waypoint, float> cost_so_far = new();
+
+        public Waypoint startPosition {get; private set;} = null;
+        public Waypoint current {get; private set;} = null;
+        public Vector3 target {get; private set;} = default;
+
         public Pathfinding(IStreetGraph streetGraph, IWorld world) {
             Debug.Assert(streetGraph != null);
             Debug.Assert(world != null);
@@ -27,30 +37,29 @@ namespace FreeFormGraph.Agents {
             return AStar(start, target, wp => GetNeighbors(wp, SnapFactorNode, SnapFactorEdge, neighborK), () => false);
         }
 
-        public List<Waypoint>? AStar(Vector3 start, Vector3 target, Func<bool> isCancelled) {
+        public List<Waypoint>? AStar(Vector3 start, Vector3 target, Func<bool> isCancelled, bool perfStats = true) {
             Debug.Log("Start pathfinding");
-            return AStar(start, target, wp => GetNeighbors(wp, SnapFactorNode, SnapFactorEdge, neighborK), isCancelled);
+            return AStar(start, target, wp => GetNeighbors(wp, SnapFactorNode, SnapFactorEdge, neighborK), isCancelled, perfStats);
         }
 
-        public List<Waypoint>? AStar(Vector3 start, Vector3 target, Func<Waypoint, List<Waypoint>> GetNeighbors, Func<bool> isCancelled) {
-
-            var q = new PriorityQueue<Waypoint, float>();
-            var q_set = new HashSet<Waypoint>();
-            var came_from = new Dictionary<Waypoint, Waypoint>();
-            var cost_so_far = new Dictionary<Waypoint, float>();
-
+        public List<Waypoint>? AStar(Vector3 start, Vector3 target, Func<Waypoint, List<Waypoint>> GetNeighbors, Func<bool> isCancelled, bool perfStats = false) {
+            this.target = target;
             var startWaypoint = GetWaypoint(start); //Start position might be on edge or node already
+            startPosition = startWaypoint;
             Waypoint? targetWaypoint = default;
             cost_so_far.Add(startWaypoint, 0);
             came_from.Add(startWaypoint, startWaypoint);
             q.Enqueue(startWaypoint, 0.0f);
             q_set.Add(startWaypoint);
             
+            var sw = new System.Diagnostics.Stopwatch();
+            if(perfStats) sw.Start();
+
             var nodesChecked = 0;
             while(q.Count != 0) {
                 if(isCancelled()) return null;
 
-                var current = q.Dequeue();
+                current = q.Dequeue();
                 q_set.Remove(current);
                 nodesChecked++;
                 if(current.Pos == target) {
@@ -87,9 +96,14 @@ namespace FreeFormGraph.Agents {
                 
             }
 
-            Debug.Log($"Nodes checked {nodesChecked}");
+            if(perfStats) {
+                sw.Stop();
+                var secs = sw.ElapsedMilliseconds / 1000.0f;
+                Debug.Log($"A* perf: Elapsed (s): {secs}; Nodes checked {nodesChecked}; Throughput (nodes/sec): {nodesChecked/secs}; World edges count: {StreetGraph.Edges.ToList().Count}");
+            }
+
             if (targetWaypoint != null) {
-                return GetShortestPath(startWaypoint, targetWaypoint, came_from);
+                return GetShortestPath(startWaypoint, targetWaypoint);
             } else {
                 return null;
             }
@@ -110,7 +124,7 @@ namespace FreeFormGraph.Agents {
 
         }
 
-        private List<Waypoint> GetShortestPath(Waypoint startNode, Waypoint targetNode, Dictionary<Waypoint, Waypoint> came_from) {
+        public List<Waypoint> GetShortestPath(Waypoint startNode, Waypoint targetNode) {
             var current = targetNode;
             List<Waypoint>? path = new();
             while(current != startNode) {
@@ -121,7 +135,7 @@ namespace FreeFormGraph.Agents {
             return path;
         }
 
-        public void BuildPath2(List<Waypoint> waypoints) {
+        public static void BuildPath2(List<Waypoint> waypoints, IStreetGraph StreetGraph, IWorld world) {
             Debug.Assert(waypoints.Count >= 2);
             //TODO assert waypoints unique
 
@@ -148,6 +162,7 @@ namespace FreeFormGraph.Agents {
 
             while(currentWaypointIndex < waypoints.Count) {
                 Debug.Assert(lastNode != null);
+                var pf = new Pathfinding(StreetGraph, world);
                 wp = waypoints[currentWaypointIndex];
                 breakCounter++;
                 if(breakCounter > 10000) {
@@ -163,7 +178,7 @@ namespace FreeFormGraph.Agents {
                 //pathfinding does not handle intersections well. It's possible that the chosen path
                 //generates new roads which connects two points which are already connected (the new path would be shorter tho).
                 //#24
-                var roadConnection = AStarStreetOnly(lastWp, wp, () => false);
+                var roadConnection = pf.AStarStreetOnly(lastWp, wp, () => false);
                 if(roadConnection != null && GetPathLength(roadConnection) / Vector3.Distance(lastWp.Pos, wp.Pos) < thresholdWpExistingConnection) {
                     currentWaypointIndex++;
                     lastWp = wp;
@@ -188,6 +203,7 @@ namespace FreeFormGraph.Agents {
         }
 
         private float Cost(Waypoint current, Waypoint next) {
+            Debug.Assert(current.Pos != next.Pos);
             var cost = Vector3.Distance(current.Pos, next.Pos);
             /*if(cost <= 1.01f) {
                 cost += 0.1f; //make short segments more costly to force fewer nodes
@@ -342,7 +358,7 @@ namespace FreeFormGraph.Agents {
             return AStar(startPos, endPos, wp => GetNeighbors(wp, 0, 0, 0), isCancelled);
         }
 
-        public float GetPathLength(List<Waypoint> waypoints) {
+        public static float GetPathLength(List<Waypoint> waypoints) {
             float length = 0;
             for(var i = 0; i < waypoints.Count-1; i++) {
                 //calculating total length via geometry is not possible here

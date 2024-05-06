@@ -65,7 +65,7 @@ namespace FreeFormGraph.Agents {
         }
 
         private void GenerateAgents() {
-            agents.Add(new TestAgentPathFinding());
+            agents.Add(FindObjectOfType<PathbuilderVisualizingAgent>());
         }
 
         
