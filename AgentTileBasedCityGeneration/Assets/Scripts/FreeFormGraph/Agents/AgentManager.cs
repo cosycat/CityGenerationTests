@@ -85,8 +85,13 @@ namespace FreeFormGraph.Agents {
         private void GenerateAgents() {
             agents.Add(FindObjectOfType<PathbuilderVisualizingAgent>());
         }
-
         
+        public void AddNewAgent(IAgent agent) {
+            lock (stopRequestLock) {
+                agents.Add(agent);
+                if (agents.Count == 1) HandleNextAgent(); // If there was no agent before, start now.
+            }
+        }
 
         public void RequestStopAgents(Action onStopped) {
             lock (stopRequestLock) {
