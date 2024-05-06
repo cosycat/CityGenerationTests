@@ -58,10 +58,14 @@ namespace FreeFormGraph.LineBased {
                     }
 
                 } else {
-                    var node = new LineNode() {
-                        Position = to
-                    };
-                    nodes.Add(node);
+                    IStreetNode node = null;
+                    if(!TryFindClosestNode(to, out node, SnapToExistingNodeThreshold)) {
+                        node = new LineNode() {
+                            Position = to
+                        };
+                        nodes.Add((LineNode)node);
+                    }
+
                     toNode = node;
                 }
 
@@ -71,6 +75,7 @@ namespace FreeFormGraph.LineBased {
             }
         
         public override bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge) {
+            //TODO shouldn't we check intersections here?
             var fromNode = (LineNode)from; //why...
             var toNode = (LineNode)to;
             var edge = new LineEdge() {
