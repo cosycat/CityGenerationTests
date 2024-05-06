@@ -21,9 +21,9 @@ namespace FreeFormGraph.Agents {
         [CanBeNull] private CancellationTokenSource cancellationTokenSource = null;
 
         private bool stopRequested = false;
+        [CanBeNull] private Action onStoppedMethod;
         
         private IWorld world;
-        [CanBeNull] private Action onStopped;
 
         private void Start() {
             GenerateAgents();
@@ -47,7 +47,8 @@ namespace FreeFormGraph.Agents {
                 lock (stopRequestLock) {
                     cancellationTokenSource = null;
                     if (stopRequested) {
-                        onStopped?.Invoke();
+                        onStoppedMethod?.Invoke();
+                        onStoppedMethod = null; // to make sure it is not called again
                     }
                     else {
                         HandleNextAgent();
@@ -57,7 +58,7 @@ namespace FreeFormGraph.Agents {
         }
 
         private void GenerateAgents() {
-            agents.Add(new PathfindingAgent());
+            agents.Add(new TestAgentPathFinding());
         }
 
         
@@ -67,7 +68,7 @@ namespace FreeFormGraph.Agents {
                 if (!IsAgentRunning) return;
                 stopRequested = true;
                 cancellationTokenSource!.Cancel();
-                this.onStopped = onStopped;
+                this.onStoppedMethod = onStopped;
             }
         }
 
@@ -76,7 +77,7 @@ namespace FreeFormGraph.Agents {
                 if (IsAgentRunning) return;
                 Debug.Assert(cancellationTokenSource == null, $"cancellationTokenSource was not null");
                 stopRequested = false;
-                this.onStopped = null;
+                this.onStoppedMethod = null;
                 HandleNextAgent();
             }
         }

@@ -8,7 +8,7 @@ namespace FreeFormGraph.Agents {
 
     public class PointOfInterestAgent {
         
-        private int desiredNumberOfPointsOfInterest = 3;
+        // private int desiredNumberOfPointsOfInterest = 3;
         
         private IWorld World { get; }
         
