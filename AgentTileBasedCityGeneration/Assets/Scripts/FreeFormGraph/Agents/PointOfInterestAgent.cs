@@ -1,11 +1,15 @@
 
 using System;
+using System.Threading;
 using FreeFormGraph.World;
 using FreeFormGraph.World.PoI;
 
 namespace FreeFormGraph.Agents {
 
     public class PointOfInterestAgent {
+        
+        private int desiredNumberOfPointsOfInterest = 3;
+        
         private IWorld World { get; }
         
         public PointOfInterestAgent(IWorld world) {
@@ -45,8 +49,13 @@ namespace FreeFormGraph.Agents {
                 _ => throw new System.ArgumentOutOfRangeException(nameof(type), type, "Invalid PointOfInterestType value.")
             };
         }
-        
-        
+
+
+        // public void DoWork(CancellationToken cancellationToken, IWorld world) {
+        //     if (world.PointsOfInterest.Count < desiredNumberOfPointsOfInterest) {
+        //         CreateNewPointOfInterest(true);
+        //     }
+        // }
     }
     
 }

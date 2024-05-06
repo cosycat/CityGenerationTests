@@ -10,6 +10,7 @@ namespace FreeFormGraph.World.PoI {
     /// </summary>
     public interface IPointOfInterestCollection {
         public List<IPointOfInterest> PointsOfInterest { get; }
+        public int Count => PointsOfInterest.Count;
         public void AddPointOfInterest(IPointOfInterest pointOfInterest);
         public void RemovePointOfInterest(IPointOfInterest pointOfInterest);
         public IPointOfInterest FindClosestPointOfInterest(Vector2 point);
