@@ -15,7 +15,7 @@ namespace FreeFormGraph {
         public IEnumerable<IStreetEdge> Edges { get; }
         
         /// <summary>
-        /// How many edges can be connected to this node.
+        /// How many edges are connected to this node.
         /// </summary>
         public int ConnectedEdgesCount { get; }
         
