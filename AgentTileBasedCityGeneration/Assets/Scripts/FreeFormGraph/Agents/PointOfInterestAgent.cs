@@ -6,31 +6,32 @@ using FreeFormGraph.World.PoI;
 
 namespace FreeFormGraph.Agents {
 
-    public class PointOfInterestAgent {
+    public class PointOfInterestAgent : IAgent {
         
-        // private int desiredNumberOfPointsOfInterest = 3;
+        private int desiredNumberOfPointsOfInterest = 3;
         
-        private IWorld World { get; }
         
-        public PointOfInterestAgent(IWorld world) {
-            World = world;
-        }
-        
-        public IPointOfInterest CreateNewPointOfInterest(bool registerInWorld) {
+        private IPointOfInterest CreateNewPointOfInterest(IWorld world) {
+            var random = new System.Random();
             // for now just randomly create a spherical point of interest
-            var type = (PointOfInterestType)UnityEngine.Random.Range(0, 3);
+            var type = (PointOfInterestType)random.Next(0, 3);
+            // var type = (PointOfInterestType)UnityEngine.Random.Range(0, 3);
             var radiusRange = GetRadiusForPointOfInterestType(type);
-            var radius = UnityEngine.Random.Range(radiusRange.min, radiusRange.max);
-            if (radius > World.Width / 2f) {
-                radius = World.Width / 2f - 0.1f;
+            var radius = (float)random.NextDouble() * (radiusRange.max - radiusRange.min) + radiusRange.min;
+            // var radius = UnityEngine.Random.Range(radiusRange.min, radiusRange.max);
+            if (radius > world.Width / 2f) {
+                radius = world.Width / 2f - 0.1f;
             }
-            var x = UnityEngine.Random.Range(radius, World.Width - radius);
-            var y = UnityEngine.Random.Range(radius, World.Height - radius);
+            var x = (float)random.NextDouble() * ((world.Width - radius) - radius) + radius;
+            var y = (float)random.NextDouble() * ((world.Height - radius) - radius) + radius;
+            // var x = UnityEngine.Random.Range(radius, world.Width - radius);
+            // var y = UnityEngine.Random.Range(radius, world.Height - radius);
             
             var pointOfInterest = new SpherePointOfInterest(new UnityEngine.Vector2(x, y), type, radius);
-            if (registerInWorld) {
-                World.PointsOfInterest.AddPointOfInterest(pointOfInterest);
-            }
+            var settlementDeveloperAgent = new SettlementDeveloperAgent(pointOfInterest, world);
+            AgentManager.Instance.AddNewAgent(settlementDeveloperAgent);
+
+            world.PointsOfInterest.AddPointOfInterest(pointOfInterest);
             return pointOfInterest;
         }
         
@@ -51,11 +52,11 @@ namespace FreeFormGraph.Agents {
         }
 
 
-        // public void DoWork(CancellationToken cancellationToken, IWorld world) {
-        //     if (world.PointsOfInterest.Count < desiredNumberOfPointsOfInterest) {
-        //         CreateNewPointOfInterest(true);
-        //     }
-        // }
+        public void DoWork(CancellationToken cancellationToken, IWorld world) {
+            if (world.PointsOfInterest.Count < desiredNumberOfPointsOfInterest) {
+                CreateNewPointOfInterest(world);
+            }
+        }
     }
     
 }

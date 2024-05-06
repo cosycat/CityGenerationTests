@@ -52,12 +52,12 @@ namespace FreeFormGraph.World {
 
             var agent = new Pathfinding(streetGraph: graph, world: this);
             
-            var poiAgent = new PointOfInterestAgent(this);
-            if (doPointOfInterest) {
-                poiAgent.CreateNewPointOfInterest(registerInWorld: true);
-                poiAgent.CreateNewPointOfInterest(registerInWorld: true);
-                poiAgent.CreateNewPointOfInterest(registerInWorld: true);
-            }
+            // var poiAgent = new PointOfInterestAgent(this);
+            // if (doPointOfInterest) {
+            //     poiAgent.CreateNewPointOfInterest(registerInWorld: true);
+            //     poiAgent.CreateNewPointOfInterest(registerInWorld: true);
+            //     poiAgent.CreateNewPointOfInterest(registerInWorld: true);
+            // }
             
 
             if (doPathfinding) {
