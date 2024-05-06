@@ -36,15 +36,20 @@ namespace FreeFormGraph.Agents {
         }
 
         private void HandleNextAgent() {
-            Debug.Log("HandleNextAgent");
             if (IsAgentRunning) return;
-            Debug.Log("HandleNextAgent - no agent running");
             currAgentIndex = (currAgentIndex + 1) % agents.Count;
             var agent = CurrAgent;
+            Debug.Assert(agent != null);
             cancellationTokenSource = new CancellationTokenSource();
             var task = Task.Run(() => agent.DoWork(cancellationTokenSource.Token, world), cancellationTokenSource.Token);
-            task.ContinueWith(_ => {
-                Debug.Log($"Continue With (stopRequested: {stopRequested})");
+            task.ContinueWith(completedTask => {
+                if(completedTask.IsFaulted) {
+                    foreach (var exception in completedTask.Exception.Flatten().InnerExceptions) {
+                        Debug.LogError(exception.ToString());
+                    }
+                    throw new Exception("Unhandled error in child task occured");
+                }
+
                 lock (stopRequestLock) {
                     cancellationTokenSource = null;
                     if (stopRequested) {
