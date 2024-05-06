@@ -43,15 +43,16 @@ namespace FreeFormGraph.Agents {
             cancellationTokenSource = new CancellationTokenSource();
             var task = Task.Run(() => agent.DoWork(cancellationTokenSource.Token, world), cancellationTokenSource.Token);
             task.ContinueWith(completedTask => {
-                if(completedTask.IsFaulted) {
-                    foreach (var exception in completedTask.Exception.Flatten().InnerExceptions) {
-                        Debug.LogError(exception.ToString());
-                    }
-                    throw new Exception("Unhandled error in child task occured");
-                }
 
                 lock (stopRequestLock) {
                     cancellationTokenSource = null;
+                    if(completedTask.IsFaulted) {
+                        foreach (var exception in completedTask.Exception.Flatten().InnerExceptions) {
+                            Debug.LogError(exception.ToString());
+                        }
+                        Debug.LogError("Aborted AgentManager due to unhandled exception in child task");
+                        return;
+                    }
                     if (stopRequested) {
                         onStoppedMethod?.Invoke();
                         onStoppedMethod = null; // to make sure it is not called again
