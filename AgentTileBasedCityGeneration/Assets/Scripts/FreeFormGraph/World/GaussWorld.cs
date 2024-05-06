@@ -29,7 +29,12 @@ namespace FreeFormGraph.World {
 
 
         private IStreetGraph graph;
+        public override IStreetGraph StreetGraph => graph;
 
+        private void Awake() {
+            graph = FindObjectOfType<StreetGraphGameObject>();
+            Debug.Assert(graph != null);
+        }
 
         public void Start() {
             heights = new float[Width, Height];
@@ -44,9 +49,6 @@ namespace FreeFormGraph.World {
                     maxHeight = Mathf.Max(MaxHeight, heights[x,y]);
                 }
             }
-
-            graph = FindObjectOfType<StreetGraphGameObject>();
-            Debug.Assert(graph != null);
 
             var agent = new Pathfinding(streetGraph: graph, world: this);
             

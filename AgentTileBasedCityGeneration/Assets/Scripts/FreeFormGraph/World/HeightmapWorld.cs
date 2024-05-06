@@ -28,6 +28,11 @@ namespace FreeFormGraph.World {
         [SerializeField] public Texture2D heightmap;
 
         private IStreetGraph graph;
+        public override IStreetGraph StreetGraph => graph;
+
+        private void Awake() {
+            graph = FindObjectOfType<StreetGraphGameObject>();
+        }
 
         public void Start() {
             if(heightmap != null) {
@@ -64,7 +69,6 @@ namespace FreeFormGraph.World {
                 }
             }
 
-            graph = FindObjectOfType<StreetGraphGameObject>();
             var agent = new Pathfinding(streetGraph: graph, world: this);
             
             var poiAgent = new PointOfInterestAgent(this);

@@ -42,7 +42,7 @@ namespace FreeFormGraph.Agents {
         }
 
         void Start() {
-            streetGraph = FindObjectOfType<StreetGraphGameObject>();
+            streetGraph = FindObjectOfType<StreetGraphGameObject>(); // TODO maybe get this from the IWorld, so it's not dependent on the scene?
 
             var width = 200;
             var height = 200;

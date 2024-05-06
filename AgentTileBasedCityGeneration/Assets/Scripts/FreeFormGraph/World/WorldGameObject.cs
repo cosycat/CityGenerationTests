@@ -12,5 +12,6 @@ namespace FreeFormGraph.World {
         public abstract float MinHeight { get; }
         
         public abstract IPointOfInterestCollection PointsOfInterest { get; }
+        public abstract IStreetGraph StreetGraph { get; }
     }
 }
