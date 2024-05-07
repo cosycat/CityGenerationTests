@@ -19,8 +19,16 @@ namespace FreeFormGraph.Agents {
         private readonly float angleOffset = Mathf.Deg2Rad * 90f;
         private readonly float angleRandomMax = Mathf.Deg2Rad * 0f;
         private readonly float maxConnectionDistance = 3.5f;
-        private readonly bool snapToGrid = true;
-        
+        private readonly bool snapToGrid = false;
+        private readonly ConnectionHandling connectCulDeSacs = ConnectionHandling.ConnectAll;
+        private readonly bool connectCulDeSacWithNonCulDeSac = true;
+
+        private enum ConnectionHandling {
+            ConnectNone,
+            ConnectSlowly,
+            ConnectAll
+        }
+
         private readonly IPointOfInterest pointOfInterest;
         private readonly List<IStreetNode> nodes = new();
         
@@ -36,7 +44,7 @@ namespace FreeFormGraph.Agents {
         public void DoWork(CancellationToken cancellationToken, IWorld world) {
             GrowRoadNetwork(world);
             cancellationToken.ThrowIfCancellationRequested();
-            ConnectRoadNetwork(world);
+            ConnectRoadNetwork(world, cancellationToken);
         }
 
         private void GrowRoadNetwork(IWorld world) {
@@ -45,10 +53,10 @@ namespace FreeFormGraph.Agents {
             // var averageInPosition = GetAverageInPosition(node); // TODO take a random incoming edge as direction
             var averageInPosition = GetRandomConnectedNodePosition(node);
             var direction = node.Position - averageInPosition;
-            var angle = Mathf.Atan2(direction.x, direction.y);
+            var angle = Mathf.Atan2(direction.y, direction.x);
             var angleRandom = (float)random.NextDouble() * 2f * angleRandomMax - angleRandomMax; //UnityEngine.Random.Range(-angleRandomMax, angleRandomMax);
             var length = (float)random.NextDouble() * (maxStreetLength - minStreetLength) + minStreetLength; //UnityEngine.Random.Range(minStreetLength, maxStreetLength);
-            var newPointPosition = new Vector2(node.Position.x + Mathf.Sin(angle + angleOffset + angleRandom) * length, node.Position.y + Mathf.Cos(angle + angleOffset + angleRandom) * length);
+            var newPointPosition = new Vector2(node.Position.x + Mathf.Cos(angle + angleOffset + angleRandom) * length, node.Position.y + Mathf.Sin(angle + angleOffset + angleRandom) * length);
             var newPoint = snapToGrid ? new Vector2(Mathf.Round(newPointPosition.x), Mathf.Round(newPointPosition.y)) : newPointPosition;
             
             // TODO check if the new angle is in a legal range for every edge
@@ -83,21 +91,45 @@ namespace FreeFormGraph.Agents {
             }
         }
 
-        private void ConnectRoadNetwork(IWorld world) {
+        private void ConnectRoadNetwork(IWorld world, CancellationToken cancellationToken) {
             if (nodes.Count < 2) return;
-            var nodeA = GetRandomNode();
-            var nodeB = GetRandomNode();
-            while (nodeA == nodeB) {
-                nodeB = GetRandomNode();
-                if (nodes.Count < 2) return; // sanity check and in case some parallel code modifies the nodes list
+            switch (connectCulDeSacs) {
+                case ConnectionHandling.ConnectNone:
+                    return;
+                
+                case ConnectionHandling.ConnectSlowly: {
+                    var nodeA = GetRandomNode();
+                    var nodeB = GetRandomNode();
+                    while (nodeA == nodeB) {
+                        nodeB = GetRandomNode();
+                        if (nodes.Count < 2) {
+                            Debug.LogError("PoIDeveloperAgent: Not enough nodes to connect. Nodes modified during connection.");
+                            return;
+                        } // sanity check and in case some parallel code modifies the nodes list (which it shouldn't)
+                    }
+                    ConnectCulDeSacs(nodeA, nodeB, world);
+                    return;
+                }
+                
+                case ConnectionHandling.ConnectAll: {
+                    for (var i = 0; i < nodes.Count; i++) {
+                        for (var j = i + 1; j < nodes.Count; j++) {
+                            cancellationToken.ThrowIfCancellationRequested();
+                            ConnectCulDeSacs(nodes[i], nodes[j], world);
+                        }
+                    }
+                    return;
+                }
+                
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
-            ConnectCulDeSacs(nodeA, nodeB, world);
-            
         }
 
         private bool ConnectCulDeSacs(IStreetNode nodeA, IStreetNode nodeB, IWorld world) {
             if (Vector3.Distance(nodeA.Position, nodeB.Position) > maxConnectionDistance) return false;
-            if (nodeA.Edges.Count() > 1 || nodeB.Edges.Count() > 1) return false;
+            if ((connectCulDeSacWithNonCulDeSac && nodeA.Edges.Count() > 1 && nodeB.Edges.Count() > 1) 
+                || !connectCulDeSacWithNonCulDeSac && nodeA.Edges.Count() > 1 || nodeB.Edges.Count() > 1) return false; // Too many nodes are not cul-de-sacs
             // TODO only connect if no intersection with existing edge between them
             if (!world.StreetGraph.CreateEdge(nodeA, nodeB.Position, out var newEdge, out _, out var isToNodeNew)) {
                 Debug.LogWarning("Could not connect the cul-de-sacs.");
@@ -109,7 +141,10 @@ namespace FreeFormGraph.Agents {
         }
 
         private Vector3 GetRandomConnectedNodePosition(IStreetNode node) {
-            if (node.ConnectedEdgesCount == 0) return new Vector3(1, 0, 0); // TODO Random direction
+            if (node.ConnectedEdgesCount == 0) {
+                Debug.Log("PoIDeveloperAgent: Node has no connected edges.");
+                return node.Position + new Vector3(1, 0, 0);
+            } // TODO Random direction
             var randomEdge = node.Edges.ToArray()[random.Next(0, node.Edges.Count())];
             var otherNode = randomEdge.NodeA == node ? randomEdge.NodeB : randomEdge.NodeA;
             return otherNode.Position;
