@@ -13,10 +13,11 @@ namespace FreeFormGraph.Agents {
     public class SettlementDeveloperAgent : IAgent {
         
         // parameters
-        private readonly float minStreetLength = 1f;
+        private readonly float minStreetLength = 2f;
         private readonly float maxStreetLength = 5f;
         private readonly float angleOffset = Mathf.Deg2Rad * 90f;
         private readonly float angleRandomMax = Mathf.Deg2Rad * 0f;
+        private readonly float maxConnectionDistance = 3.5f;
         
         private IPointOfInterest pointOfInterest;
         private readonly List<IStreetNode> nodes = new();
@@ -32,12 +33,15 @@ namespace FreeFormGraph.Agents {
 
         public void DoWork(CancellationToken cancellationToken, IWorld world) {
             GrowRoadNetwork(world);
+            cancellationToken.ThrowIfCancellationRequested();
+            ConnectRoadNetwork(world);
         }
 
         private void GrowRoadNetwork(IWorld world) {
             var node = GetRandomNode();
             Debug.Assert(node != null, $"PoIDeveloperAgent: Node is null.");
-            var averageInPosition = GetAverageInPosition(node); // TODO take a random incoming edge as direction
+            // var averageInPosition = GetAverageInPosition(node); // TODO take a random incoming edge as direction
+            var averageInPosition = GetRandomConnectedNodePosition(node);
             var direction = node.Position - averageInPosition;
             var angle = Mathf.Atan2(direction.x, direction.y);
             var angleRandom = (float)random.NextDouble() * 2f * angleRandomMax - angleRandomMax; //UnityEngine.Random.Range(-angleRandomMax, angleRandomMax);
@@ -56,15 +60,55 @@ namespace FreeFormGraph.Agents {
                 return;
             }
             
-            // TODO check for intersections
-
-            if (!world.StreetGraph.CreateUnconnectedNode(newPoint, out var newNode)) {
+            if (!world.StreetGraph.CreateEdge(node, new Vector3(newPoint.x, newPoint.y), out var newEdge, out var toNode, out var isToNodeNew)) {
                 Debug.LogWarning("Could not create a new node for the PoIDeveloperAgent.");
                 // could not create a new node, discard the new point
                 return;
             }
-            world.StreetGraph.CreateEdge(node, newNode, out var newEdge);
-            nodes.Add(newNode);
+            
+            // This method does not (yet) check for intersections with existing edges
+            // if (!world.StreetGraph.CreateUnconnectedNode(newPoint, out var newNode)) {
+            //     Debug.LogWarning("Could not create a new node for the PoIDeveloperAgent.");
+            //     // could not create a new node, discard the new point
+            //     return;
+            // }
+            // world.StreetGraph.CreateEdge(node, newNode, out var newEdge);
+            
+            if (!nodes.Contains(toNode)) {
+                nodes.Add(toNode);
+            }
+        }
+
+        private void ConnectRoadNetwork(IWorld world) {
+            if (nodes.Count < 2) return;
+            var nodeA = GetRandomNode();
+            var nodeB = GetRandomNode();
+            while (nodeA == nodeB) {
+                nodeB = GetRandomNode();
+                if (nodes.Count < 2) return; // sanity check and in case some parallel code modifies the nodes list
+            }
+            ConnectCulDeSacs(nodeA, nodeB, world);
+            
+        }
+
+        private bool ConnectCulDeSacs(IStreetNode nodeA, IStreetNode nodeB, IWorld world) {
+            if (Vector3.Distance(nodeA.Position, nodeB.Position) > maxConnectionDistance) return false;
+            if (nodeA.Edges.Count() > 1 || nodeB.Edges.Count() > 1) return false;
+            // TODO only connect if no intersection with existing edge between them
+            if (!world.StreetGraph.CreateEdge(nodeA, nodeB.Position, out var newEdge, out _, out var isToNodeNew)) {
+                Debug.LogWarning("Could not connect the cul-de-sacs.");
+                return false;
+            }
+            Debug.Assert(!isToNodeNew, "PoIDeveloperAgent: Cul-de-sac connection created a new node.");
+            Debug.Log($"PoIDeveloperAgent: Connected cul-de-sacs {nodeA.Position} and {nodeB.Position}.");
+            return true;
+        }
+
+        private Vector3 GetRandomConnectedNodePosition(IStreetNode node) {
+            if (node.ConnectedEdgesCount == 0) return new Vector3(1, 0, 0); // TODO Random direction
+            var randomEdge = node.Edges.ToArray()[random.Next(0, node.Edges.Count())];
+            var otherNode = randomEdge.NodeA == node ? randomEdge.NodeB : randomEdge.NodeA;
+            return otherNode.Position;
         }
 
         private Vector3 GetAverageInPosition(IStreetNode node) {
