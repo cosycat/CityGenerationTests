@@ -3,10 +3,11 @@ using System;
 using System.Threading;
 using FreeFormGraph.World;
 using FreeFormGraph.World.PoI;
+using UnityEngine;
 
 namespace FreeFormGraph.Agents {
 
-    public class PointOfInterestAgent : IAgent {
+    public class PointOfInterestAgent : MonoBehaviour, IAgent {
         
         private int desiredNumberOfPointsOfInterest = 3;
         

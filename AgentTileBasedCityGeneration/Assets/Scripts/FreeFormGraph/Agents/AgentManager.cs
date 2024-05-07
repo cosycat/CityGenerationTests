@@ -85,7 +85,7 @@ namespace FreeFormGraph.Agents {
         private void GenerateAgents() {
             var pathBuilderVisualizingAgent = FindObjectOfType<PathbuilderVisualizingAgent>();
             if (pathBuilderVisualizingAgent != null) agents.Add(pathBuilderVisualizingAgent);
-            agents.Add(new PointOfInterestAgent());
+            agents.Add(new GameObject("PointOfInterestAgent").AddComponent<PointOfInterestAgent>());
         }
         
         public void AddNewAgent(IAgent agent) {
