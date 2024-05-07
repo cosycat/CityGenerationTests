@@ -12,7 +12,7 @@ namespace FreeFormGraph.Agents {
         [Tooltip("Increase field, to add more points of interest, with the current settlementDeveloperAgentParameters"),
          SerializeField] private int desiredNumberOfPointsOfInterest = 1;
         
-        [SerializeField] private SettlementDeveloperAgent.SdaParameters settlementDeveloperAgentParameters;
+        [SerializeField] private SettlementDeveloperAgent.SdaParameters settlementDeveloperAgentParameters = new();
         [SerializeField] private PointOfInterestType pointOfInterestType;
         
         

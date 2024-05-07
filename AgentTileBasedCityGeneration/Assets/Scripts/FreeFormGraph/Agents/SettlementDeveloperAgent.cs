@@ -172,6 +172,9 @@ namespace FreeFormGraph.Agents {
             public SdaParameters() { }
 
             public SdaParameters(SdaParameters other) {
+                if (other == null) {
+                    return;
+                }
                 MinStreetLength = other.MinStreetLength;
                 MaxStreetLength = other.MaxStreetLength;
                 MinNodeEdgeDistance = other.MinNodeEdgeDistance;
