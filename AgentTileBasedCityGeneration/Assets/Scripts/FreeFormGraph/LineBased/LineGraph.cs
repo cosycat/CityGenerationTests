@@ -37,12 +37,6 @@ namespace FreeFormGraph.LineBased {
                     var intersects = Intersection(A, a, B, b, out var crossPoint, out var t, out var s);
 
                     if(intersects) {
-                        if(failIfIntersection) {
-                            newEdge = null;
-                            toNode = null;
-                            isToNodeNew = false;
-                            return false;
-                        }
                         to = crossPoint;
                         lastIntersectionEdge = e;
                     }
@@ -60,6 +54,12 @@ namespace FreeFormGraph.LineBased {
                         toNode = lastIntersectionEdge.NodeB;
                     }
                     else {
+                        if(failIfIntersection) {
+                            newEdge = null;
+                            toNode = null;
+                            isToNodeNew = false;
+                            return false;
+                        }
                         InsertNodeOnEdge(lastIntersectionEdge, to, out toNode, out _, out _);
                     }
 
