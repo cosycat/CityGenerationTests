@@ -67,7 +67,8 @@ namespace FreeFormGraph {
             return false;
         }
 
-        public bool CreateEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode, out bool isToNodeNew);
+        public bool CreateEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode,
+            out bool isToNodeNew, bool failIfIntersection = false);
         
         public bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge);
 

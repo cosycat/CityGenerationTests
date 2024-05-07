@@ -13,7 +13,8 @@ namespace FreeFormGraph {
         public abstract float SnapToExistingNodeThreshold { get; set; }
         public abstract float SnapToExistingEdgeThreshold { get; set; }
         
-        public virtual bool CreateEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode, out bool isToNodeNew) {
+        public virtual bool CreateEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode,
+            out bool isToNodeNew, bool failIfIntersection = false) {
             if (!GetOrCreateNode(to, SnapToExistingNodeThreshold, out toNode, out isToNodeNew)) {
                 Debug.Log("IStreetGraph::CreateEdge - Failed to create node at to position");
                 newEdge = null;
