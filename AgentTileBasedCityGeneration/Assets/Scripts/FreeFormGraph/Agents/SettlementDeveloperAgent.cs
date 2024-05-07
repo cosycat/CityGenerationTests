@@ -15,9 +15,7 @@ namespace FreeFormGraph.Agents {
         private readonly SdaParameters parameters;
 
         private readonly IPointOfInterest pointOfInterest;
-
-        private readonly List<IStreetNode> nodes = new();
-
+        
         private readonly Random random = new Random();
 
         public SettlementDeveloperAgent([NotNull] IPointOfInterest pointOfInterest, [NotNull] IWorld world, [CanBeNull] SdaParameters parameters = null) {
@@ -25,20 +23,22 @@ namespace FreeFormGraph.Agents {
             this.parameters = parameters ?? new SdaParameters();
             var startNode = world.StreetGraph.TryFindClosestNode(pointOfInterest.Position, out var closestNode, this.parameters.MinStreetLength) 
                 ? closestNode : world.StreetGraph.CreateUnconnectedNode(pointOfInterest.Position, out var newNode) ? newNode : throw new Exception("Could not find or create a node for the point of interest.");
-            nodes.Add(startNode);
+            // nodes.Add(startNode);
         }
 
-        public void DoWork(CancellationToken cancellationToken, IWorld world) {
+        public void DoWork(CancellationToken cancellationToken, IWorld world) { // Save since when it most recently changed. If nothing changed for some time, take some breaks between.
+            var nodes = pointOfInterest.FindAllNodes(world);
             Debug.Log("PoIDeveloperAgent: Growing road network.");
-            GrowRoadNetwork(world);
+            GrowRoadNetwork(world, nodes);
             cancellationToken.ThrowIfCancellationRequested();
             Debug.Log("PoIDeveloperAgent: Connecting road network.");
-            var newConnections = ConnectRoadNetwork(world, cancellationToken);
+            var newConnections = ConnectRoadNetwork(world, nodes, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
             Debug.Log($"PoIDeveloperAgent: Connected {newConnections} cul-de-sacs.");
         }
 
-        private void GrowRoadNetwork(IWorld world) {
-            var node = GetRandomNode();
+        private void GrowRoadNetwork(IWorld world, IStreetNode[] nodes) {
+            var node = GetRandomNode(nodes);
             Debug.Assert(node != null, $"PoIDeveloperAgent: Node is null.");
             // var averageInPosition = GetAverageInPosition(node); // TODO take a random incoming edge as direction
             var averageInPosition = GetRandomConnectedNodePosition(node);
@@ -76,23 +76,24 @@ namespace FreeFormGraph.Agents {
             // }
             // world.StreetGraph.CreateEdge(node, newNode, out var newEdge);
             
-            if (!nodes.Contains(toNode)) {
-                nodes.Add(toNode);
-            }
+            // if (!nodes.Contains(toNode)) {
+            //     nodes.Add(toNode);
+            // }
         }
 
-        private int ConnectRoadNetwork(IWorld world, CancellationToken cancellationToken) {
-            if (nodes.Count < 2) return 0;
+        private int ConnectRoadNetwork(IWorld world, IStreetNode[] nodes, CancellationToken cancellationToken) {
+            
+            if (nodes.Length < 2) return 0;
             switch (parameters.ConnectCulDeSacs) {
                 case SdaParameters.ConnectionHandling.ConnectNone:
                     return 0;
                 
                 case SdaParameters.ConnectionHandling.ConnectSlowly: {
-                    var nodeA = GetRandomNode();
-                    var nodeB = GetRandomNode();
+                    var nodeA = GetRandomNode(nodes);
+                    var nodeB = GetRandomNode(nodes);
                     while (nodeA == nodeB) {
-                        nodeB = GetRandomNode();
-                        if (nodes.Count < 2) {
+                        nodeB = GetRandomNode(nodes);
+                        if (nodes.Length < 2) {
                             Debug.LogError("PoIDeveloperAgent: Not enough nodes to connect. Nodes modified during connection.");
                             return 0;
                         } // sanity check and in case some parallel code modifies the nodes list (which it shouldn't)
@@ -103,9 +104,11 @@ namespace FreeFormGraph.Agents {
                 
                 case SdaParameters.ConnectionHandling.ConnectAll: {
                     var connections = 0;
-                    for (var i = 0; i < nodes.Count; i++) {
-                        for (var j = i + 1; j < nodes.Count; j++) {
-                            cancellationToken.ThrowIfCancellationRequested();
+                    for (var i = 0; i < nodes.Length; i++) {
+                        for (var j = i + 1; j < nodes.Length; j++) {
+                            if (cancellationToken.IsCancellationRequested) {
+                                return connections;
+                            }
                             if (ConnectCulDeSacs(nodes[i], nodes[j], world)) {
                                 connections++;
                             }
@@ -152,8 +155,8 @@ namespace FreeFormGraph.Agents {
             return average / node.ConnectedEdgesCount;
         }
 
-        private IStreetNode GetRandomNode() {
-            return nodes[random.Next(0, nodes.Count)];
+        private IStreetNode GetRandomNode(IStreetNode[] nodes) {
+            return nodes[random.Next(0, nodes.Length)];
         }
 
         [Serializable]
