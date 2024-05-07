@@ -34,7 +34,7 @@ namespace FreeFormGraph.Agents {
             // var y = UnityEngine.Random.Range(radius, world.Height - radius);
             
             var pointOfInterest = new SpherePointOfInterest(new UnityEngine.Vector2(x, y), type, radius);
-            var settlementDeveloperAgent = new SettlementDeveloperAgent(pointOfInterest, world, settlementDeveloperAgentParameters);
+            var settlementDeveloperAgent = new SettlementDeveloperAgent(pointOfInterest, world, new SettlementDeveloperAgent.SdaParameters(settlementDeveloperAgentParameters));
             AgentManager.Instance.AddNewAgent(settlementDeveloperAgent);
 
             world.PointsOfInterest.AddPointOfInterest(pointOfInterest);

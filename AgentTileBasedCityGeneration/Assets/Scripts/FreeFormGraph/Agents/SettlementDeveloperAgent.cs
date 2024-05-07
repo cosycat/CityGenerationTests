@@ -170,7 +170,33 @@ namespace FreeFormGraph.Agents {
             [field: SerializeField] public bool SnapToGrid { get; set; } = false;
             [field: SerializeField] public ConnectionHandling ConnectCulDeSacs { get; set; } = ConnectionHandling.ConnectAll;
             [field: SerializeField] public bool ConnectCulDeSacWithNonCulDeSac { get; set; } = true;
-            
+
+            public SdaParameters() { }
+
+            public SdaParameters(SdaParameters other) {
+                MinStreetLength = other.MinStreetLength;
+                MaxStreetLength = other.MaxStreetLength;
+                MinNodeEdgeDistance = other.MinNodeEdgeDistance;
+                AngleOffset = other.AngleOffset;
+                AngleRandomMax = other.AngleRandomMax;
+                MaxConnectionDistance = other.MaxConnectionDistance;
+                SnapToGrid = other.SnapToGrid;
+                ConnectCulDeSacs = other.ConnectCulDeSacs;
+                ConnectCulDeSacWithNonCulDeSac = other.ConnectCulDeSacWithNonCulDeSac;
+            }
+
+            public SdaParameters(float minStreetLength, float maxStreetLength, float minNodeEdgeDistance, float angleOffset, float angleRandomMax, float maxConnectionDistance, bool snapToGrid, ConnectionHandling connectCulDeSacs, bool connectCulDeSacWithNonCulDeSac) {
+                MinStreetLength = minStreetLength;
+                MaxStreetLength = maxStreetLength;
+                MinNodeEdgeDistance = minNodeEdgeDistance;
+                AngleOffset = angleOffset;
+                AngleRandomMax = angleRandomMax;
+                MaxConnectionDistance = maxConnectionDistance;
+                SnapToGrid = snapToGrid;
+                ConnectCulDeSacs = connectCulDeSacs;
+                ConnectCulDeSacWithNonCulDeSac = connectCulDeSacWithNonCulDeSac;
+            }
+
             public enum ConnectionHandling {
                 ConnectNone,
                 ConnectSlowly,
