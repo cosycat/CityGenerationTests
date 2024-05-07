@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace FreeFormGraph.World.PoI {
@@ -17,7 +18,9 @@ namespace FreeFormGraph.World.PoI {
         /// <param name="point"> The point to check. </param>
         /// <returns> True if the point is within this point of interest, false otherwise. </returns>
         public bool IsPointWithinRange(Vector2 point);
+
         
+        IStreetNode[] FindAllNodes(IWorld world);
     }
     
     /// <summary>
