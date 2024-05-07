@@ -12,39 +12,29 @@ namespace FreeFormGraph.Agents {
     
     public class SettlementDeveloperAgent : IAgent {
         
-        // parameters
-        private readonly float minStreetLength = 2f;
-        private readonly float maxStreetLength = 5f;
-        private readonly float minNodeEdgeDistance = 0.7f;
-        private readonly float angleOffset = Mathf.Deg2Rad * 90f;
-        private readonly float angleRandomMax = Mathf.Deg2Rad * 0f;
-        private readonly float maxConnectionDistance = 3.5f;
-        private readonly bool snapToGrid = false;
-        private readonly ConnectionHandling connectCulDeSacs = ConnectionHandling.ConnectAll;
-        private readonly bool connectCulDeSacWithNonCulDeSac = true;
-
-        private enum ConnectionHandling {
-            ConnectNone,
-            ConnectSlowly,
-            ConnectAll
-        }
+        private readonly SdaParameters parameters;
 
         private readonly IPointOfInterest pointOfInterest;
+
         private readonly List<IStreetNode> nodes = new();
-        
+
         private readonly Random random = new Random();
-        
-        public SettlementDeveloperAgent([NotNull] IPointOfInterest pointOfInterest, [NotNull] IWorld world) {
+
+        public SettlementDeveloperAgent([NotNull] IPointOfInterest pointOfInterest, [NotNull] IWorld world, [CanBeNull] SdaParameters parameters = null) {
             this.pointOfInterest = pointOfInterest;
-            var startNode = world.StreetGraph.TryFindClosestNode(pointOfInterest.Position, out var closestNode, minStreetLength) 
+            this.parameters = parameters ?? new SdaParameters();
+            var startNode = world.StreetGraph.TryFindClosestNode(pointOfInterest.Position, out var closestNode, this.parameters.MinStreetLength) 
                 ? closestNode : world.StreetGraph.CreateUnconnectedNode(pointOfInterest.Position, out var newNode) ? newNode : throw new Exception("Could not find or create a node for the point of interest.");
             nodes.Add(startNode);
         }
 
         public void DoWork(CancellationToken cancellationToken, IWorld world) {
+            Debug.Log("PoIDeveloperAgent: Growing road network.");
             GrowRoadNetwork(world);
             cancellationToken.ThrowIfCancellationRequested();
-            ConnectRoadNetwork(world, cancellationToken);
+            Debug.Log("PoIDeveloperAgent: Connecting road network.");
+            var newConnections = ConnectRoadNetwork(world, cancellationToken);
+            Debug.Log($"PoIDeveloperAgent: Connected {newConnections} cul-de-sacs.");
         }
 
         private void GrowRoadNetwork(IWorld world) {
@@ -54,26 +44,26 @@ namespace FreeFormGraph.Agents {
             var averageInPosition = GetRandomConnectedNodePosition(node);
             var direction = node.Position - averageInPosition;
             var angle = Mathf.Atan2(direction.y, direction.x);
-            var angleRandom = (float)random.NextDouble() * 2f * angleRandomMax - angleRandomMax; //UnityEngine.Random.Range(-angleRandomMax, angleRandomMax);
-            var length = (float)random.NextDouble() * (maxStreetLength - minStreetLength) + minStreetLength; //UnityEngine.Random.Range(minStreetLength, maxStreetLength);
-            var newPointPosition = new Vector2(node.Position.x + Mathf.Cos(angle + angleOffset + angleRandom) * length, node.Position.y + Mathf.Sin(angle + angleOffset + angleRandom) * length);
-            var newPoint = snapToGrid ? new Vector2(Mathf.Round(newPointPosition.x), Mathf.Round(newPointPosition.y)) : newPointPosition;
+            var angleRandom = (float)random.NextDouble() * 2f * parameters.AngleRandomMax - parameters.AngleRandomMax; //UnityEngine.Random.Range(-angleRandomMax, angleRandomMax);
+            var length = (float)random.NextDouble() * (parameters.MaxStreetLength - parameters.MinStreetLength) + parameters.MinStreetLength; //UnityEngine.Random.Range(minStreetLength, maxStreetLength);
+            var newPointPosition = new Vector2(node.Position.x + Mathf.Cos(angle + parameters.AngleOffset + angleRandom) * length, node.Position.y + Mathf.Sin(angle + parameters.AngleOffset + angleRandom) * length);
+            var newPoint = parameters.SnapToGrid ? new Vector2(Mathf.Round(newPointPosition.x), Mathf.Round(newPointPosition.y)) : newPointPosition;
             
             // TODO check if the new angle is in a legal range for every edge
             if(world.StreetGraph.TryFindClosestNode(newPoint, out var closestNode, length)) {
-                Debug.Log($"PoIDeveloperAgent: New point {newPoint} is too close to an existing node: {closestNode.Position}");
+                // Debug.Log($"PoIDeveloperAgent: New point {newPoint} is too close to an existing node: {closestNode.Position}");
                 return;
             }
-            if (world.StreetGraph.TryFindClosestEdge(newPoint, out var foundEdge, out var positionOnEdge, minNodeEdgeDistance)) {
-                Debug.Log($"PoIDeveloperAgent: New point {newPoint} is too close to an existing edge: {foundEdge.NodeA.Position} - {foundEdge.NodeB.Position}");
+            if (world.StreetGraph.TryFindClosestEdge(newPoint, out var foundEdge, out var positionOnEdge, parameters.MinNodeEdgeDistance)) {
+                // Debug.Log($"PoIDeveloperAgent: New point {newPoint} is too close to an existing edge: {foundEdge.NodeA.Position} - {foundEdge.NodeB.Position}");
                 return;
             }
             if (!pointOfInterest.IsPointWithinRange(newPoint)) {
-                Debug.Log($"PoIDeveloperAgent: New point {newPoint} is outside the point of interest.");
+                // Debug.Log($"PoIDeveloperAgent: New point {newPoint} is outside the point of interest.");
                 return;
             }
             
-            if (!world.StreetGraph.CreateEdge(node, new Vector3(newPoint.x, newPoint.y), out var newEdge, out var toNode, out var isToNodeNew)) {
+            if (!world.StreetGraph.CreateEdge(node, new Vector3(newPoint.x, newPoint.y), out var newEdge, out var toNode, out var isToNodeNew, failIfIntersection: true)) {
                 Debug.LogWarning("Could not create a new node for the PoIDeveloperAgent.");
                 return;
             }
@@ -91,34 +81,37 @@ namespace FreeFormGraph.Agents {
             }
         }
 
-        private void ConnectRoadNetwork(IWorld world, CancellationToken cancellationToken) {
-            if (nodes.Count < 2) return;
-            switch (connectCulDeSacs) {
-                case ConnectionHandling.ConnectNone:
-                    return;
+        private int ConnectRoadNetwork(IWorld world, CancellationToken cancellationToken) {
+            if (nodes.Count < 2) return 0;
+            switch (parameters.ConnectCulDeSacs) {
+                case SdaParameters.ConnectionHandling.ConnectNone:
+                    return 0;
                 
-                case ConnectionHandling.ConnectSlowly: {
+                case SdaParameters.ConnectionHandling.ConnectSlowly: {
                     var nodeA = GetRandomNode();
                     var nodeB = GetRandomNode();
                     while (nodeA == nodeB) {
                         nodeB = GetRandomNode();
                         if (nodes.Count < 2) {
                             Debug.LogError("PoIDeveloperAgent: Not enough nodes to connect. Nodes modified during connection.");
-                            return;
+                            return 0;
                         } // sanity check and in case some parallel code modifies the nodes list (which it shouldn't)
                     }
-                    ConnectCulDeSacs(nodeA, nodeB, world);
-                    return;
+                    if (!ConnectCulDeSacs(nodeA, nodeB, world)) return 0;
+                    return 1;
                 }
                 
-                case ConnectionHandling.ConnectAll: {
+                case SdaParameters.ConnectionHandling.ConnectAll: {
+                    var connections = 0;
                     for (var i = 0; i < nodes.Count; i++) {
                         for (var j = i + 1; j < nodes.Count; j++) {
                             cancellationToken.ThrowIfCancellationRequested();
-                            ConnectCulDeSacs(nodes[i], nodes[j], world);
+                            if (ConnectCulDeSacs(nodes[i], nodes[j], world)) {
+                                connections++;
+                            }
                         }
                     }
-                    return;
+                    return connections;
                 }
                 
                 default:
@@ -127,11 +120,10 @@ namespace FreeFormGraph.Agents {
         }
 
         private bool ConnectCulDeSacs(IStreetNode nodeA, IStreetNode nodeB, IWorld world) {
-            if (Vector3.Distance(nodeA.Position, nodeB.Position) > maxConnectionDistance) return false;
-            if ((connectCulDeSacWithNonCulDeSac && nodeA.Edges.Count() > 1 && nodeB.Edges.Count() > 1) 
-                || !connectCulDeSacWithNonCulDeSac && nodeA.Edges.Count() > 1 || nodeB.Edges.Count() > 1) return false; // Too many nodes are not cul-de-sacs
-            // TODO only connect if no intersection with existing edge between them
-            if (!world.StreetGraph.CreateEdge(nodeA, nodeB.Position, out var newEdge, out _, out var isToNodeNew)) {
+            if (Vector3.Distance(nodeA.Position, nodeB.Position) > parameters.MaxConnectionDistance) return false;
+            if ((parameters.ConnectCulDeSacWithNonCulDeSac && nodeA.Edges.Count() > 1 && nodeB.Edges.Count() > 1) 
+                || !parameters.ConnectCulDeSacWithNonCulDeSac && nodeA.Edges.Count() > 1 || nodeB.Edges.Count() > 1) return false; // Too many nodes are not cul-de-sacs
+            if (!world.StreetGraph.CreateEdge(nodeA, nodeB.Position, out var newEdge, out _, out var isToNodeNew, failIfIntersection: true)) {
                 Debug.LogWarning("Could not connect the cul-de-sacs.");
                 return false;
             }
@@ -163,6 +155,27 @@ namespace FreeFormGraph.Agents {
         private IStreetNode GetRandomNode() {
             return nodes[random.Next(0, nodes.Count)];
         }
+
+        [Serializable]
+        public class SdaParameters {
+            [field: SerializeField] public float MinStreetLength { get; set; } = 2f;
+            [field: SerializeField] public float MaxStreetLength { get; set; } = 5f;
+            [field: SerializeField] public float MinNodeEdgeDistance { get; set; } = 0.7f;
+            [field: SerializeField] public float AngleOffset { get; set; } = Mathf.Deg2Rad * 90f;
+            [field: SerializeField] public float AngleRandomMax { get; set; } = Mathf.Deg2Rad * 0f;
+            [field: SerializeField] public float MaxConnectionDistance { get; set; } = 3.5f;
+            [field: SerializeField] public bool SnapToGrid { get; set; } = false;
+            [field: SerializeField] public ConnectionHandling ConnectCulDeSacs { get; set; } = ConnectionHandling.ConnectAll;
+            [field: SerializeField] public bool ConnectCulDeSacWithNonCulDeSac { get; set; } = true;
+            
+            public enum ConnectionHandling {
+                ConnectNone,
+                ConnectSlowly,
+                ConnectAll
+            }
+        }
+
+        
     }
     
 }

@@ -11,6 +11,8 @@ namespace FreeFormGraph.Agents {
         
         private int desiredNumberOfPointsOfInterest = 3;
         
+        [SerializeField] private SettlementDeveloperAgent.SdaParameters settlementDeveloperAgentParameters;
+        
         
         private IPointOfInterest CreateNewPointOfInterest(IWorld world) {
             var random = new System.Random();
@@ -29,7 +31,7 @@ namespace FreeFormGraph.Agents {
             // var y = UnityEngine.Random.Range(radius, world.Height - radius);
             
             var pointOfInterest = new SpherePointOfInterest(new UnityEngine.Vector2(x, y), type, radius);
-            var settlementDeveloperAgent = new SettlementDeveloperAgent(pointOfInterest, world);
+            var settlementDeveloperAgent = new SettlementDeveloperAgent(pointOfInterest, world, settlementDeveloperAgentParameters);
             AgentManager.Instance.AddNewAgent(settlementDeveloperAgent);
 
             world.PointsOfInterest.AddPointOfInterest(pointOfInterest);
