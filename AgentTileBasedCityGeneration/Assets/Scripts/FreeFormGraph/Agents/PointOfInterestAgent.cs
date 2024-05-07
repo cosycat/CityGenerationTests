@@ -9,15 +9,18 @@ namespace FreeFormGraph.Agents {
 
     public class PointOfInterestAgent : MonoBehaviour, IAgent {
         
-        private int desiredNumberOfPointsOfInterest = 3;
+        [Tooltip("Increase field, to add more points of interest, with the current settlementDeveloperAgentParameters"),
+         SerializeField] private int desiredNumberOfPointsOfInterest = 1;
         
         [SerializeField] private SettlementDeveloperAgent.SdaParameters settlementDeveloperAgentParameters;
+        [SerializeField] private PointOfInterestType pointOfInterestType;
         
         
         private IPointOfInterest CreateNewPointOfInterest(IWorld world) {
             var random = new System.Random();
             // for now just randomly create a spherical point of interest
-            var type = (PointOfInterestType)random.Next(0, 3);
+            // var type = (PointOfInterestType)random.Next(0, 3);
+            var type = pointOfInterestType;
             // var type = (PointOfInterestType)UnityEngine.Random.Range(0, 3);
             var radiusRange = GetRadiusForPointOfInterestType(type);
             var radius = (float)random.NextDouble() * (radiusRange.max - radiusRange.min) + radiusRange.min;
