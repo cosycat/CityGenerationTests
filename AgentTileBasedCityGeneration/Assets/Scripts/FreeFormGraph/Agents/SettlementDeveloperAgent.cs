@@ -15,11 +15,13 @@ namespace FreeFormGraph.Agents {
         // parameters
         private readonly float minStreetLength = 2f;
         private readonly float maxStreetLength = 5f;
+        private readonly float minNodeEdgeDistance = 0.7f;
         private readonly float angleOffset = Mathf.Deg2Rad * 90f;
         private readonly float angleRandomMax = Mathf.Deg2Rad * 0f;
         private readonly float maxConnectionDistance = 3.5f;
+        private readonly bool snapToGrid = true;
         
-        private IPointOfInterest pointOfInterest;
+        private readonly IPointOfInterest pointOfInterest;
         private readonly List<IStreetNode> nodes = new();
         
         private readonly Random random = new Random();
@@ -46,23 +48,25 @@ namespace FreeFormGraph.Agents {
             var angle = Mathf.Atan2(direction.x, direction.y);
             var angleRandom = (float)random.NextDouble() * 2f * angleRandomMax - angleRandomMax; //UnityEngine.Random.Range(-angleRandomMax, angleRandomMax);
             var length = (float)random.NextDouble() * (maxStreetLength - minStreetLength) + minStreetLength; //UnityEngine.Random.Range(minStreetLength, maxStreetLength);
-            var newPoint = new Vector2(node.Position.x + Mathf.Sin(angle + angleOffset + angleRandom) * length, node.Position.y + Mathf.Cos(angle + angleOffset + angleRandom) * length);
+            var newPointPosition = new Vector2(node.Position.x + Mathf.Sin(angle + angleOffset + angleRandom) * length, node.Position.y + Mathf.Cos(angle + angleOffset + angleRandom) * length);
+            var newPoint = snapToGrid ? new Vector2(Mathf.Round(newPointPosition.x), Mathf.Round(newPointPosition.y)) : newPointPosition;
+            
             // TODO check if the new angle is in a legal range for every edge
             if(world.StreetGraph.TryFindClosestNode(newPoint, out var closestNode, length)) {
                 Debug.Log($"PoIDeveloperAgent: New point {newPoint} is too close to an existing node: {closestNode.Position}");
-                // the new point is too close to an existing node, discard it
                 return;
             }
-            
+            if (world.StreetGraph.TryFindClosestEdge(newPoint, out var foundEdge, out var positionOnEdge, minNodeEdgeDistance)) {
+                Debug.Log($"PoIDeveloperAgent: New point {newPoint} is too close to an existing edge: {foundEdge.NodeA.Position} - {foundEdge.NodeB.Position}");
+                return;
+            }
             if (!pointOfInterest.IsPointWithinRange(newPoint)) {
                 Debug.Log($"PoIDeveloperAgent: New point {newPoint} is outside the point of interest.");
-                // the new point is outside the point of interest, discard it
                 return;
             }
             
             if (!world.StreetGraph.CreateEdge(node, new Vector3(newPoint.x, newPoint.y), out var newEdge, out var toNode, out var isToNodeNew)) {
                 Debug.LogWarning("Could not create a new node for the PoIDeveloperAgent.");
-                // could not create a new node, discard the new point
                 return;
             }
             
