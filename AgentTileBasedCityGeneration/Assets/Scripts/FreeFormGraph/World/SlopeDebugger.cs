@@ -90,7 +90,7 @@ namespace FreeFormGraph.World {
 
 
                 UnityEditor.Handles.Label(highestPoint, $"Highest point: {maxHeight * Constants.METERS_PER_UNIT}", new GUIStyle() { fontSize = 30 });
-                UnityEditor.Handles.Label(lowestPoint, $"Lowet point: {minHeight * Constants.METERS_PER_UNIT}", new GUIStyle() { fontSize = 30 });
+                UnityEditor.Handles.Label(lowestPoint, $"Lowest point: {minHeight * Constants.METERS_PER_UNIT}", new GUIStyle() { fontSize = 30 });
             }
         }
     }
