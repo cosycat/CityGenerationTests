@@ -31,6 +31,12 @@ namespace FreeFormGraph.Agents {
         private Context context;
 
         private void Awake() {
+            if (Instance != null) {
+                Destroy(gameObject);
+                return;
+            }
+            Instance = this;
+
             context = new Context() {
                 random = new(1337)
             };
