@@ -77,6 +77,13 @@ namespace FreeFormGraph.Agents {
             context.manager.AddNewAgent(new SettlementDeveloperAgent(pointOfInterest, world, settlementDeveloperAgentParameters));
         }
 
+        /// <summary>
+        /// Given a position <paramref name="pos"/> in the world, this function will move the point around
+        /// until it reaches a local minima according to a cost function.
+        /// </summary>
+        /// <param name="pos">Initial point to move</param>
+        /// <param name="world"></param>
+        /// <returns>New point in local minima</returns>
         private Vector3 MinimizeCostOfPOI(IWorld world, Vector2 pos) {
             var visited = new HashSet<Vector3>();
             var current = pos;
@@ -104,6 +111,14 @@ namespace FreeFormGraph.Agents {
             return totalCost;
         }
 
+        /// <summary>
+        /// Given a position <paramref name="v"/> in the world, this function will return the neighboring point
+        /// with the lowest cost function value. Neighboring is implemented as 8-neighborhood.
+        /// If <paramref name="v"/> is already in a local minima, <paramref name="v"/> is returned.
+        /// </summary>
+        /// <param name="v">Initial position</param>
+        /// <param name="world"></param>
+        /// <returns>New position or v if local minima is reached</returns>
         private Vector2 SelectCheapestDirection(Vector2 v, IWorld world) {
             var currentTargetPos = Vector2.zero;
             var currentCost = float.MaxValue;
@@ -135,9 +150,27 @@ namespace FreeFormGraph.Agents {
 
         [Serializable]
         public class POIAgentParameters {
+            /// <summary>
+            /// Maximum number of POIs in world. If this threshold is reached, no new POIs are generated.
+            /// </summary>
             [Min(0)] public int DesiredNumberOfPoints = 35;
+
+            /// <summary>
+            /// Factor which influences cost function of POI generation. Specifically, it influences the cost
+            /// of the distance to the nearest existing POI. This part of the cost function is calculated as 
+            /// DistanceCostFactor * 1 / (distanceToNearestPOI + 1). Increasing this factor will make the POI be farther apart
+            /// </summary>
             [SerializeField] public float DistanceCostFactor = 35;
+
+            /// <summary>
+            /// Minimum distance to a road that needs to exist to build a POI
+            /// </summary>
             [Min(0)] public int MinDistanceToRoad = 20;
+
+            /// <summary>
+            /// Radius which is used for selection of new POI. An initial position for a new POI is based
+            /// on a random POI's position + radius. The final POI might be outside of the radius due to the cost function.
+            /// </summary>
             [Min(0)] public int RadiusGeneration = 100;
         }
     }
