@@ -8,6 +8,21 @@ namespace FreeFormGraph.World {
         public Material material;
         private bool didCreateMesh = false;
 
+        private Gradient colorGradient;
+
+        void Start() {
+            colorGradient = new Gradient();
+            var colorGradients = new GradientColorKey[4];
+            colorGradients[0] = new GradientColorKey(Color.blue, 0.0f);
+            colorGradients[1] = new GradientColorKey(Color.green, 0.5f);
+            colorGradients[2] = new GradientColorKey(Color.red, 0.8f);
+            colorGradients[3] = new GradientColorKey(Color.white, 1.0f);
+            var alphas = new GradientAlphaKey[2];
+            alphas[0] = new GradientAlphaKey(1.0f, 0.0f);
+            alphas[1] = new GradientAlphaKey(1.0f, 1.0f);
+            colorGradient.SetKeys(colorGradients, alphas);
+        }
+
         void Update() {
             if(World != null) {
                 if(!didCreateMesh) {
@@ -75,7 +90,7 @@ namespace FreeFormGraph.World {
                     var heightValue = Mathf.InverseLerp(minHeight, maxHeight, World.GetHeightAt(worldX, worldY));
                     vertices[index] = new Vector3(worldX, worldY, 0);
                     normals[index] = new Vector3(0, 0, 1);
-                    colors[index] = gradient.Evaluate(heightValue);
+                    colors[index] = colorGradient.Evaluate(heightValue);
 
                     // Add triangles if not at the border
                     if (meshX < width - 1 && meshY < height - 1)
