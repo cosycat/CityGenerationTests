@@ -8,11 +8,6 @@ namespace FreeFormGraph.World {
         public Material material;
         private bool didCreateMesh = false;
 
-        [SerializeField]
-        private Color startColor = new Color(0.91f, 0.83f, 0.02f, 1f);
-        [SerializeField]
-        private Color endColor = new Color(0.91f, 0, 0, 1f);
-
         void Update() {
             if(World != null) {
                 if(!didCreateMesh) {
@@ -53,6 +48,19 @@ namespace FreeFormGraph.World {
             var triangles = new int[(width - 1) * (height - 1) * 6];
             var triangleIndex = 0;
 
+            var gradient = new Gradient();
+            var colorGradients = new GradientColorKey[4];
+            colorGradients[0] = new GradientColorKey(Color.blue, 0.0f);
+            colorGradients[1] = new GradientColorKey(Color.green, 0.5f);
+            colorGradients[2] = new GradientColorKey(Color.red, 0.8f);
+            colorGradients[3] = new GradientColorKey(Color.white, 1.0f);
+            var alphas = new GradientAlphaKey[2];
+            alphas[0] = new GradientAlphaKey(1.0f, 0.0f);
+            alphas[1] = new GradientAlphaKey(1.0f, 1.0f);
+            gradient.SetKeys(colorGradients, alphas);
+            
+            Debug.Log($"col: {gradient.Evaluate(0.4f)}");
+
 
             int worldX = startX;
             int worldY = startY;
@@ -67,7 +75,7 @@ namespace FreeFormGraph.World {
                     var heightValue = Mathf.InverseLerp(minHeight, maxHeight, World.GetHeightAt(worldX, worldY));
                     vertices[index] = new Vector3(worldX, worldY, 0);
                     normals[index] = new Vector3(0, 0, 1);
-                    colors[index] = Color.Lerp(startColor, endColor, heightValue);
+                    colors[index] = gradient.Evaluate(heightValue);
 
                     // Add triangles if not at the border
                     if (meshX < width - 1 && meshY < height - 1)
