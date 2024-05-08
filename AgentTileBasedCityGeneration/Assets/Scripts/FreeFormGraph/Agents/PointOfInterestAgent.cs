@@ -8,7 +8,10 @@ using FreeFormGraph.World.PoI;
 
 namespace FreeFormGraph.Agents {
 
-    public class PointOfInterestAgent: MonoBehaviour, IAgent {
+    public class PointOfInterestAgent : MonoBehaviour, IAgent {
+        
+        [SerializeField] private SettlementDeveloperAgent.SdaParameters settlementDeveloperAgentParameters = new();
+        [SerializeField] private PointOfInterestType pointOfInterestType;
         
         private IStreetGraph streetGraph;
 

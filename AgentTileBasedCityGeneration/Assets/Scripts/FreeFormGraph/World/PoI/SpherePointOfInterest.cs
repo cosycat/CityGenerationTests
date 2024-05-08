@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace FreeFormGraph.World.PoI {
@@ -17,6 +18,10 @@ namespace FreeFormGraph.World.PoI {
         
         public bool IsPointWithinRange(Vector2 point) {
             return Vector2.Distance(Position, point) <= Radius;
+        }
+
+        public IStreetNode[] FindAllNodes(IWorld world) {
+            return world.StreetGraph.FindAllNodesWithinRange(Position, Radius);
         }
 
         public override string ToString() {

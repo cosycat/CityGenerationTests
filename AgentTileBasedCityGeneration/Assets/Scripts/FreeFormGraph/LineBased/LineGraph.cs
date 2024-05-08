@@ -22,13 +22,13 @@ namespace FreeFormGraph.LineBased {
         public override float SnapToExistingEdgeThreshold { get; set; } = 0;
 
         public override bool CreateEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode,
-            out bool isToNodeNew) {
+            out bool isToNodeNew, bool failIfIntersection = false) {
                 Debug.Assert(from != null, $"CreateEdge: From node is null, to position: {to}");
 
                 IStreetEdge lastIntersectionEdge = null;
                 //check for intersections
                 foreach(var e in edges) {
-                    //skip node we are comming from to prevent finding intersection with edge we are connected to
+                    //skip node we are coming from to prevent finding intersection with edge we are connected to
                     if(e.NodeA == from || e.NodeB == from) continue;
                     var A = from.Position;
                     var a = to-A;
@@ -54,6 +54,12 @@ namespace FreeFormGraph.LineBased {
                         toNode = lastIntersectionEdge.NodeB;
                     }
                     else {
+                        if(failIfIntersection) {
+                            newEdge = null;
+                            toNode = null;
+                            isToNodeNew = false;
+                            return false;
+                        }
                         InsertNodeOnEdge(lastIntersectionEdge, to, out toNode, out _, out _);
                     }
 
@@ -182,7 +188,7 @@ namespace FreeFormGraph.LineBased {
         public bool IsMaxConnectedEdgesReached => ConnectedEdgesCount >= MaxConnectedEdges;
 
         public override string ToString() {
-            return $"LineNode at Position {Position}";
+            return $"LineNode at {Position} with {ConnectedEdgesCount} edges.";
         }
 
         public void AddEdge(LineEdge e) {
