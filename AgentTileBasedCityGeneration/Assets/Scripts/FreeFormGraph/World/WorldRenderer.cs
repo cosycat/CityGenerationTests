@@ -62,21 +62,7 @@ namespace FreeFormGraph.World {
             var normals = new Vector3[width * height];
             var triangles = new int[(width - 1) * (height - 1) * 6];
             var triangleIndex = 0;
-
-            var gradient = new Gradient();
-            var colorGradients = new GradientColorKey[4];
-            colorGradients[0] = new GradientColorKey(Color.blue, 0.0f);
-            colorGradients[1] = new GradientColorKey(Color.green, 0.5f);
-            colorGradients[2] = new GradientColorKey(Color.red, 0.8f);
-            colorGradients[3] = new GradientColorKey(Color.white, 1.0f);
-            var alphas = new GradientAlphaKey[2];
-            alphas[0] = new GradientAlphaKey(1.0f, 0.0f);
-            alphas[1] = new GradientAlphaKey(1.0f, 1.0f);
-            gradient.SetKeys(colorGradients, alphas);
             
-            Debug.Log($"col: {gradient.Evaluate(0.4f)}");
-
-
             int worldX = startX;
             int worldY = startY;
             for (int meshY = 0; meshY < height; meshY++)

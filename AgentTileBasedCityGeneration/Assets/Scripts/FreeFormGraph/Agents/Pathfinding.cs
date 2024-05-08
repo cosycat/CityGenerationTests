@@ -38,7 +38,7 @@ namespace FreeFormGraph.Agents {
         }
 
         public List<Waypoint>? AStar(Vector3 start, Vector3 target, Func<bool> isCancelled, bool perfStats = true) {
-            Debug.Log("Start pathfinding");
+            Debug.Log($"Start pathfinding from {start} to {target}");
             return AStar(start, target, wp => GetNeighbors(wp, SnapFactorNode, SnapFactorEdge, neighborK), isCancelled, perfStats);
         }
 
