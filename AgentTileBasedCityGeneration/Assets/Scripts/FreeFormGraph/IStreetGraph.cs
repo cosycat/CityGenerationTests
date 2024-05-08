@@ -67,8 +67,7 @@ namespace FreeFormGraph {
             return false;
         }
 
-        public bool CreateEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode,
-            out bool isToNodeNew, bool failIfIntersection = false);
+        public bool CreateEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode, out bool isToNodeNew, bool failIfIntersection = false);
         
         public bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge);
 
@@ -120,5 +119,6 @@ namespace FreeFormGraph {
         public bool GetOrCreateNode(Vector3 position, float threshold, out IStreetNode node, out bool isNewlyCreatedNode);
 
         void InsertNodeOnEdge(IStreetEdge edge, Vector3 positionOnEdge, out IStreetNode node, out IStreetEdge leftEdge, out IStreetEdge rightEdge);
+        IStreetNode[] FindAllNodesWithinRange(Vector2 position, float radius);
     }
 }

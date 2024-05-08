@@ -91,6 +91,16 @@ namespace FreeFormGraph {
         }
 
         public abstract void InsertNodeOnEdge(IStreetEdge edge, Vector3 positionOnEdge, out IStreetNode node, out IStreetEdge leftEdge, out IStreetEdge rightEdge);
+        
+        public IStreetNode[] FindAllNodesWithinRange(Vector2 position, float radius) {
+            var nodes = new List<IStreetNode>();
+            foreach (var streetNode in Nodes) {
+                if (Vector2.Distance(streetNode.Position, position) <= radius) {
+                    nodes.Add(streetNode);
+                }
+            }
+            return nodes.ToArray();
+        }
     }
     
 }

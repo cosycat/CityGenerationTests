@@ -188,7 +188,7 @@ namespace FreeFormGraph.LineBased {
         public bool IsMaxConnectedEdgesReached => ConnectedEdgesCount >= MaxConnectedEdges;
 
         public override string ToString() {
-            return $"LineNode at Position {Position}";
+            return $"LineNode at {Position} with {ConnectedEdgesCount} edges.";
         }
 
         public void AddEdge(LineEdge e) {

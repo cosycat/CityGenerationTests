@@ -21,13 +21,7 @@ namespace FreeFormGraph.World.PoI {
         }
 
         public IStreetNode[] FindAllNodes(IWorld world) {
-            var nodes = new List<IStreetNode>();
-            foreach (var streetNode in world.StreetGraph.Nodes) {
-                if (IsPointWithinRange(streetNode.Position)) {
-                    nodes.Add(streetNode);
-                }
-            }
-            return nodes.ToArray();
+            return world.StreetGraph.FindAllNodesWithinRange(Position, Radius);
         }
 
         public override string ToString() {
