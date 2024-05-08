@@ -6,7 +6,7 @@ using UnityEngine;
 namespace FreeFormGraph.Agents {
     public class TestAgentPathFinding : IAgent {
         
-        public void DoWork(CancellationToken cancellationToken, IWorld world) {
+        public void DoWork(CancellationToken cancellationToken, IWorld world, AgentManager.Context context) {
             var path = FindPath(cancellationToken, world);
             cancellationToken.ThrowIfCancellationRequested();
             CommitPath(world);

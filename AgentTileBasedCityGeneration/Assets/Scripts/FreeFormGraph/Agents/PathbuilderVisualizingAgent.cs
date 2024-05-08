@@ -16,7 +16,7 @@ namespace FreeFormGraph.Agents {
         private int frameCounter = 0;
         private List<Pathfinding.Waypoint> currentBestPath = new();
 
-        public void DoWork(CancellationToken cancellationToken, IWorld world) {
+        public void DoWork(CancellationToken cancellationToken, IWorld world, AgentManager.Context context) {
             if(pathsToBuild.Count == 0) return;
 
             Func<bool> isCancelled = () => cancellationToken.IsCancellationRequested;

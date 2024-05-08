@@ -27,12 +27,12 @@ namespace FreeFormGraph.Agents {
         
         private IWorld world;
 
+        private Context context;
+
         private void Awake() {
-            if (Instance != null) {
-                Destroy(gameObject);
-                return;
-            }
-            Instance = this;
+            context = new Context() {
+                random = new(1337)
+            };
         }
 
         private void Start() {
@@ -59,7 +59,7 @@ namespace FreeFormGraph.Agents {
             var agent = CurrAgent;
             Debug.Assert(agent != null);
             cancellationTokenSource = new CancellationTokenSource();
-            var task = Task.Run(() => agent.DoWork(cancellationTokenSource.Token, world), cancellationTokenSource.Token);
+            var task = Task.Run(() => agent.DoWork(cancellationTokenSource.Token, world, context), cancellationTokenSource.Token);
             task.ContinueWith(completedTask => {
 
                 lock (stopRequestLock) {
@@ -114,6 +114,8 @@ namespace FreeFormGraph.Agents {
             }
         }
 
-        
+        public class Context {
+            public System.Random random;
+        }
     }
 }
