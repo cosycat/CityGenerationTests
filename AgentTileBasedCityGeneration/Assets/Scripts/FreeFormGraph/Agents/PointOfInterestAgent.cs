@@ -37,11 +37,12 @@ namespace FreeFormGraph.Agents {
 
             var random = context.random;
             if (world.PointsOfInterest.PointsOfInterest.Count < agentParameters.DesiredNumberOfPoints)  {
-                CreatePOI(world, streetGraph, random);
+                CreatePOI(world, streetGraph, context);
             }
         }
 
-        private void CreatePOI(IWorld world, IStreetGraph streetGraph, System.Random random) {
+        private void CreatePOI(IWorld world, IStreetGraph streetGraph, AgentManager.Context context) {
+            var random = context.random;
             var poiSeedPosition = new Vector2(world.Width/2, world.Height/2);
             var worldPoiCount = world.PointsOfInterest.PointsOfInterest.Count;
             if(worldPoiCount > 0) {
@@ -65,8 +66,9 @@ namespace FreeFormGraph.Agents {
 
             //TODO check validity?
 
-            var pointOfInterest = new SpherePointOfInterest(newPoiPos, PointOfInterestType.Village, 3);
+            var pointOfInterest = new SpherePointOfInterest(newPoiPos, PointOfInterestType.Village, 15);
             world.PointsOfInterest.AddPointOfInterest(pointOfInterest);
+            context.manager.AddNewAgent(new SettlementDeveloperAgent(pointOfInterest, world));
         }
 
         private Vector3 MinimizeCostOfPOI(IWorld world, Vector2 pos) {
