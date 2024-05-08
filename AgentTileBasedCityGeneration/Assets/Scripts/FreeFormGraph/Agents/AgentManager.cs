@@ -38,7 +38,8 @@ namespace FreeFormGraph.Agents {
             Instance = this;
 
             context = new Context() {
-                random = new(1337)
+                random = new(1337),
+                manager = this
             };
         }
 
@@ -121,6 +122,7 @@ namespace FreeFormGraph.Agents {
 
         public class Context {
             public System.Random random;
+            public AgentManager manager;
         }
     }
 }
