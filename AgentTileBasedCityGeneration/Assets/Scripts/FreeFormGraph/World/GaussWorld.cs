@@ -1,15 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
 using UnityEngine;
-using FreeFormGraph.Agents;
 using FreeFormGraph.World.PoI;
-using Utils;
 
-namespace FreeFormGraph.World {
+namespace FreeFormGraph.World
+{
     public class GaussWorld: WorldGameObject {
-        [SerializeField] private bool doPathfinding;
-        [SerializeField] private bool doPointOfInterest;
         
         private float[,] heights;
         
@@ -27,15 +21,6 @@ namespace FreeFormGraph.World {
         public override float MinHeight => minHeight;
         public override IPointOfInterestCollection PointsOfInterest { get; } = new PointOfInterestCollection();
 
-
-        private IStreetGraph graph;
-        public override IStreetGraph StreetGraph => graph;
-
-        private void Awake() {
-            graph = FindObjectOfType<StreetGraphGameObject>();
-            Debug.Assert(graph != null);
-        }
-
         public void Start() {
             heights = new float[Width, Height];
 
@@ -49,43 +34,6 @@ namespace FreeFormGraph.World {
                     maxHeight = Mathf.Max(MaxHeight, heights[x,y]);
                 }
             }
-
-            var agent = new Pathfinding(streetGraph: graph, world: this);
-            
-            // var poiAgent = new PointOfInterestAgent(this);
-            // if (doPointOfInterest) {
-            //     poiAgent.CreateNewPointOfInterest(registerInWorld: true);
-            //     poiAgent.CreateNewPointOfInterest(registerInWorld: true);
-            //     poiAgent.CreateNewPointOfInterest(registerInWorld: true);
-            // }
-            
-
-            if (doPathfinding) {
-                BackgroundCodeExecutor.ExecuteInBackground((cancellationToken) => {
-                    // diagonal
-                    agent.AStar(new Vector3(10, 10), new Vector3(width - 10, height - 10));
-                    agent.AStar(new Vector3(width - 10, 10), new Vector3(10, height - 10));
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    // straight
-                    agent.AStar(new Vector3(10, 10), new Vector3(width - 10, 10));
-                    agent.AStar(new Vector3(10, 10), new Vector3(10, height - 10));
-                    agent.AStar(new Vector3(10, height - 10), new Vector3(width - 10, height - 10));
-                    agent.AStar(new Vector3(width - 10, 10), new Vector3(width - 10, height - 10));
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    // jagged street going up the mountain
-                    agent.AStar(new Vector3(50,97,0), new Vector3(50,70 ,0)); 
-                    agent.AStar(new Vector3(40,80,0), new Vector3(80,75 ,0));
-                    agent.AStar(new Vector3(20,60,0), new Vector3(90,90 ,0));
-                    cancellationToken.ThrowIfCancellationRequested();
-                }, () => {
-                    Debug.Log("Pathfinding done");
-                    // TODO: restart all other pathfinding tasks, as the world has changed. Maybe with a flag?
-                });
-                
-            }
-            
         }
 
         private void PlaceGauss(int centerX, int centerY, float amplitude = 10, float spread = 5.0f) {
