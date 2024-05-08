@@ -57,6 +57,7 @@ namespace FreeFormGraph.Agents {
             var newPointPosition = new Vector2(node.Position.x + Mathf.Cos(angle + parameters.AngleOffset + angleRandom) * length, node.Position.y + Mathf.Sin(angle + parameters.AngleOffset + angleRandom) * length);
             var newPoint = parameters.SnapToGrid ? new Vector2(Mathf.Round(newPointPosition.x), Mathf.Round(newPointPosition.y)) : newPointPosition;
             
+            // TODO check for steepness with parameter
             // TODO check if the new angle is in a legal range for every edge
             if(world.StreetGraph.TryFindClosestNode(newPoint, out var closestNode, length)) {
                 // Debug.Log($"PoIDeveloperAgent: New point {newPoint} is too close to an existing node: {closestNode.Position}");

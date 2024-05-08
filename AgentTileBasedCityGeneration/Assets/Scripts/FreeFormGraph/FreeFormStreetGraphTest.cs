@@ -16,10 +16,14 @@ namespace FreeFormGraph {
         private bool drawGrid = true;
         private bool drawCurveBoxes;
         private bool drawIntersectionLines = true;
-        private bool drawLabelsEdges = true;
-        private bool drawLabelsNodes = true;
+        private bool drawLabelsEdges = false;
+        private bool drawLabelsNodes = false;
+        private bool drawMouseLabel = true;
+        private float mouseNodeDistanceThreshold = 0.3f;
 
         private readonly Dictionary<IStreetEdge, Color> edgeColors = new();
+
+        private static Vector2 MouseWorldPosition => Camera.main!.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 0));
 
         private void Start() {
             streetGraph ??= FindObjectOfType<StreetGraphGameObject>();
@@ -32,7 +36,7 @@ namespace FreeFormGraph {
                 Debug.LogWarning("Multiple StreetGraphs found in Scene. Using the first one found.");
             }
         }
-        
+
         private void Update() {
             CheckMouseCreation();
         }
@@ -60,8 +64,6 @@ namespace FreeFormGraph {
             }
         }
 
-        private static Vector2 MouseWorldPosition => Camera.main!.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 0));
-        
         private void OnGUI() {
             // Contents:
             // - A textfield to enter coordinates for a new node
@@ -87,13 +89,16 @@ namespace FreeFormGraph {
             }
             GUILayout.Label("Labels:");
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button($"Nodes: ({drawLabelsNodes})")) {
+            if (GUILayout.Button($"Nodes ({drawLabelsNodes})")) {
                 drawLabelsNodes = !drawLabelsNodes;
             }
-            if (GUILayout.Button($"Edges: ({drawLabelsEdges})")) {
+            if (GUILayout.Button($"Edges ({drawLabelsEdges})")) {
                 drawLabelsEdges = !drawLabelsEdges;
             }
             GUILayout.EndHorizontal();
+            if (GUILayout.Button($"Mouse Label ({drawMouseLabel})")) {
+                drawMouseLabel = !drawMouseLabel;
+            }
             GUILayout.Label("Drag from one node to create a new connection or node.");
             GUILayout.EndArea();
         }
@@ -144,9 +149,16 @@ namespace FreeFormGraph {
                 return;
             }
 
-            // copy them, so if they change in the meantime on another thread, it doesn't throw an error.
-            var nodes = streetGraph.Nodes.ToList();
-            var edges = streetGraph.Edges.ToList();
+            List<IStreetNode> nodes;
+            List<IStreetEdge> edges;
+            try {
+                // copy them, so if they change in the meantime on another thread, it doesn't throw an error.
+                nodes = streetGraph.Nodes.ToList();
+                edges = streetGraph.Edges.ToList();
+            } catch {
+                return;
+            }
+            var mouseWorldPosition = MouseWorldPosition;
 
             foreach (var node in nodes) {
                 Gizmos.color = node.IsMaxConnectedEdgesReached ? Color.red : node.ConnectedEdgesCount > 2 ? Color.yellow : Color.green;
@@ -166,7 +178,7 @@ namespace FreeFormGraph {
             
             Gizmos.color = Color.green;
             if (Input.GetMouseButton(0) && dragStartNode != null) {
-                Gizmos.DrawLine(dragStartNode.Position, MouseWorldPosition);
+                Gizmos.DrawLine(dragStartNode.Position, mouseWorldPosition);
             }
 
             // if (_drawIntersectionLines) {
@@ -212,10 +224,22 @@ namespace FreeFormGraph {
             }
             if (drawLabelsNodes) {
                 // UnityEditor.Handles.color = Color.white;
-                for (var i = 0; i < nodes.Count; i++) {
-                    var node = nodes[i];
-                    UnityEditor.Handles.Label(node.Position, $"(Idx: {i}) {node.DebugString()}");
-                }
+                DrawLabelNode(nodes.ToArray());
+            }
+
+            if (drawMouseLabel) {
+                Gizmos.DrawWireSphere(mouseWorldPosition, mouseNodeDistanceThreshold);
+                var nodesWithinRange = streetGraph.FindAllNodesWithinRange(mouseWorldPosition, mouseNodeDistanceThreshold);
+                DrawLabelNode(nodesWithinRange);
+                var foundANode = streetGraph.TryFindClosestNode(mouseWorldPosition, out var closestNode, mouseNodeDistanceThreshold);
+                UnityEditor.Handles.Label(mouseWorldPosition, $"{mouseWorldPosition}{(foundANode ? $" {closestNode}" : "")}");
+            }
+        }
+
+        private static void DrawLabelNode(IStreetNode[] nodes) {
+            for (var i = 0; i < nodes.Length; i++) {
+                var node = nodes[i];
+                UnityEditor.Handles.Label(node.Position, $"(Idx: {i}) {node.DebugString()}");
             }
         }
     }
