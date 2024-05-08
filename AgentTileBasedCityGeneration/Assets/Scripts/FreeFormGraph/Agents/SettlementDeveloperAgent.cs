@@ -30,7 +30,7 @@ namespace FreeFormGraph.Agents {
             nodes.Add(startNode);
         }
 
-        public void DoWork(CancellationToken cancellationToken, IWorld world) {
+        public void DoWork(CancellationToken cancellationToken, IWorld world, AgentManager.Context context) {
             GrowRoadNetwork(world);
         }
 
