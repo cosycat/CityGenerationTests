@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FreeFormGraph.World;
@@ -83,9 +84,7 @@ namespace FreeFormGraph.Agents {
         }
 
         private void GenerateAgents() {
-            var pathBuilderVisualizingAgent = FindObjectOfType<PathbuilderVisualizingAgent>();
-            if (pathBuilderVisualizingAgent != null) agents.Add(pathBuilderVisualizingAgent);
-            agents.Add(new PointOfInterestAgent());
+            agents.AddRange(FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).OfType<IAgent>());
         }
         
         public void AddNewAgent(IAgent agent) {
