@@ -63,6 +63,10 @@ namespace FreeFormGraph.Agents {
 
         private void HandleNextAgent() {
             if (IsAgentRunning) return;
+            if (agents.Count == 0) {
+                Debug.Log("No agents to run. Stopped AgentManager.");
+                return;
+            }
             currAgentIndex = (currAgentIndex + 1) % agents.Count;
             var agent = CurrAgent;
             Debug.Assert(agent != null);
