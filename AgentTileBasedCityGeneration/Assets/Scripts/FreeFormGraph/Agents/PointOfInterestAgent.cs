@@ -1,39 +1,19 @@
-
+using UnityEngine;
 using System;
+using System.Linq;
+using System.Collections.Generic;
 using System.Threading;
 using FreeFormGraph.World;
 using FreeFormGraph.World.PoI;
 
 namespace FreeFormGraph.Agents {
 
-    public class PointOfInterestAgent : IAgent {
+    public class PointOfInterestAgent: MonoBehaviour, IAgent {
         
-        private int desiredNumberOfPointsOfInterest = 3;
-        
-        
-        private IPointOfInterest CreateNewPointOfInterest(IWorld world) {
-            var random = new System.Random();
-            // for now just randomly create a spherical point of interest
-            var type = (PointOfInterestType)random.Next(0, 3);
-            // var type = (PointOfInterestType)UnityEngine.Random.Range(0, 3);
-            var radiusRange = GetRadiusForPointOfInterestType(type);
-            var radius = (float)random.NextDouble() * (radiusRange.max - radiusRange.min) + radiusRange.min;
-            // var radius = UnityEngine.Random.Range(radiusRange.min, radiusRange.max);
-            if (radius > world.Width / 2f) {
-                radius = world.Width / 2f - 0.1f;
-            }
-            var x = (float)random.NextDouble() * ((world.Width - radius) - radius) + radius;
-            var y = (float)random.NextDouble() * ((world.Height - radius) - radius) + radius;
-            // var x = UnityEngine.Random.Range(radius, world.Width - radius);
-            // var y = UnityEngine.Random.Range(radius, world.Height - radius);
-            
-            var pointOfInterest = new SpherePointOfInterest(new UnityEngine.Vector2(x, y), type, radius);
-            var settlementDeveloperAgent = new SettlementDeveloperAgent(pointOfInterest, world);
-            AgentManager.Instance.AddNewAgent(settlementDeveloperAgent);
+        private IStreetGraph streetGraph;
 
-            world.PointsOfInterest.AddPointOfInterest(pointOfInterest);
-            return pointOfInterest;
-        }
+        [SerializeField]
+        public POIAgentParameters agentParameters = new();
         
         /// <summary>
         /// Returns the min and max radius for a point of interest of the given type.
@@ -52,10 +32,105 @@ namespace FreeFormGraph.Agents {
         }
 
 
-        public void DoWork(CancellationToken cancellationToken, IWorld world) {
-            if (world.PointsOfInterest.Count < desiredNumberOfPointsOfInterest) {
-                CreateNewPointOfInterest(world);
+        public void DoWork(CancellationToken cancellationToken, IWorld world, AgentManager.Context context) {
+            if(streetGraph == null) return;
+
+            var random = context.random;
+            if (world.PointsOfInterest.PointsOfInterest.Count < agentParameters.DesiredNumberOfPoints)  {
+                CreatePOI(world, streetGraph, random);
             }
+        }
+
+        private void CreatePOI(IWorld world, IStreetGraph streetGraph, System.Random random) {
+            var poiSeedPosition = new Vector2(world.Width/2, world.Height/2);
+            var worldPoiCount = world.PointsOfInterest.PointsOfInterest.Count;
+            if(worldPoiCount > 0) {
+                poiSeedPosition = world.PointsOfInterest.PointsOfInterest[random.Next(worldPoiCount)].Position;
+            }
+
+            var minDistanceToRoad = agentParameters.MinDistanceToRoad;
+            var radius = agentParameters.RadiusGeneration;
+            var randomDir = new Vector2(random.Next(-radius, radius), random.Next(-radius, radius));
+            var newPoiPos = poiSeedPosition + randomDir;
+
+            if(newPoiPos.x < 0 || newPoiPos.x >= world.Width || newPoiPos.y < 0 || newPoiPos.y >= world.Height) return;
+
+            newPoiPos = MinimizeCostOfPOI(world, newPoiPos);
+
+            if(streetGraph.TryFindClosestNode(newPoiPos, out _, minDistanceToRoad)) {
+                return;
+            } else if(streetGraph.TryFindClosestEdge(newPoiPos, out _, out _, minDistanceToRoad)) {
+                return;
+            }
+
+            //TODO check validity?
+
+            var pointOfInterest = new SpherePointOfInterest(newPoiPos, PointOfInterestType.Village, 3);
+            world.PointsOfInterest.AddPointOfInterest(pointOfInterest);
+        }
+
+        private Vector3 MinimizeCostOfPOI(IWorld world, Vector2 pos) {
+            var visited = new HashSet<Vector3>();
+            var current = pos;
+
+            while(!visited.Contains(current)) {
+                visited.Add(current);
+                current = SelectCheapestDirection(current, world);
+            }
+
+            return current;
+        }
+
+        private float Cost(IWorld world, Vector2 currentPos, Vector3 targetPosition) {
+            var heightDiff = world.GetHeightAt(targetPosition.x, targetPosition.y) - world.GetHeightAt(currentPos.x, currentPos.y);
+            var gradient = heightDiff / Vector3.Distance(currentPos, targetPosition);
+
+            var distanceClosest = 0.0f;
+            if(world.PointsOfInterest.PointsOfInterest.Count >= 2) {
+                distanceClosest = world.PointsOfInterest.PointsOfInterest
+                    .Min(POI => Vector3.Distance(targetPosition, POI.Position));
+            }
+            var distanceCost = agentParameters.DistanceCostFactor * 1.0f/(distanceClosest+1);
+
+            var totalCost = gradient + distanceCost;
+            return totalCost;
+        }
+
+        private Vector2 SelectCheapestDirection(Vector2 v, IWorld world) {
+            var currentTargetPos = Vector2.zero;
+            var currentCost = float.MaxValue;
+
+            int lookDistance = 1;
+            for(int dy = -lookDistance; dy <= lookDistance; dy++) {
+                for(int dx = -lookDistance; dx <= lookDistance; dx++) {
+                    if(dy == 0 && dx == 0) continue;
+
+                    var testPosition = v + new Vector2(dx,dy);
+                    if(testPosition.y < 0 || testPosition.y >= world.Height || testPosition.x < 0 || testPosition.x >= world.Width) continue;
+
+                    var newCost = Cost(world, v, testPosition);
+
+                    if(newCost < currentCost) {
+                        currentCost = newCost;
+                        currentTargetPos = testPosition; 
+                    }
+                }
+            }
+            
+            if(currentCost == float.MaxValue) return v;
+            return currentTargetPos;
+        }
+
+        void Start() {
+            streetGraph = FindObjectOfType<StreetGraphGameObject>();
+        }
+
+        [Serializable]
+        public class POIAgentParameters {
+            [Min(0)] public int DesiredNumberOfPoints = 35;
+            [SerializeField] public float DistanceCostFactor = 35;
+            [Min(0)] public int MinDistanceToRoad = 20;
+            [Min(0)] public int RadiusGeneration = 100;
         }
     }
     
