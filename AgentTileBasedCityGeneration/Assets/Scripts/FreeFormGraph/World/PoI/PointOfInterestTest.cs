@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -18,7 +20,16 @@ namespace FreeFormGraph.World.PoI {
             if (pointsOfInterest == null)
                 return;
             
-            foreach (var pointOfInterest in pointsOfInterest.PointsOfInterest) {
+            //handle concurrency issues
+            List<IPointOfInterest> POIs;
+            try {
+                POIs = pointsOfInterest.PointsOfInterest.ToList();
+            } catch (Exception) {
+                return;
+            }
+            
+            for (int i = 0; i < POIs.Count; i++) {
+                var pointOfInterest = POIs[i];
                 if (pointOfInterest is SpherePointOfInterest spherePointOfInterest) {
                     Gizmos.color = Color.green;
                     Gizmos.DrawWireSphere(spherePointOfInterest.Position, spherePointOfInterest.Radius);
