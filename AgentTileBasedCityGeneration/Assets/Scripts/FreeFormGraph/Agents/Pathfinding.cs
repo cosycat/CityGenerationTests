@@ -132,6 +132,7 @@ namespace FreeFormGraph.Agents {
                 current = came_from[current];
             }
             path.Add(startNode);
+            path.Reverse();
             return path;
         }
 
@@ -141,8 +142,6 @@ namespace FreeFormGraph.Agents {
 
             //#24
             var thresholdWpExistingConnection = 2.0f;
-
-            waypoints.Reverse(); //easier to debug TODO
 
             var currentWaypointIndex = 0;
             IStreetNode lastNode;
