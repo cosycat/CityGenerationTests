@@ -10,8 +10,10 @@ namespace FreeFormGraph.Agents {
 
     public class PointOfInterestAgent : MonoBehaviour, IAgent {
         
-        [SerializeField] private SettlementDeveloperAgent.SdaParameters settlementDeveloperAgentParameters = new();
-        [SerializeField] private PointOfInterestType pointOfInterestType;
+        [Tooltip("The parameters for used for the next generated settlement and its settlement developer agent."),
+         SerializeField] private SettlementDeveloperAgent.SdaParameters settlementDeveloperAgentParameters = new();
+        [Tooltip("The type of point of interest that will be generated next."),
+         SerializeField] private PointOfInterestType pointOfInterestType = PointOfInterestType.Village;
         
         private IStreetGraph streetGraph;
 
@@ -53,7 +55,7 @@ namespace FreeFormGraph.Agents {
             }
 
             var minDistanceToRoad = agentParameters.MinDistanceToRoad;
-            var radius = agentParameters.RadiusGeneration;
+            var radius = agentParameters.RadiusGeneration; // Shouldn't this be dependent on the world size?
             var randomDir = new Vector2(random.Next(-radius, radius), random.Next(-radius, radius));
             var newPoiPos = poiSeedPosition + randomDir;
 
@@ -68,10 +70,11 @@ namespace FreeFormGraph.Agents {
             }
 
             //TODO check validity?
-
-            var pointOfInterest = new SpherePointOfInterest(newPoiPos, PointOfInterestType.Village, 15);
+            var sizeRange = GetRadiusForPointOfInterestType(pointOfInterestType);
+            var radiusPoi = random.Next((int)sizeRange.min, (int)sizeRange.max);
+            var pointOfInterest = new SpherePointOfInterest(newPoiPos, pointOfInterestType, radiusPoi);
             world.PointsOfInterest.AddPointOfInterest(pointOfInterest);
-            context.manager.AddNewAgent(new SettlementDeveloperAgent(pointOfInterest, world));
+            context.manager.AddNewAgent(new SettlementDeveloperAgent(pointOfInterest, world, settlementDeveloperAgentParameters));
         }
 
         private Vector3 MinimizeCostOfPOI(IWorld world, Vector2 pos) {
