@@ -21,6 +21,9 @@ namespace FreeFormGraph.World
         public override float MinHeight => minHeight;
         public override IPointOfInterestCollection PointsOfInterest { get; } = new PointOfInterestCollection();
 
+        private IStreetGraph streetGraph;
+        public override IStreetGraph StreetGraph => streetGraph;
+
         public void Start() {
             heights = new float[Width, Height];
 
@@ -34,6 +37,8 @@ namespace FreeFormGraph.World
                     maxHeight = Mathf.Max(MaxHeight, heights[x,y]);
                 }
             }
+
+            streetGraph = FindObjectOfType<StreetGraphGameObject>();
         }
 
         private void PlaceGauss(int centerX, int centerY, float amplitude = 10, float spread = 5.0f) {

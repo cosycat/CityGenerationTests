@@ -25,6 +25,9 @@ namespace FreeFormGraph.World {
 
         [SerializeField] public Texture2D heightmap;
 
+        private IStreetGraph streetGraph;
+        public override IStreetGraph StreetGraph => streetGraph;
+
         public void Start() {
             if(heightmap != null) {
                 var pixels = heightmap.GetPixels();  
@@ -59,6 +62,8 @@ namespace FreeFormGraph.World {
                     }
                 }
             }
+
+            streetGraph = FindObjectOfType<StreetGraphGameObject>();
         }
 
         public override float GetHeightAt(float x, float y)
