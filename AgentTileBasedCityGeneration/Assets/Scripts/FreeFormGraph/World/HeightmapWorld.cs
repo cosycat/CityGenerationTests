@@ -5,8 +5,6 @@ using Utils;
 
 namespace FreeFormGraph.World {
     public class HeightmapWorld: WorldGameObject {
-        [SerializeField] private bool doPathfinding;
-        [SerializeField] private bool doPointOfInterest;
         
         private float[,] heights;
         private int width;
@@ -26,13 +24,6 @@ namespace FreeFormGraph.World {
         public override IPointOfInterestCollection PointsOfInterest { get; } = new PointOfInterestCollection();
 
         [SerializeField] public Texture2D heightmap;
-
-        private IStreetGraph graph;
-        public override IStreetGraph StreetGraph => graph;
-
-        private void Awake() {
-            graph = FindObjectOfType<StreetGraphGameObject>();
-        }
 
         public void Start() {
             if(heightmap != null) {
@@ -68,43 +59,6 @@ namespace FreeFormGraph.World {
                     }
                 }
             }
-
-            var agent = new Pathfinding(streetGraph: graph, world: this);
-            
-            // var poiAgent = new PointOfInterestAgent(this);
-            // if (doPointOfInterest) {
-            //     poiAgent.CreateNewPointOfInterest(registerInWorld: true);
-            //     poiAgent.CreateNewPointOfInterest(registerInWorld: true);
-            //     poiAgent.CreateNewPointOfInterest(registerInWorld: true);
-            // }
-            
-            if (doPathfinding) {
-                BackgroundCodeExecutor.ExecuteInBackground((cancellationToken) => {
-                    // diagonal
-                    agent.AStar(new Vector3(10, 10), new Vector3(width - 10, height - 10));
-                    agent.AStar(new Vector3(width - 10, 10), new Vector3(10, height - 10));
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    // straight
-                    agent.AStar(new Vector3(10, 10), new Vector3(width - 10, 10));
-                    agent.AStar(new Vector3(10, 10), new Vector3(10, height - 10));
-                    agent.AStar(new Vector3(10, height - 10), new Vector3(width - 10, height - 10));
-                    agent.AStar(new Vector3(width - 10, 10), new Vector3(width - 10, height - 10));
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    agent.AStar(new Vector3(10, 185, 0), new Vector3(20, 192, 0));
-                    agent.AStar(new Vector3(10, 200 - 10, 0), new Vector3(140, 200 - 150, 0));
-                    agent.AStar(new Vector3(190, 200 - 55, 0), new Vector3(80, 200 - 180, 0));
-                    agent.AStar(new Vector3(4, 4, 0), new Vector3(140, 200 - 150, 0));
-                    agent.AStar(new Vector3(4, 4, 0), new Vector3(80, 20, 0));
-                    cancellationToken.ThrowIfCancellationRequested();
-                }, () => {
-                    Debug.Log("Pathfinding done");
-                    // TODO: restart all other pathfinding tasks, as the world has changed. Maybe with a flag?
-                });
-                
-            }
-            
         }
 
         public override float GetHeightAt(float x, float y)
