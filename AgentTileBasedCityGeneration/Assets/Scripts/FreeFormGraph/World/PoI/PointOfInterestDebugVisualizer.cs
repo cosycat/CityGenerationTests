@@ -5,7 +5,8 @@ using UnityEditor;
 using UnityEngine;
 
 namespace FreeFormGraph.World.PoI {
-    public class PointOfInterestTest : MonoBehaviour {
+    
+    public class PointOfInterestDebugVisualizer : MonoBehaviour {
 
         private IWorld world;
         private IPointOfInterestCollection pointsOfInterest;
