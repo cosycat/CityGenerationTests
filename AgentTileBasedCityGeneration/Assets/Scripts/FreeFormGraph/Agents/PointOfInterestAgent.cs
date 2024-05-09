@@ -70,8 +70,7 @@ namespace FreeFormGraph.Agents {
             }
 
             //TODO check validity?
-            var sizeRange = GetRadiusForPointOfInterestType(pointOfInterestType);
-            var radiusPoi = random.Next((int)sizeRange.min, (int)sizeRange.max);
+            var radiusPoi = DetermineRadiusOfPoi(newPoiPos, world);
             var pointOfInterest = new SpherePointOfInterest(newPoiPos, pointOfInterestType, radiusPoi);
             world.PointsOfInterest.AddPointOfInterest(pointOfInterest);
             context.manager.AddNewAgent(new SettlementDeveloperAgent(pointOfInterest, world, settlementDeveloperAgentParameters));
@@ -144,6 +143,65 @@ namespace FreeFormGraph.Agents {
             return currentTargetPos;
         }
 
+        /// <summary>
+        /// Determine the radius of a POI by growing it in steps. During each step, the slopes on the edge of the radius are
+        /// evaluated, penalised and accumulated according to some parameters. If this accumulated penalty is higher than some
+        /// threshold, growing stops and the radius is fixed.
+        /// </summary>
+        /// <param name="v">POI position</param>
+        /// <param name="world"></param>
+        /// <returns>Radius of POI in world units</returns>
+        private float DetermineRadiusOfPoi(Vector2 v, IWorld world) {
+            var startingHeight = world.GetHeightAt(v.x, v.y);
+            var penalty = 0.0f;
+            var threshold = agentParameters.POIRadiusFlatnessThreshold;
+
+            var directions = new Vector2[] {
+                new Vector2(0, 1), //up
+                new Vector2(0, -1), //down
+                new Vector2(1, 0), //left
+                new Vector2(-1, 0), //right
+
+                new Vector2(1, 1), //top right
+                new Vector2(-1, -1), //bottom left
+                new Vector2(1, -1), //top left
+                new Vector2(-1, 1), //bottom right
+            };
+
+            //looks the same as above but 
+            var dirUpdateMask = (Vector2[])directions.Clone(); //vectors are value types!
+            var directionHeights = new float[directions.Count()];
+            Array.Fill(directionHeights, startingHeight);
+
+            var radius = 1; //radius could technically be inferred from directions array but lets keep that array flexible
+            while(penalty < threshold) {
+                penalty = 0;
+                for(int i = 0; i < directions.Count(); i++) {
+                    var testPos = v + directions[i];
+                    if(world.IsOutOfBounds(testPos)) continue;
+                    var heightAtDir = directionHeights[i];
+                    var heightAtTestPos = world.GetHeightAt(testPos.x, testPos.y);
+
+                    var slopeCost = 0.0f;
+                    var slope = heightAtTestPos - heightAtDir;
+                    if(slope >= agentParameters.POIRadiusMinimumSlopeForPenalty) {
+                        slopeCost = Mathf.Pow(slope + 1, agentParameters.POIRadiusSlopePenaltyPower);
+                    }
+
+                    penalty += slopeCost;
+                    
+                    var heightPenalty = agentParameters.POIRadiusHeightPenalty.Evaluate(Mathf.InverseLerp(world.MinHeight, world.MaxHeight, heightAtDir));
+                    penalty += heightPenalty * agentParameters.POIRadiusHeightPenaltyMultiplier;
+
+                    directions[i] += dirUpdateMask[i];
+                    directionHeights[i] = heightAtTestPos;
+                }
+                radius++;
+            }
+            
+            return radius;
+        }
+
         void Start() {
             streetGraph = FindObjectOfType<StreetGraphGameObject>();
         }
@@ -172,6 +230,34 @@ namespace FreeFormGraph.Agents {
             /// on a random POI's position + radius. The final POI might be outside of the radius due to the cost function.
             /// </summary>
             [Min(0)] public int RadiusGeneration = 100;
+
+            /// <summary>
+            /// Threshold which determines when POI-Radius-growing stops. Radius growing stops when accumulated penalty
+            /// is above this threshold.
+            /// </summary>
+            [Min(0)] public float POIRadiusFlatnessThreshold = 20.0f;
+
+            /// <summary>
+            /// Defines at which point a penalty for the slope is applied. 0.1 equals to 10% slope.
+            /// </summary>
+            [Min(0)] public float POIRadiusMinimumSlopeForPenalty = 0.06f;
+
+            /// <summary>
+            /// Defines how slopes > POIRadiusMinimumSlopeForPenalty are penalised in terms of power:
+            /// slope penalty = slope ^ POIRadiusSlopePenaltyPower
+            /// </summary>
+            [Min(0)] public int POIRadiusSlopePenaltyPower = 3;
+            
+            /// <summary>
+            /// Curve which describes how height penalty is applied to the radius. A linear curve means that
+            /// the penalty for height is linear with increasing height.
+            /// </summary>
+            [SerializeField] public AnimationCurve POIRadiusHeightPenalty = AnimationCurve.Linear(0,0,1,1);
+            
+            /// <summary>
+            /// Multiplier for the height penalty.
+            /// </summary>
+            [SerializeField] public float POIRadiusHeightPenaltyMultiplier = 3.5f;
         }
     }
     
