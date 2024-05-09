@@ -34,10 +34,10 @@ namespace FreeFormGraph {
 
         public abstract bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge);
         public abstract bool RemoveNode(IStreetNode node);
-        public virtual bool TryFindClosestNode(Vector3 position, out IStreetNode foundNode, float threshold = Single.MaxValue) {
+        public virtual bool TryFindClosestNode(IEnumerable<IStreetNode> nodes, Vector3 position, out IStreetNode foundNode, float threshold = Single.MaxValue) {
             foundNode = null;
             var minDistance = threshold;
-            foreach (var node in Nodes) {
+            foreach (var node in nodes) {
                 var distance = Vector3.Distance(node.Position, position);
                 if (distance < minDistance) {
                     minDistance = distance;
@@ -47,13 +47,13 @@ namespace FreeFormGraph {
             return foundNode != null;
         }
 
-        public virtual bool TryFindClosestEdge(Vector3 position, out IStreetEdge foundEdge, out Vector3 positionOnEdge,
+        public virtual bool TryFindClosestEdge(IEnumerable<IStreetEdge> edges, Vector3 position, out IStreetEdge foundEdge, out Vector3 positionOnEdge,
             float threshold = Single.MaxValue) {
 
             foundEdge = null;
             var minDistance = threshold;
             positionOnEdge = default;
-            foreach (var edge in Edges) {
+            foreach (var edge in edges) {
                 var distance = edge.GetDistanceEdgeToPosition(position, out var posOnEdgeTmp);
                 if (distance < minDistance) {
                     minDistance = distance;
@@ -67,15 +67,15 @@ namespace FreeFormGraph {
         public abstract bool CreateUnconnectedNode(Vector3 position, out IStreetNode newNode);
         public virtual bool GetOrCreateNode(Vector3 position, float threshold, out IStreetNode node, out bool isNewlyCreatedNode) {
             // Snap to node if possible
-            if (TryFindClosestNode(position, out node, threshold)) {
+            if (((IStreetGraph)this).TryFindClosestNode(position, out node, threshold)) {
                 isNewlyCreatedNode = false;
                 return true;
             }
             // snap to edge if possible
-            if (TryFindClosestEdge(position, out var edge, out var positionOnEdge, SnapToExistingEdgeThreshold)) {
+            if (((IStreetGraph)this).TryFindClosestEdge(position, out var edge, out var positionOnEdge, SnapToExistingEdgeThreshold)) {
                 Debug.Log($"IStreetGraph::GetOrCreateNode - Found edge to snap to. Position on edge: {positionOnEdge}, edge: {edge}");
                 // snap to existing node on edge if possible
-                if (TryFindClosestNode(positionOnEdge, out node, SnapToExistingNodeThreshold)) {
+                if (((IStreetGraph)this).TryFindClosestNode(positionOnEdge, out node, SnapToExistingNodeThreshold)) {
                     isNewlyCreatedNode = false;
                     return true;
                 }
@@ -100,6 +100,11 @@ namespace FreeFormGraph {
                 }
             }
             return nodes.ToArray();
+        }
+
+        public virtual IStreetEdge[] FindAllEdgesWithinRange(Vector2 position, float radius)
+        {
+            throw new NotImplementedException();
         }
     }
     

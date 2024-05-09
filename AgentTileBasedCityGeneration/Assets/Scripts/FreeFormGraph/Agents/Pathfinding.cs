@@ -26,6 +26,10 @@ namespace FreeFormGraph.Agents {
         public Waypoint current {get; private set;} = null;
         public Vector3 target {get; private set;} = default;
 
+        private IDictionary<Waypoint, List<Waypoint>> wpCache = new Dictionary<Waypoint, List<Waypoint>>();
+        private int cacheHits = 0;
+        private int getNeighborsCalled = 0;
+
         public Pathfinding(IStreetGraph streetGraph, IWorld world) {
             Debug.Assert(streetGraph != null);
             Debug.Assert(world != null);
@@ -99,7 +103,7 @@ namespace FreeFormGraph.Agents {
             if(perfStats) {
                 sw.Stop();
                 var secs = sw.ElapsedMilliseconds / 1000.0f;
-                Debug.Log($"A* perf: Elapsed (s): {secs}; Nodes checked {nodesChecked}; Throughput (nodes/sec): {nodesChecked/secs}; World edges count: {StreetGraph.Edges.ToList().Count}");
+                Debug.Log($"A* perf: Elapsed (s): {secs}; Nodes checked {nodesChecked}; Throughput (nodes/sec): {nodesChecked/secs}; World edges count: {StreetGraph.Edges.ToList().Count}; Queue size: {q.Count}; cache hits {cacheHits}; get neighbors calls: {getNeighborsCalled}");
             }
 
             if (targetWaypoint != null) {
@@ -248,6 +252,12 @@ namespace FreeFormGraph.Agents {
         }
 
         public List<Waypoint> GetNeighbors(Waypoint n, float SnapFactorNode, float SnapFactorEdge, int k) {
+            getNeighborsCalled++;
+            if(wpCache.ContainsKey(n)) {
+                cacheHits++;
+                return wpCache[n];
+            }
+
             var list = new List<Waypoint>(); //list of new waypoint to be explored in A*
             var skipEdge = new List<IStreetEdge>();
             var skipNode = new List<IStreetNode>();
@@ -286,7 +296,15 @@ namespace FreeFormGraph.Agents {
             //snap position to grid in case we are on a edge/node which does not lie on grid
             currentPosition = new Vector3(Mathf.Round(currentPosition.x), Mathf.Round(currentPosition.y), 0);
 
-            
+            var possibleEdges = StreetGraph.FindAllEdgesWithinRange(n.Pos, k + SnapFactorEdge);
+            var possibleNodes = new List<IStreetNode>();
+            for(int i = 0; i < possibleEdges.Count(); i++) {
+                //prefiltering nodes to be included in the radius is not necessary. TryFindClosestNode will
+                //loop through them again anyway and discard the ones to far away
+                possibleNodes.Add(possibleEdges[i].NodeA);
+                possibleNodes.Add(possibleEdges[i].NodeB);
+            } 
+
             //see Marechal et al. section 5.1
             //this is the case were we are currently not on existing roads
             for(int i = -k; i <= k; i++) {
@@ -294,14 +312,14 @@ namespace FreeFormGraph.Agents {
                     if(GCD(i, j) == 1) {
                         var newPos = new Vector3(i, j, 0) + currentPosition;
                         var wp = new Waypoint(newPos);
-                        if(StreetGraph.TryFindClosestNode(newPos, out var node, SnapFactorNode)) {
+                        if(StreetGraph.TryFindClosestNode(possibleNodes, newPos, out var node, SnapFactorNode)) {
                             //move this point to the closest node
                             if(!skipNode.Contains(node)) {
                                 wp.Pos = node.Position;
                                 wp.GraphNode = node;
                                 list.Add(wp);
                             }
-                        } else if(StreetGraph.TryFindClosestEdge(newPos, out var edge, out var posOnEdge, SnapFactorEdge)) {
+                        } else if(StreetGraph.TryFindClosestEdge(possibleEdges, newPos, out var edge, out var posOnEdge, SnapFactorEdge)) {
                             //move this point to the closest edge
                             if(!skipEdge.Contains(edge)) {
                                 wp.Pos = posOnEdge;
@@ -317,6 +335,7 @@ namespace FreeFormGraph.Agents {
             foreach(var wp in list) {
                 Debug.Assert(!skipEdge.Contains(wp.GraphEdge));
             }
+            wpCache.Add(n, list);
             return list;
         }
 

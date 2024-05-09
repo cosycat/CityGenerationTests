@@ -80,7 +80,10 @@ namespace FreeFormGraph {
         /// <param name="foundNode"> The closest node to the position, if it is within the threshold, null otherwise. </param>
         /// <param name="threshold"> The maximum distance to consider a node as the closest. </param>
         /// <returns> True if a node was found, false otherwise. </returns>
-        public bool TryFindClosestNode(Vector3 position, out IStreetNode foundNode, float threshold = float.MaxValue);
+        public bool TryFindClosestNode(Vector3 position, out IStreetNode foundNode, float threshold = float.MaxValue) =>
+            TryFindClosestNode(Nodes, position, out foundNode, threshold);
+
+        public bool TryFindClosestNode(IEnumerable<IStreetNode> nodes, Vector3 position, out IStreetNode foundNode, float threshold = float.MaxValue);
 
         /// <summary>
         /// Finds the closest edge to the given position, if it is within the given threshold.
@@ -90,7 +93,10 @@ namespace FreeFormGraph {
         /// <param name="positionOnEdge"> The position on the edge that is closest to the given position. </param>
         /// <param name="threshold"> The maximum distance to consider an edge as the closest. </param>
         /// <returns> True if an edge was found, false otherwise. </returns>
-        public bool TryFindClosestEdge(Vector3 position, out IStreetEdge foundEdge, out Vector3 positionOnEdge, float threshold = float.MaxValue);
+        public bool TryFindClosestEdge(Vector3 position, out IStreetEdge foundEdge, out Vector3 positionOnEdge, float threshold = float.MaxValue) =>
+            TryFindClosestEdge(Edges, position, out foundEdge, out positionOnEdge, threshold);
+
+        public bool TryFindClosestEdge(IEnumerable<IStreetEdge> edges, Vector3 position, out IStreetEdge foundEdge, out Vector3 positionOnEdge, float threshold = float.MaxValue);
 
         /// <summary>
         /// Creates a new node at the given position without connecting it to any edges.
@@ -120,5 +126,6 @@ namespace FreeFormGraph {
 
         void InsertNodeOnEdge(IStreetEdge edge, Vector3 positionOnEdge, out IStreetNode node, out IStreetEdge leftEdge, out IStreetEdge rightEdge);
         IStreetNode[] FindAllNodesWithinRange(Vector2 position, float radius);
+        IStreetEdge[] FindAllEdgesWithinRange(Vector2 position, float radius);
     }
 }
