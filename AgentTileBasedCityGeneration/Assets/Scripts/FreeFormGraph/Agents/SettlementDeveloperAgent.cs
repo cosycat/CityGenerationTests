@@ -12,6 +12,8 @@ namespace FreeFormGraph.Agents {
     
     public class SettlementDeveloperAgent : IAgent {
         
+        public int WorkFrequency { get; set; } = 1;
+        
         private readonly SdaParameters parameters;
 
         private readonly IPointOfInterest pointOfInterest;
@@ -33,12 +35,12 @@ namespace FreeFormGraph.Agents {
                 return;
             }
             var nodes = pointOfInterest.FindAllNodes(world);
-            Debug.Log("PoIDeveloperAgent: Growing road network.");
+            // Debug.Log("PoIDeveloperAgent: Growing road network.");
             var roadNetworkGrown = GrowRoadNetwork(world, nodes);
             cancellationToken.ThrowIfCancellationRequested();
-            Debug.Log("PoIDeveloperAgent: Connecting road network.");
+            // Debug.Log("PoIDeveloperAgent: Connecting road network.");
             var newConnections = ConnectRoadNetwork(world, nodes, cancellationToken);
-            Debug.Log($"PoIDeveloperAgent: Connected {newConnections} cul-de-sacs.");
+            // Debug.Log($"PoIDeveloperAgent: Connected {newConnections} cul-de-sacs.");
             var didChange = roadNetworkGrown || newConnections > 0;
             if (didChange) lastWorkCycleWithChange = 0;
             else lastWorkCycleWithChange++;
@@ -92,10 +94,10 @@ namespace FreeFormGraph.Agents {
                     var nodeB = GetRandomNode(nodes);
                     while (nodeA == nodeB) {
                         nodeB = GetRandomNode(nodes);
-                        if (nodes.Length < 2) {
+                        if (nodes.Length < 2) { // sanity check and in case some parallel code modifies the nodes list (which it shouldn't)
                             Debug.LogError("PoIDeveloperAgent: Not enough nodes to connect. Nodes modified during connection.");
                             return 0;
-                        } // sanity check and in case some parallel code modifies the nodes list (which it shouldn't)
+                        }
                     }
                     if (!ConnectCulDeSacs(nodeA, nodeB, world)) return 0;
                     return 1;
@@ -103,12 +105,12 @@ namespace FreeFormGraph.Agents {
                 
                 case SdaParameters.ConnectionHandling.ConnectAll: {
                     var connections = 0;
-                    for (var i = 0; i < nodes.Length; i++) {
-                        for (var j = i + 1; j < nodes.Length; j++) {
+                    foreach (var nodeA in nodes) {
+                        foreach (var nodeB in nodes) {
                             if (cancellationToken.IsCancellationRequested) {
                                 return connections;
                             }
-                            if (ConnectCulDeSacs(nodes[i], nodes[j], world)) {
+                            if (ConnectCulDeSacs(nodeA, nodeB, world)) {
                                 connections++;
                             }
                         }
@@ -130,7 +132,7 @@ namespace FreeFormGraph.Agents {
                 return false;
             }
             Debug.Assert(!isToNodeNew, $"PoIDeveloperAgent: Cul-de-sac connection created a new node at {toNode}.");
-            Debug.Log($"PoIDeveloperAgent: Connected cul-de-sacs {nodeA.Position} and {nodeB.Position}.");
+            // Debug.Log($"PoIDeveloperAgent: Connected cul-de-sacs {nodeA.Position} and {nodeB.Position}.");
             return true;
         }
 

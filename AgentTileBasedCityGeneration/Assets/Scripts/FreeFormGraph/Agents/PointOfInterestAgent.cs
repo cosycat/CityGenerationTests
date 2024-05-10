@@ -10,6 +10,8 @@ namespace FreeFormGraph.Agents {
 
     public class PointOfInterestAgent : MonoBehaviour, IAgent {
         
+        public int WorkFrequency { get; set; } = 100;
+        
         [Tooltip("The parameters for used for the next generated settlement and its settlement developer agent."),
          SerializeField] private SettlementDeveloperAgent.SdaParameters settlementDeveloperAgentParameters = new();
         [Tooltip("The type of point of interest that will be generated next."),
@@ -35,7 +37,6 @@ namespace FreeFormGraph.Agents {
                 _ => throw new System.ArgumentOutOfRangeException(nameof(type), type, "Invalid PointOfInterestType value.")
             };
         }
-
 
         public void DoWork(CancellationToken cancellationToken, IWorld world, AgentManager.Context context) {
             if(streetGraph == null) return;

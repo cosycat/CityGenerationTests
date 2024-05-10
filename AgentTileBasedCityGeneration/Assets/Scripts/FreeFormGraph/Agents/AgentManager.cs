@@ -6,20 +6,33 @@ using System.Threading.Tasks;
 using FreeFormGraph.World;
 using JetBrains.Annotations;
 using UnityEngine;
+using Random = System.Random;
 
 namespace FreeFormGraph.Agents {
     public class AgentManager : MonoBehaviour {
         
+        /// <summary>
+        /// The target frames per second the agents should run at.
+        ///
+        /// If the agent is ever faster than this, it will wait until starting the next frame.
+        /// </summary>
+        public int TargetFramesPerSecond { get; set; } = 1;
+        
+        private float TargetFrameTimeSeconds => 1f / TargetFramesPerSecond;
+        
         public static AgentManager Instance { get; private set; }
 
-        [ItemNotNull] private readonly List<IAgent> agents = new();
+        [ItemNotNull] private readonly List<(IAgent agent, int framesSinceWorked)> agents = new();
 
         private readonly object stopRequestLock = new();
 
+        private int currCycleCounter = 0;
+        private DateTime lastFrameTime = DateTime.Now;
         private int currAgentIndex = -1;
-        private IAgent CurrAgent => agents[currAgentIndex];
+        internal IAgent CurrAgent => agents[currAgentIndex].agent;
+        internal int CurrAgentFramesSinceWorked => agents[currAgentIndex].framesSinceWorked;
 
-        private bool IsAgentRunning => cancellationTokenSource != null;
+        internal bool IsAgentRunning => cancellationTokenSource != null;
 
         [CanBeNull] private CancellationTokenSource cancellationTokenSource = null;
 
@@ -38,7 +51,7 @@ namespace FreeFormGraph.Agents {
             Instance = this;
 
             context = new Context() {
-                random = new(1337),
+                random = new Random(1337),
                 manager = this
             };
         }
@@ -62,31 +75,75 @@ namespace FreeFormGraph.Agents {
         }
 
         private void HandleNextAgent() {
+            // check if we are ready to start the next agent
             if (IsAgentRunning) return;
             if (agents.Count == 0) {
                 Debug.Log("No agents to run. Stopped AgentManager.");
                 return;
             }
-            currAgentIndex = (currAgentIndex + 1) % agents.Count;
-            var agent = CurrAgent;
-            Debug.Assert(agent != null);
-            cancellationTokenSource = new CancellationTokenSource();
-            var task = Task.Run(() => agent.DoWork(cancellationTokenSource.Token, world, context), cancellationTokenSource.Token);
-            task.ContinueWith(completedTask => {
 
+            // get next agent and handle frame time
+            double timeToWaitSeconds;
+            currAgentIndex = (currAgentIndex + 1) % agents.Count;
+            if (currAgentIndex == 0) {
+                currCycleCounter++;
+                var timeSinceLastFrame = DateTime.Now - lastFrameTime;
+                timeToWaitSeconds = TargetFrameTimeSeconds - timeSinceLastFrame.TotalSeconds; // set wait time, if the previous frame was too fast
+                lastFrameTime = DateTime.Now;
+                Debug.Log($"Cycle {currCycleCounter} started. Waiting {timeToWaitSeconds} seconds. {agents.Count} agents to run. {TargetFrameTimeSeconds} seconds per frame.");
+            } else {
+                timeToWaitSeconds = 0; // no need to wait, if we are in the same frame as the last agent
+            }
+            
+            // get the agent and start the work, if the agent is ready
+            var agent = CurrAgent;
+            var framesSinceWorked = CurrAgentFramesSinceWorked;
+            if (framesSinceWorked < agent.WorkFrequency) {
+                // the agent is not ready this frame, skip to the next agent.
+                agents[currAgentIndex] = (agent, framesSinceWorked + 1);
+                Task.Run(() => { // make sure to still wait, even if the agent is not ready
+                    if (timeToWaitSeconds > 0) {
+                        Debug.Log($"Waiting {timeToWaitSeconds} seconds.");
+                        Thread.Sleep((int)(timeToWaitSeconds * 1000));
+                    }
+                    HandleNextAgent();
+                });
+                return;
+            }
+            Debug.Assert(agent != null);
+            agents[currAgentIndex] = (agent, 0); // reset the frame counter for the agent
+            cancellationTokenSource = new CancellationTokenSource();
+            
+            // run the task, but let it wait if the previous frame was too fast
+            var task = Task.Run(() => {
+                if (timeToWaitSeconds > 0) {
+                    Debug.Log($"Waiting {timeToWaitSeconds} seconds.");
+                    Thread.Sleep((int)(timeToWaitSeconds * 1000));
+                }
+                cancellationTokenSource.Token.ThrowIfCancellationRequested();
+                agent.DoWork(cancellationTokenSource.Token, world, context);
+            }, cancellationTokenSource.Token);
+            
+            // once the agent is done, either start the next agent or stop the manager, if requested
+            task.ContinueWith(completedTask => {
                 lock (stopRequestLock) {
                     cancellationTokenSource = null;
+                    
                     if(completedTask.IsFaulted) {
-                        foreach (var exception in completedTask.Exception.Flatten().InnerExceptions) {
+                        var exceptions = completedTask.Exception?.Flatten().InnerExceptions;
+                        Debug.LogError("Aborted AgentManager due to unhandled exception in child task");
+                        if (exceptions == null) return;
+                        foreach (var exception in exceptions) {
                             Debug.LogError(exception.ToString());
                         }
-                        Debug.LogError("Aborted AgentManager due to unhandled exception in child task");
                         return;
                     }
+                    
                     if (stopRequested) {
                         onStoppedMethod?.Invoke();
                         onStoppedMethod = null; // to make sure it is not called again
                     }
+                    
                     else {
                         HandleNextAgent();
                     }
@@ -95,12 +152,14 @@ namespace FreeFormGraph.Agents {
         }
 
         private void GenerateAgents() {
-            agents.AddRange(FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).OfType<IAgent>());
+            foreach (var agent in FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).OfType<IAgent>()) {
+                agents.Add((agent, agent.WorkFrequency));
+            }
         }
         
         public void AddNewAgent(IAgent agent) {
             lock (stopRequestLock) {
-                agents.Add(agent);
+                agents.Add((agent, agent.WorkFrequency)); // set to frame rate to make sure it is run in the next frame
                 if (agents.Count == 1) HandleNextAgent(); // If there was no agent before, start now.
             }
         }

@@ -202,7 +202,7 @@ namespace FreeFormGraph.Agents {
         }
 
         private float Cost(Waypoint current, Waypoint next) {
-            Debug.Assert(current.Pos != next.Pos);
+            Debug.Assert(current.Pos != next.Pos, "Current and next waypoint are the same");
             var cost = Vector3.Distance(current.Pos, next.Pos);
             /*if(cost <= 1.01f) {
                 cost += 0.1f; //make short segments more costly to force fewer nodes
