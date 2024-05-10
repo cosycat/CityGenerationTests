@@ -207,6 +207,10 @@ namespace FreeFormGraph {
                 var foundANode = streetGraphCopy.TryFindClosestNode(mouseWorldPosition, out var closestNode, mouseNodeDistanceThreshold);
                 UnityEditor.Handles.Label(mouseWorldPosition, $"{mouseWorldPosition}{(foundANode ? $" {closestNode}" : "")}");
             }
+            
+            if (streetGraphCopy is MonoBehaviour mb) {
+                Destroy(mb.gameObject);
+            }
         }
 
         private static void DrawLabelNode(IStreetNode[] nodes) {

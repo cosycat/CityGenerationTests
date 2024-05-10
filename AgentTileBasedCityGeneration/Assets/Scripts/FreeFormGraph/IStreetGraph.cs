@@ -124,6 +124,8 @@ namespace FreeFormGraph {
         
         /// <summary>
         /// Copy the graph for reading from it on a different thread.
+        ///
+        /// Don't forget to destroy the copy when you are done with it.
         /// </summary>
         /// <returns> A copy of the graph. </returns>
         IStreetGraph Copy();
