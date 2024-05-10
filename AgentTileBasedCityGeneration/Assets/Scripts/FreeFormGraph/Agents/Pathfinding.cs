@@ -296,7 +296,7 @@ namespace FreeFormGraph.Agents {
             //snap position to grid in case we are on a edge/node which does not lie on grid
             currentPosition = new Vector3(Mathf.Round(currentPosition.x), Mathf.Round(currentPosition.y), 0);
 
-            var possibleEdges = StreetGraph.FindAllEdgesWithinRange(n.Pos, k + SnapFactorEdge);
+            var possibleEdges = StreetGraph.FindAllEdgesWithinRange(n.Pos, Mathf.Sqrt(k*k + k*k) + SnapFactorEdge);
             var possibleNodes = new List<IStreetNode>();
             for(int i = 0; i < possibleEdges.Count(); i++) {
                 //prefiltering nodes to be included in the radius is not necessary. TryFindClosestNode will
