@@ -74,7 +74,7 @@ namespace FreeFormGraph.Agents {
             RequestStopAgents(() => { Debug.Log("OnApplicationQuit stopped");});
         }
 
-        private void HandleNextAgent() {
+        private void HandleNextAgent(float timeToWaitSeconds = 0) {
             // check if we are ready to start the next agent
             if (IsAgentRunning) return;
             if (agents.Count == 0) {
@@ -83,12 +83,11 @@ namespace FreeFormGraph.Agents {
             }
 
             // get next agent and handle frame time
-            double timeToWaitSeconds;
             currAgentIndex = (currAgentIndex + 1) % agents.Count;
             if (currAgentIndex == 0) {
                 currCycleCounter++;
                 var timeSinceLastFrame = DateTime.Now - lastFrameTime;
-                timeToWaitSeconds = TargetFrameTimeSeconds - timeSinceLastFrame.TotalSeconds; // set wait time, if the previous frame was too fast
+                timeToWaitSeconds = (float)(TargetFrameTimeSeconds - timeSinceLastFrame.TotalSeconds); // set wait time, if the previous frame was too fast
                 lastFrameTime = DateTime.Now;
                 Debug.Log($"Cycle {currCycleCounter} started. Waiting {timeToWaitSeconds} seconds. {agents.Count} agents to run. {TargetFrameTimeSeconds} seconds per frame.");
             } else {
@@ -101,13 +100,7 @@ namespace FreeFormGraph.Agents {
             if (framesSinceWorked < agent.WorkFrequency) {
                 // the agent is not ready this frame, skip to the next agent.
                 agents[currAgentIndex] = (agent, framesSinceWorked + 1);
-                Task.Run(() => { // make sure to still wait, even if the agent is not ready
-                    if (timeToWaitSeconds > 0) {
-                        Debug.Log($"Waiting {timeToWaitSeconds} seconds.");
-                        Thread.Sleep((int)(timeToWaitSeconds * 1000));
-                    }
-                    HandleNextAgent();
-                });
+                HandleNextAgent(timeToWaitSeconds);
                 return;
             }
             Debug.Assert(agent != null);
