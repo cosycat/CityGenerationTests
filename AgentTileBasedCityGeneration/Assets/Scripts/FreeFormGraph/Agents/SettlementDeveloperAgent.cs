@@ -74,7 +74,7 @@ namespace FreeFormGraph.Agents {
                 return false;
             }
 
-            if (!world.StreetGraph.CreateEdge(node, new Vector3(newPoint.x, newPoint.y), out var newEdge, out var toNode, out var isToNodeNew, failIfIntersection: true)) {
+            if (!world.StreetGraph.CreateEdge(node, new Vector3(newPoint.x, newPoint.y), out var newEdge, out var toNode, out var isToNodeNew, out var isEdgeNew, failIfIntersection: true)) {
                 Debug.LogWarning("Could not create a new node for the PoIDeveloperAgent.");
                 return false;
             }
@@ -127,13 +127,15 @@ namespace FreeFormGraph.Agents {
             if (Vector3.Distance(nodeA.Position, nodeB.Position) > parameters.MaxConnectionDistance) return false;
             if ((parameters.ConnectCulDeSacWithNonCulDeSac && nodeA.Edges.Count() > 1 && nodeB.Edges.Count() > 1) 
                 || !parameters.ConnectCulDeSacWithNonCulDeSac && nodeA.Edges.Count() > 1 || nodeB.Edges.Count() > 1) return false; // Too many nodes are not cul-de-sacs
-            if (!world.StreetGraph.CreateEdge(nodeA, nodeB.Position, out var newEdge, out var toNode, out var isToNodeNew, failIfIntersection: true)) {
-                Debug.LogWarning("Could not connect the cul-de-sacs.");
+            // TODO check if nodeA and nodeB are connected already.
+            
+            if (!world.StreetGraph.CreateEdge(nodeA, nodeB.Position, out var newEdge, out var toNode, out var isToNodeNew, out var isEdgeNew, failIfIntersection: true)) {
+                // Debug.Log("Could not connect the cul-de-sacs.");
                 return false;
             }
             Debug.Assert(!isToNodeNew, $"PoIDeveloperAgent: Cul-de-sac connection created a new node at {toNode}.");
             // Debug.Log($"PoIDeveloperAgent: Connected cul-de-sacs {nodeA.Position} and {nodeB.Position}.");
-            return true;
+            return isEdgeNew;
         }
 
         private Vector3 GetRandomConnectedNodePosition(IStreetNode node) {

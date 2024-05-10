@@ -189,7 +189,7 @@ namespace FreeFormGraph.Agents {
                         lastNode = wp.GraphNode;
                     }
                 } else {
-                    StreetGraph.CreateEdge(lastNode, wp.Pos, out var newEdge, out lastNode, out var isNewNode);
+                    StreetGraph.CreateEdge(lastNode, wp.Pos, out var newEdge, out lastNode, out var isNewNode, out var isEdgeNew);
 
                     if(Vector3.Distance(lastNode.Position, wp.Pos) > 0.001f) {
                         //found an intersection, keep next waypoint

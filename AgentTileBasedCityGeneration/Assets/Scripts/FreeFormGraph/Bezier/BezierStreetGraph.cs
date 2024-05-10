@@ -18,7 +18,7 @@ namespace FreeFormGraph.Bezier {
             CreateUnconnectedNode(Vector3.zero, out _);
         }
 
-        public override bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge) {
+        public override bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge, out bool isEdgeNew) {
             Debug.Assert(from is BezierStreetNode && to is BezierStreetNode,
                 $"Expected BezierStreetNodes, got fromNode {from.GetType()} and toNode {to.GetType()}");
             var fromNode = (BezierStreetNode)from;
@@ -58,11 +58,13 @@ namespace FreeFormGraph.Bezier {
             if (!fromNode.AddEdge(edge) || !toNode.AddEdge(edge)) {
                 fromNode.RemoveEdge(edge);
                 newEdge = null;
+                isEdgeNew = false;
                 return false;
             }
 
             edges.Add(edge);
             newEdge = edge;
+            isEdgeNew = true;
             return true;
         }
 
@@ -80,6 +82,10 @@ namespace FreeFormGraph.Bezier {
         }
 
         public override void InsertNodeOnEdge(IStreetEdge foundEdge, Vector3 positionOnEdge, out IStreetNode node, out IStreetEdge leftEdge, out IStreetEdge rightEdge) {
+            throw new System.NotImplementedException();
+        }
+
+        public override IStreetGraph Copy() {
             throw new System.NotImplementedException();
         }
 

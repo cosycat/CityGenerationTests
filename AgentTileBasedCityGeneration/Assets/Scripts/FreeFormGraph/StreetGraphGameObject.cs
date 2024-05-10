@@ -14,14 +14,15 @@ namespace FreeFormGraph {
         public abstract float SnapToExistingEdgeThreshold { get; set; }
         
         public virtual bool CreateEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode,
-            out bool isToNodeNew, bool failIfIntersection = false) {
+            out bool isToNodeNew, out bool isEdgeNew, bool failIfIntersection = false) {
             if (!GetOrCreateNode(to, SnapToExistingNodeThreshold, out toNode, out isToNodeNew)) {
                 Debug.Log("IStreetGraph::CreateEdge - Failed to create node at to position");
                 newEdge = null;
+                isEdgeNew = false;
                 return false;
             }
             // try to create the edge
-            var success = CreateEdge(from, toNode, out newEdge);
+            var success = CreateEdge(from, toNode, out newEdge, out isEdgeNew);
             if (success) {
                 return true;
             }
@@ -32,7 +33,7 @@ namespace FreeFormGraph {
             return false;
         }
 
-        public abstract bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge);
+        public abstract bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge, out bool isEdgeNew);
         public abstract bool RemoveNode(IStreetNode node);
         public virtual bool TryFindClosestNode(Vector3 position, out IStreetNode foundNode, float threshold = Single.MaxValue) {
             foundNode = null;
@@ -101,6 +102,8 @@ namespace FreeFormGraph {
             }
             return nodes.ToArray();
         }
+        
+        public abstract IStreetGraph Copy();
     }
     
 }

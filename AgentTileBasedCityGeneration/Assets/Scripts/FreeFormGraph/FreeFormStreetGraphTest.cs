@@ -56,7 +56,7 @@ namespace FreeFormGraph {
                 if (dragStartNode == null) {
                     return;
                 }
-                if (!streetGraph.CreateEdge(dragStartNode, mousePositionWorld, out _, out _, out _)) {
+                if (!streetGraph.CreateEdge(dragStartNode, mousePositionWorld, out _, out _, out _, out var isEdgeNew)) {
                     Debug.LogWarning("FreeFormStreetGraphTest - Failed to create new edge.");
                 }
 
@@ -148,19 +148,17 @@ namespace FreeFormGraph {
             if (streetGraph == null) {
                 return;
             }
-
-            List<IStreetNode> nodes;
-            List<IStreetEdge> edges;
+            
+            IStreetGraph streetGraphCopy;
             try {
                 // copy them, so if they change in the meantime on another thread, it doesn't throw an error.
-                nodes = streetGraph.Nodes.ToList();
-                edges = streetGraph.Edges.ToList();
+                streetGraphCopy = streetGraph.Copy();
             } catch {
                 return;
             }
             var mouseWorldPosition = MouseWorldPosition;
 
-            foreach (var node in nodes) {
+            foreach (var node in streetGraphCopy.Nodes) {
                 Gizmos.color = node.IsMaxConnectedEdgesReached ? Color.red : node.ConnectedEdgesCount > 2 ? Color.yellow : Color.green;
                 Gizmos.DrawSphere(node.Position, 0.1f);
                 Gizmos.DrawLine(node.Position, node.Position +
@@ -168,7 +166,7 @@ namespace FreeFormGraph {
                                                 (Vector3.right * 0.3f)));
             }
 
-            foreach (var edge in edges) {
+            foreach (var edge in streetGraphCopy.Edges) {
                 Gizmos.color = edgeColors.TryGetValue(edge, out var color) ? color : Color.grey;
                 Gizmos.DrawLine(edge.PositionNodeA, edge.PositionNodeB);
                 foreach (var point in edge.SplitIntoEvenlySpacedPoints()) {
@@ -181,18 +179,6 @@ namespace FreeFormGraph {
                 Gizmos.DrawLine(dragStartNode.Position, mouseWorldPosition);
             }
 
-            // if (_drawIntersectionLines) {
-            //     foreach ((var position, var dir) in Intersections._dbg_curveSteps) {
-            //         Gizmos.color = Color.grey;
-            //         Gizmos.DrawRay(position, Vector3.up * dir);
-            //     }
-            //
-            //     foreach (var intersection in Intersections._dbg_splineIntersectionPoints) {
-            //         Gizmos.color = Color.magenta;
-            //         Gizmos.DrawRay(intersection, Vector3.up);
-            //     }
-            // }
-
             if(drawGrid) {
                 Gizmos.color = new Color(0.5f, 0.5f, 0.5f, 0.5f);
                 for(int i = 0; i < world.Width; i++) {
@@ -202,36 +188,23 @@ namespace FreeFormGraph {
                     Gizmos.DrawRay(new Vector3(0, i), Vector3.right * world.Width);
                 }
             }
-
-            // if(_drawCurveBoxes) {
-            //     foreach(var s in _streetGraph.Nodes.SelectMany(n => n.CorrespondingSplines).Distinct()) {
-            //         for(var i = 0; i < SplineUtility.GetCurveCount(s); i++) {
-            //             var targetCurve = s.GetCurve(i);
-            //             var bounds = Intersections.GetBoundsForCurve(targetCurve);
-            //             Gizmos.DrawRay(bounds.min, Vector3.right * (bounds.max.x - bounds.min.x));
-            //             Gizmos.DrawRay(bounds.min, Vector3.up* (bounds.max.y - bounds.min.y));
-            //             Gizmos.DrawRay(bounds.max, Vector3.left * (bounds.max.x - bounds.min.x));
-            //             Gizmos.DrawRay(bounds.max, Vector3.down* (bounds.max.y - bounds.min.y));
-            //         }
-            //     }
-            // }
             
             if (drawLabelsEdges) {
                 // UnityEditor.Handles.color = Color.yellow;
-                foreach (var edge in edges) {
+                foreach (var edge in streetGraphCopy.Edges) {
                     UnityEditor.Handles.Label((edge.PositionNodeA + edge.PositionNodeB) / 2, edge.DebugString());
                 }
             }
             if (drawLabelsNodes) {
                 // UnityEditor.Handles.color = Color.white;
-                DrawLabelNode(nodes.ToArray());
+                DrawLabelNode(streetGraphCopy.Nodes.ToArray());
             }
 
             if (drawMouseLabel) {
                 Gizmos.DrawWireSphere(mouseWorldPosition, mouseNodeDistanceThreshold);
-                var nodesWithinRange = streetGraph.FindAllNodesWithinRange(mouseWorldPosition, mouseNodeDistanceThreshold);
+                var nodesWithinRange = streetGraphCopy.FindAllNodesWithinRange(mouseWorldPosition, mouseNodeDistanceThreshold);
                 DrawLabelNode(nodesWithinRange);
-                var foundANode = streetGraph.TryFindClosestNode(mouseWorldPosition, out var closestNode, mouseNodeDistanceThreshold);
+                var foundANode = streetGraphCopy.TryFindClosestNode(mouseWorldPosition, out var closestNode, mouseNodeDistanceThreshold);
                 UnityEditor.Handles.Label(mouseWorldPosition, $"{mouseWorldPosition}{(foundANode ? $" {closestNode}" : "")}");
             }
         }
