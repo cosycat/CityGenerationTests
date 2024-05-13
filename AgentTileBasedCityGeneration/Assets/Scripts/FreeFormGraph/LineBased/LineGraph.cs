@@ -72,7 +72,7 @@ namespace FreeFormGraph.LineBased {
 
                 } else {
                     IStreetNode node = null;
-                    if (!((IStreetGraph)this).TryFindClosestNode(to, out node, SnapToExistingNodeThreshold)) {
+                    if (((IStreetGraph)this).TryFindClosestNode(to, out node, SnapToExistingNodeThreshold)) {
                         toNode = node;
                         isToNodeNew = false;
                     }
