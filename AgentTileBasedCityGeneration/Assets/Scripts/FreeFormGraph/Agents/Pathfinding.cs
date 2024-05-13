@@ -64,7 +64,6 @@ namespace FreeFormGraph.Agents {
                 if(isCancelled()) return null;
 
                 current = q.Dequeue();
-                q_set.Remove(current);
                 nodesChecked++;
                 if(current.Pos == target) {
                     targetWaypoint = current;
@@ -84,16 +83,21 @@ namespace FreeFormGraph.Agents {
                         || nextWaypoint.Pos.y >= World.Height) {
                         continue;
                     }
+                    
+                    Debug.Assert(nextWaypoint.Pos != current.Pos);
 
                     var next = nextWaypoint;
 
                     if(q_set.Contains(next)) continue; //now that we move the position around, it's possible that we would enqueue the same target again
 
                     var new_cost = cost_so_far[current] + Cost(current, next);
+                    if(float.IsPositiveInfinity(new_cost)) continue;
+                    Debug.Assert(Cost(current, next) >= Heuristic(current.Pos, next.Pos));
                     if(!cost_so_far.ContainsKey(next) || new_cost < cost_so_far[next]) {
                         cost_so_far[next] = new_cost;
                         var prio = new_cost + Heuristic(target, next.Pos);
                         q.Enqueue(next, prio);
+                        q_set.Add(next);
                         came_from[next] = current;
                     }
                 }
@@ -212,7 +216,7 @@ namespace FreeFormGraph.Agents {
                 cost += 0.1f; //make short segments more costly to force fewer nodes
             }*/
             
-            var costPenaltyForRoad = 1.3f;
+            var costPenaltyForRoad = 2.9f;
             float slopeCost = 0;
             if(next.CameFrom == current) {
                 //we are walking over an existing road. make it cheap
@@ -241,9 +245,9 @@ namespace FreeFormGraph.Agents {
         public static float SlopeCost(IWorld w, Waypoint a, Waypoint b) {
             var cost = Mathf.Abs(w.GetHeightAt(a.Pos.x, a.Pos.y) - w.GetHeightAt(b.Pos.x, b.Pos.y)) / Vector3.Distance(a.Pos, b.Pos);
             //0.5f = 50 % slope
-            if(cost > 0.5f) return float.PositiveInfinity; //TODO return inf
+            if(cost > 0.12f) return float.PositiveInfinity; //TODO return inf
             cost = cost * cost;
-            cost *= 3;
+            cost *= 30;
             return cost;
         }
 
@@ -267,6 +271,7 @@ namespace FreeFormGraph.Agents {
                 foreach(var edge in n.GraphNode.Edges) {
                     var otherNode = edge.NodeA;
                     if(otherNode == n.GraphNode) otherNode = edge.NodeB;
+                    Debug.Assert(edge.NodeA != edge.NodeB);
 
                     var newWaypoint = new Waypoint(otherNode.Position) {
                         GraphNode = otherNode,
@@ -274,6 +279,7 @@ namespace FreeFormGraph.Agents {
                     };
                     list.Add(newWaypoint);
                     skipEdge.Add(edge);
+                    skipNode.Add(otherNode);
                 }
                 skipNode.Add(n.GraphNode);
             }
@@ -336,6 +342,10 @@ namespace FreeFormGraph.Agents {
                 Debug.Assert(!skipEdge.Contains(wp.GraphEdge));
             }
             wpCache.Add(n, list);
+
+            //TODO why does this fail so often?
+            //Debug.Assert(list.Count == new HashSet<Waypoint>(list).Count);
+
             return list;
         }
 
