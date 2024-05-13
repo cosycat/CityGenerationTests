@@ -2,11 +2,15 @@ using System;
 using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.Splines;
+using DataStructures;
 
 namespace FreeFormGraph.LineBased {
     public class LineGraph : StreetGraphGameObject {
 
         private readonly List<LineEdge> edges = new();
+
+        public BVH<LineEdge> bvh = new BVH<LineEdge>(new BVHLineAdapter(), new()); 
+
         private readonly List<LineNode> nodes = new();
         public override IEnumerable<IStreetNode> Nodes => nodes;
         public override IEnumerable<IStreetEdge> Edges => edges;
@@ -68,7 +72,7 @@ namespace FreeFormGraph.LineBased {
 
                 } else {
                     IStreetNode node = null;
-                    if (TryFindClosestNode(to, out node, SnapToExistingNodeThreshold)) {
+                    if (!((IStreetGraph)this).TryFindClosestNode(to, out node, SnapToExistingNodeThreshold)) {
                         toNode = node;
                         isToNodeNew = false;
                     }
@@ -107,7 +111,7 @@ namespace FreeFormGraph.LineBased {
                 NodeA = fromNode,
                 NodeB = toNode
             };
-            edges.Add(edge);
+            addEdge(edge);
             fromNode.AddEdge(edge);
             toNode.AddEdge(edge);
             newEdge = edge;
@@ -163,7 +167,7 @@ namespace FreeFormGraph.LineBased {
             var e = (LineEdge) foundEdge;
             ((LineNode)e.NodeA).RemoveEdge(e);
             ((LineNode)e.NodeB).RemoveEdge(e);
-            edges.Remove(e);
+            removeEdge(e);
 
             var lEdge = new LineEdge() {
                 NodeA = foundEdge.NodeA,
@@ -175,8 +179,8 @@ namespace FreeFormGraph.LineBased {
                 NodeB = foundEdge.NodeB
             };
             nodes.Add(n);
-            edges.Add(lEdge);
-            edges.Add(rEdge);
+            addEdge(lEdge);
+            addEdge(rEdge);
 
             //if this fails, we would have an edge with length 0, which is weird and should not happen
             Debug.Assert(Vector3.Distance(lEdge.NodeA.Position, lEdge.NodeB.Position) > eps);
@@ -214,6 +218,35 @@ namespace FreeFormGraph.LineBased {
 
             return copy;
         }
+        
+        public override IStreetEdge[] FindAllEdgesWithinRange(Vector2 position, float radius) {
+            var closeEdges = new List<IStreetEdge>();
+            var bvhHits = bvh.Traverse(BVHHelper.RadialNodeTraversalTest(position, radius));
+
+            foreach(var g in bvhHits) {
+                if(g.GObjects != null) {
+                    foreach(var edge in g.GObjects) {
+                        var distance = edge.GetDistanceEdgeToPosition(position, out var posOnEdgeTmp);
+                        if (distance < radius) {
+                            closeEdges.Add(edge);
+                        }
+                    }
+                }
+            }
+            return closeEdges.ToArray();
+        }
+
+        private void addEdge(LineEdge edge) {
+            edges.Add(edge);
+            bvh.Add(edge);
+            bvh.Optimize(); //maybe use batch operations for adding?
+        }
+
+        private void removeEdge(LineEdge edge) {
+            edges.Remove(edge);
+            bvh.Remove(edge);
+            bvh.Optimize();
+        }
     }
 
     public class LineNode: IStreetNode {
@@ -249,6 +282,10 @@ namespace FreeFormGraph.LineBased {
     public class LineEdge: IStreetEdge {
         public Vector3 PositionNodeA => NodeA.Position;
         public Vector3 PositionNodeB => NodeB.Position;
+
+        public Vector3 Position => PositionNodeA + (PositionNodeB-PositionNodeA)/2.0f;
+        public float Radius => Vector3.Distance(PositionNodeB, PositionNodeA) / 2.0f;
+
         public IStreetNode NodeA { get; set;}
         public IStreetNode NodeB { get; set;}
         public float StreetWidth { get; set;} = 1;
