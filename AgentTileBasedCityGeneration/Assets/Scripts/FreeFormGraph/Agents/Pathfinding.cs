@@ -197,7 +197,7 @@ namespace FreeFormGraph.Agents {
                         lastNode = wp.GraphNode;
                     }
                 } else {
-                    StreetGraph.CreateEdge(lastNode, wp.Pos, out var newEdge, out lastNode, out var isNewNode);
+                    StreetGraph.CreateEdge(lastNode, wp.Pos, out var newEdge, out lastNode, out var isNewNode, out var isEdgeNew);
 
                     if(Vector3.Distance(lastNode.Position, wp.Pos) > 0.001f) {
                         //found an intersection, keep next waypoint
@@ -210,7 +210,7 @@ namespace FreeFormGraph.Agents {
         }
 
         private float Cost(Waypoint current, Waypoint next) {
-            Debug.Assert(current.Pos != next.Pos);
+            Debug.Assert(current.Pos != next.Pos, "Current and next waypoint are the same");
             var cost = Vector3.Distance(current.Pos, next.Pos);
             /*if(cost <= 1.01f) {
                 cost += 0.1f; //make short segments more costly to force fewer nodes

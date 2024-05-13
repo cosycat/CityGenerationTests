@@ -11,8 +11,9 @@ using UnityEngine;
 namespace FreeFormGraph.Agents {
 
     public class POIConnectorAgent: MonoBehaviour, IAgent {
-        
 
+        public int WorkFrequency { get; set; } = 100;
+        
         private object pathFindingLock = new();
         private Pathfinding? pathfinding;
 
@@ -20,11 +21,14 @@ namespace FreeFormGraph.Agents {
 
         private int frameCounter = 0;
 
+
         /// <summary>
         /// Actual best path that pathfiding has achieved (but didn't reach target yet). Set to empty when no pathfinding is active.
         /// </summary>
         private List<Pathfinding.Waypoint> currentBestPath = new();
+
         private Vector3 currentTarget = new();
+
 
         public void DoWork(CancellationToken cancellationToken, IWorld world, AgentManager.Context context) {
             var worldPOIs = world.PointsOfInterest.PointsOfInterest;
@@ -89,7 +93,8 @@ namespace FreeFormGraph.Agents {
                 }
 
                 //draw flags
-                var currentStartPosition = currentBestPath[0].Pos;
+                if (currentBestPath == null || currentBestPath.Count == 0) return;
+                var currentStartPosition = currentBestPath[0].Pos; // this threw a null reference exception
                 var postHeight = 4;
                 var flagSize = 2;
                 Gizmos.color = Color.green;

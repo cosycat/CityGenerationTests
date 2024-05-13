@@ -26,7 +26,7 @@ namespace FreeFormGraph.LineBased {
         public override float SnapToExistingEdgeThreshold { get; set; } = 0;
 
         public override bool CreateEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode,
-            out bool isToNodeNew, bool failIfIntersection = false) {
+            out bool isToNodeNew, out bool isEdgeNew, bool failIfIntersection = false) {
                 Debug.Assert(from != null, $"CreateEdge: From node is null, to position: {to}");
 
                 IStreetEdge lastIntersectionEdge = null;
@@ -62,30 +62,49 @@ namespace FreeFormGraph.LineBased {
                             newEdge = null;
                             toNode = null;
                             isToNodeNew = false;
+                            isEdgeNew = false;
                             return false;
                         }
+
+                        Debug.Assert(!TryFindClosestNode(to, out var node, eps), $"Intersection with edge, but no node found at {to}");
                         InsertNodeOnEdge(lastIntersectionEdge, to, out toNode, out _, out _);
                     }
 
                 } else {
                     IStreetNode node = null;
-                    if(!((IStreetGraph)this).TryFindClosestNode(to, out node, SnapToExistingNodeThreshold)) {
+                    if (((IStreetGraph)this).TryFindClosestNode(to, out node, SnapToExistingNodeThreshold)) {
+                        toNode = node;
+                        isToNodeNew = false;
+                    }
+                    else {
                         node = new LineNode() {
                             Position = to
                         };
                         nodes.Add((LineNode)node);
+                        toNode = node;
                     }
-
-                    toNode = node;
                 }
-
-
-
-                return CreateEdge(from, toNode, out newEdge);
+                
+                return CreateEdge(from, toNode, out newEdge, out isEdgeNew);
             }
         
-        public override bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge) {
-            //TODO shouldn't we check intersections here?
+        public override bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge, out bool isEdgeNew) {
+            if (from == null || to == null) {
+                newEdge = null;
+                isEdgeNew = false;
+                return false;
+            }
+
+            // check if edge already exists
+            foreach (var fromEdge in from.Edges) {
+                if (fromEdge.NodeA == to || fromEdge.NodeB == to) {
+                    newEdge = fromEdge;
+                    isEdgeNew = false;
+                    return true;
+                }
+            }
+
+            // TODO check intersections here
             var fromNode = (LineNode)from; //why...
             var toNode = (LineNode)to;
             var edge = new LineEdge() {
@@ -96,6 +115,7 @@ namespace FreeFormGraph.LineBased {
             fromNode.AddEdge(edge);
             toNode.AddEdge(edge);
             newEdge = edge;
+            isEdgeNew = true;
             return true;
         }
 
@@ -175,6 +195,30 @@ namespace FreeFormGraph.LineBased {
             node = n;
         }
 
+        public override IStreetGraph Copy() {
+            var copy = new GameObject().AddComponent<LineGraph>();
+            for (var i = 0; i < nodes.Count; i++) {
+                var node = nodes[i];
+                var n = new LineNode {
+                    Position = node.Position
+                };
+                copy.nodes.Add(n);
+            }
+
+            for (var i = 0; i < edges.Count; i++) {
+                var edge = edges[i];
+                var e = new LineEdge {
+                    NodeA = copy.nodes[nodes.IndexOf((LineNode)edge.NodeA)],
+                    NodeB = copy.nodes[nodes.IndexOf((LineNode)edge.NodeB)]
+                };
+                copy.edges.Add(e);
+                ((LineNode)e.NodeA).AddEdge(e);
+                ((LineNode)e.NodeB).AddEdge(e);
+            }
+
+            return copy;
+        }
+        
         public override IStreetEdge[] FindAllEdgesWithinRange(Vector2 position, float radius) {
             var closeEdges = new List<IStreetEdge>();
             var bvhHits = bvh.Traverse(BVHHelper.RadialNodeTraversalTest(position, radius));

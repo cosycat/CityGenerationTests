@@ -36,9 +36,10 @@ namespace FreeFormGraph.SplineBased {
             Debug.Assert(splineExtrude != null);
         }
 
-        public override bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge) {
+        public override bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge, out bool isEdgeNew) {
             var res = AddNewSegment((SplineStreetNode)from, (SplineStreetNode)to, out var newSegment);
             newEdge = newSegment;
+            isEdgeNew = res;
             return res;
         }
 
@@ -472,6 +473,10 @@ namespace FreeFormGraph.SplineBased {
         }
 
         public override void InsertNodeOnEdge(IStreetEdge foundEdge, Vector3 positionOnEdge, out IStreetNode node, out IStreetEdge leftEdge, out IStreetEdge rightEdge) {
+            throw new NotImplementedException();
+        }
+
+        public override IStreetGraph Copy() {
             throw new NotImplementedException();
         }
 

@@ -56,7 +56,7 @@ namespace FreeFormGraph {
                 return false;
             }
             // try to create the edge
-            var success = CreateEdge(fromNode, to, out newEdge, out toNode, out isToNodeNew);
+            var success = CreateEdge(fromNode, to, out newEdge, out toNode, out isToNodeNew, out var isEdgeNew);
             if (success) {
                 return true;
             }
@@ -67,9 +67,10 @@ namespace FreeFormGraph {
             return false;
         }
 
-        public bool CreateEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode, out bool isToNodeNew, bool failIfIntersection = false);
+        public bool CreateEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode,
+            out bool isToNodeNew, out bool isEdgeNew, bool failIfIntersection = false);
         
-        public bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge);
+        public bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge, out bool isEdgeNew);
 
         bool RemoveNode(IStreetNode node);
 
@@ -127,5 +128,13 @@ namespace FreeFormGraph {
         void InsertNodeOnEdge(IStreetEdge edge, Vector3 positionOnEdge, out IStreetNode node, out IStreetEdge leftEdge, out IStreetEdge rightEdge);
         IStreetNode[] FindAllNodesWithinRange(Vector2 position, float radius);
         IStreetEdge[] FindAllEdgesWithinRange(Vector2 position, float radius);
+        
+        /// <summary>
+        /// Copy the graph for reading from it on a different thread.
+        ///
+        /// Don't forget to destroy the copy when you are done with it.
+        /// </summary>
+        /// <returns> A copy of the graph. </returns>
+        IStreetGraph Copy();
     }
 }
