@@ -15,7 +15,6 @@ namespace FreeFormGraph.Agents {
 
         private object pathFindingLock = new();
         private Pathfinding? pathfinding;
-        private IStreetGraph streetGraph;
 
         private HashSet<IPointOfInterest> connectedPOIs = new();
 
@@ -43,12 +42,12 @@ namespace FreeFormGraph.Agents {
 
             Func<bool> isCancelled = () => cancellationToken.IsCancellationRequested;
             lock(pathFindingLock) {
-                pathfinding = new Pathfinding(streetGraph, world);
+                pathfinding = new Pathfinding(world.StreetGraph, world);
             }
             var path = pathfinding.AStar(unconnectedPoi.Position, closestPoi.Position, isCancelled);
 
             if(path != null) {
-                Pathfinding.BuildPath2(path, streetGraph, world);
+                Pathfinding.BuildPath2(path, world.StreetGraph, world);
                 connectedPOIs.Add(unconnectedPoi);
             } else if(!isCancelled()) {
                 //isCancelled == false => AStar couldn't find a path, there is no need to test it again next time
@@ -64,10 +63,6 @@ namespace FreeFormGraph.Agents {
             lock(pathFindingLock) {
                 pathfinding = null; //TODO
             }
-        }
-
-        void Start() {
-            streetGraph = FindObjectOfType<StreetGraphGameObject>();
         }
 
         void OnDrawGizmos() {
