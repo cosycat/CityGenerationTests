@@ -473,6 +473,78 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1598817974081203650, guid: 5744e3538bf9c488b9609dbe3c381145, type: 3}
+      propertyPath: pointOfInterestType
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1598817974081203650, guid: 5744e3538bf9c488b9609dbe3c381145, type: 3}
+      propertyPath: agentParameters.POIRadiusFlatnessThreshold
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 1598817974081203650, guid: 5744e3538bf9c488b9609dbe3c381145, type: 3}
+      propertyPath: agentParameters.POIRadiusSlopePenaltyPower
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1598817974081203650, guid: 5744e3538bf9c488b9609dbe3c381145, type: 3}
+      propertyPath: agentParameters.POIRadiusHeightPenaltyMultiplier
+      value: 2.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1598817974081203650, guid: 5744e3538bf9c488b9609dbe3c381145, type: 3}
+      propertyPath: agentParameters.POIRadiusHeightPenalty.m_Curve.Array.data[0].time
+      value: -0.0452919
+      objectReference: {fileID: 0}
+    - target: {fileID: 1598817974081203650, guid: 5744e3538bf9c488b9609dbe3c381145, type: 3}
+      propertyPath: agentParameters.POIRadiusHeightPenalty.m_Curve.Array.data[1].time
+      value: 1.0041809
+      objectReference: {fileID: 0}
+    - target: {fileID: 1598817974081203650, guid: 5744e3538bf9c488b9609dbe3c381145, type: 3}
+      propertyPath: agentParameters.POIRadiusHeightPenalty.m_Curve.Array.data[0].value
+      value: 0.6276245
+      objectReference: {fileID: 0}
+    - target: {fileID: 1598817974081203650, guid: 5744e3538bf9c488b9609dbe3c381145, type: 3}
+      propertyPath: agentParameters.POIRadiusHeightPenalty.m_Curve.Array.data[1].value
+      value: 0.8773575
+      objectReference: {fileID: 0}
+    - target: {fileID: 1598817974081203650, guid: 5744e3538bf9c488b9609dbe3c381145, type: 3}
+      propertyPath: settlementDeveloperAgentParameters.<MaxStreetLength>k__BackingField
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1598817974081203650, guid: 5744e3538bf9c488b9609dbe3c381145, type: 3}
+      propertyPath: settlementDeveloperAgentParameters.<MinStreetLength>k__BackingField
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1598817974081203650, guid: 5744e3538bf9c488b9609dbe3c381145, type: 3}
+      propertyPath: agentParameters.POIRadiusHeightPenalty.m_Curve.Array.data[0].inSlope
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1598817974081203650, guid: 5744e3538bf9c488b9609dbe3c381145, type: 3}
+      propertyPath: agentParameters.POIRadiusHeightPenalty.m_Curve.Array.data[1].inSlope
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1598817974081203650, guid: 5744e3538bf9c488b9609dbe3c381145, type: 3}
+      propertyPath: settlementDeveloperAgentParameters.<ConnectCulDeSacs>k__BackingField
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1598817974081203650, guid: 5744e3538bf9c488b9609dbe3c381145, type: 3}
+      propertyPath: agentParameters.POIRadiusHeightPenalty.m_Curve.Array.data[0].outSlope
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1598817974081203650, guid: 5744e3538bf9c488b9609dbe3c381145, type: 3}
+      propertyPath: agentParameters.POIRadiusHeightPenalty.m_Curve.Array.data[1].inWeight
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1598817974081203650, guid: 5744e3538bf9c488b9609dbe3c381145, type: 3}
+      propertyPath: agentParameters.POIRadiusHeightPenalty.m_Curve.Array.data[1].outSlope
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1598817974081203650, guid: 5744e3538bf9c488b9609dbe3c381145, type: 3}
+      propertyPath: settlementDeveloperAgentParameters.<MinNodeEdgeDistance>k__BackingField
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1598817974081203650, guid: 5744e3538bf9c488b9609dbe3c381145, type: 3}
+      propertyPath: settlementDeveloperAgentParameters.<ConnectCulDeSacWithNonCulDeSac>k__BackingField
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4003260572412167715, guid: 5744e3538bf9c488b9609dbe3c381145, type: 3}
       propertyPath: m_Name
       value: POICreatorAgent
