@@ -52,7 +52,7 @@ MonoBehaviour:
     <AngleRandomMax>k__BackingField: 0
     <MaxConnectionDistance>k__BackingField: 3.5
     <SnapToGrid>k__BackingField: 0
-    <ConnectCulDeSacs>k__BackingField: 2
+    <ConnectCulDeSacs>k__BackingField: 1
     <ConnectCulDeSacWithNonCulDeSac>k__BackingField: 1
   pointOfInterestType: 0
   agentParameters:
@@ -62,29 +62,38 @@ MonoBehaviour:
     RadiusGeneration: 100
     POIRadiusFlatnessThreshold: 20
     POIRadiusMinimumSlopeForPenalty: 0.06
-    POIRadiusSlopePenaltyPower: 3
+    POIRadiusSlopePenaltyPower: 2
     POIRadiusHeightPenalty:
       serializedVersion: 2
       m_Curve:
       - serializedVersion: 3
         time: 0
         value: 0
-        inSlope: 0
-        outSlope: 1
-        tangentMode: 0
+        inSlope: 1.6217592
+        outSlope: 1.6217592
+        tangentMode: 34
         weightedMode: 0
         inWeight: 0
-        outWeight: 0
+        outWeight: 0.33333334
+      - serializedVersion: 3
+        time: 0.3189431
+        value: 0.5172489
+        inSlope: 1.1652927
+        outSlope: 1.1652927
+        tangentMode: 34
+        weightedMode: 0
+        inWeight: 0.33333334
+        outWeight: 0.33333334
       - serializedVersion: 3
         time: 1
         value: 1
-        inSlope: 1
-        outSlope: 0
-        tangentMode: 0
+        inSlope: 0.70882636
+        outSlope: 0.70882636
+        tangentMode: 34
         weightedMode: 0
-        inWeight: 0
+        inWeight: 0.33333334
         outWeight: 0
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
-    POIRadiusHeightPenaltyMultiplier: 3.5
+    POIRadiusHeightPenaltyMultiplier: 3

@@ -39,7 +39,7 @@ namespace FreeFormGraph.World.PoI {
                     Debug.LogWarning("Unknown point of interest type");
                 }
 
-                Handles.Label(pointOfInterest.Position, $"{pointOfInterest}");
+                // Handles.Label(pointOfInterest.Position, $"{pointOfInterest}");
             }
         }
     }

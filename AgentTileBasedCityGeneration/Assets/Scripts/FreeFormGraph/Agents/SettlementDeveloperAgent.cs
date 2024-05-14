@@ -172,7 +172,7 @@ namespace FreeFormGraph.Agents {
             [field: SerializeField] public float AngleRandomMax { get; set; } = Mathf.Deg2Rad * 0f;
             [field: SerializeField] public float MaxConnectionDistance { get; set; } = 3.5f;
             [field: SerializeField] public bool SnapToGrid { get; set; } = false;
-            [field: SerializeField] public ConnectionHandling ConnectCulDeSacs { get; set; } = ConnectionHandling.ConnectAll;
+            [field: SerializeField] public ConnectionHandling ConnectCulDeSacs { get; set; } = ConnectionHandling.ConnectSlowly;
             [field: SerializeField] public bool ConnectCulDeSacWithNonCulDeSac { get; set; } = true;
 
             public SdaParameters() { }
