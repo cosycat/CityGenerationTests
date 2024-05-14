@@ -26,7 +26,6 @@ namespace FreeFormGraph.Agents {
         public Waypoint current {get; private set;} = null;
         public Vector3 target {get; private set;} = default;
 
-        private IDictionary<Waypoint, List<Waypoint>> wpCache = new Dictionary<Waypoint, List<Waypoint>>();
         private int cacheHits = 0;
         private int getNeighborsCalled = 0;
 
@@ -107,7 +106,7 @@ namespace FreeFormGraph.Agents {
             if(perfStats) {
                 sw.Stop();
                 var secs = sw.ElapsedMilliseconds / 1000.0f;
-                Debug.Log($"A* perf: Elapsed (s): {secs}; Nodes checked {nodesChecked}; Throughput (nodes/sec): {nodesChecked/secs}; World edges count: {StreetGraph.Edges.ToList().Count}; Queue size: {q.Count}; cache hits {cacheHits}; get neighbors calls: {getNeighborsCalled}");
+                Debug.Log($"A* perf: Elapsed (s): {secs}; Nodes checked {nodesChecked}; Throughput (nodes/sec): {nodesChecked/secs}; World edges count: {StreetGraph.Edges.ToList().Count}; Queue size: {q.Count}; get neighbors calls: {getNeighborsCalled}; visited count: {q_set.Count}");
             }
 
             if (targetWaypoint != null) {
@@ -257,10 +256,6 @@ namespace FreeFormGraph.Agents {
 
         public List<Waypoint> GetNeighbors(Waypoint n, float SnapFactorNode, float SnapFactorEdge, int k) {
             getNeighborsCalled++;
-            if(wpCache.ContainsKey(n)) {
-                cacheHits++;
-                return wpCache[n];
-            }
 
             var list = new List<Waypoint>(); //list of new waypoint to be explored in A*
             var skipEdge = new List<IStreetEdge>();
@@ -341,7 +336,6 @@ namespace FreeFormGraph.Agents {
             foreach(var wp in list) {
                 Debug.Assert(!skipEdge.Contains(wp.GraphEdge));
             }
-            wpCache.Add(n, list);
 
             //TODO why does this fail so often?
             //Debug.Assert(list.Count == new HashSet<Waypoint>(list).Count);
