@@ -1,10 +1,9 @@
+#nullable enable
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using FreeFormGraph.World;
 using FreeFormGraph.World.PoI;
-using JetBrains.Annotations;
 using UnityEngine;
 using Random = System.Random;
 
@@ -22,11 +21,20 @@ namespace FreeFormGraph.Agents {
 
         private int lastWorkCycleWithChange = 0;
 
-        public SettlementDeveloperAgent([NotNull] IPointOfInterest pointOfInterest, [NotNull] IWorld world, [CanBeNull] SdaParameters parameters = null) {
+        public SettlementDeveloperAgent(IPointOfInterest pointOfInterest, IWorld world, SdaParameters? parameters = null) {
             this.pointOfInterest = pointOfInterest;
             this.parameters = parameters ?? new SdaParameters();
-            var startNode = world.StreetGraph.TryFindClosestNode(pointOfInterest.Position, out var closestNode, this.parameters.MinStreetLength) 
-                ? closestNode : world.StreetGraph.CreateUnconnectedNode(pointOfInterest.Position, out var newNode) ? newNode : throw new Exception("Could not find or create a node for the point of interest.");
+            CreateStartNode();
+            return;
+
+            void CreateStartNode() {
+                if (world.StreetGraph.TryFindClosestNode(pointOfInterest.Position, out _,
+                        this.parameters.MinStreetLength)) return;
+                var success = world.StreetGraph.CreateUnconnectedNode(pointOfInterest.Position, out _);
+                if (!success) {
+                    throw new Exception("Could not find or create a node for the point of interest.");
+                }
+            }
         }
 
         public void DoWork(CancellationToken cancellationToken, IWorld world, AgentManager.Context context) {
@@ -49,7 +57,7 @@ namespace FreeFormGraph.Agents {
 
         private bool GrowRoadNetwork(IWorld world, IStreetNode[] nodes) {
             var node = GetRandomNode(nodes);
-            Debug.Assert(node != null, $"PoIDeveloperAgent: Node is null.");
+            // Debug.Assert(node != null, $"PoIDeveloperAgent: Node is null.");
             // var averageInPosition = GetAverageInPosition(node); // TODO take a random incoming edge as direction
             var averageInPosition = GetRandomConnectedNodePosition(node);
             var direction = node.Position - averageInPosition;
@@ -62,11 +70,11 @@ namespace FreeFormGraph.Agents {
             
             // TODO check for steepness with parameter
             // TODO check if the new angle is in a legal range for every edge
-            if(world.StreetGraph.TryFindClosestNode(newPoint, out var closestNode, length)) {
+            if(world.StreetGraph.TryFindClosestNode(newPoint, out _, length)) {
                 // Debug.Log($"PoIDeveloperAgent: New point {newPoint} is too close to an existing node: {closestNode.Position}");
                 return false;
             }
-            if (world.StreetGraph.TryFindClosestEdge(newPoint, out var foundEdge, out var positionOnEdge, parameters.MinNodeEdgeDistance)) {
+            if (world.StreetGraph.TryFindClosestEdge(newPoint, out _, out _, parameters.MinNodeEdgeDistance)) {
                 // Debug.Log($"PoIDeveloperAgent: New point {newPoint} is too close to an existing edge: {foundEdge.NodeA.Position} - {foundEdge.NodeB.Position}");
                 return false;
             }
@@ -75,7 +83,7 @@ namespace FreeFormGraph.Agents {
                 return false;
             }
 
-            if (!world.StreetGraph.CreateEdge(node, new Vector3(newPoint.x, newPoint.y), out var newEdge, out var toNode, out var isToNodeNew, out var isEdgeNew, failIfIntersection: true)) {
+            if (!world.StreetGraph.CreateEdge(node, new Vector3(newPoint.x, newPoint.y), out _, out _, out _, out _, failIfIntersection: true)) {
                 Debug.LogWarning("Could not create a new node for the PoIDeveloperAgent.");
                 return false;
             }
@@ -130,7 +138,7 @@ namespace FreeFormGraph.Agents {
                 || !parameters.ConnectCulDeSacWithNonCulDeSac && nodeA.Edges.Count() > 1 || nodeB.Edges.Count() > 1) return false; // Too many nodes are not cul-de-sacs
             // TODO check if nodeA and nodeB are connected already.
             
-            if (!world.StreetGraph.CreateEdge(nodeA, nodeB.Position, out var newEdge, out var toNode, out var isToNodeNew, out var isEdgeNew, failIfIntersection: true)) {
+            if (!world.StreetGraph.CreateEdge(nodeA, nodeB.Position, out _, out var toNode, out var isToNodeNew, out var isEdgeNew, failIfIntersection: true)) {
                 // Debug.Log("Could not connect the cul-de-sacs.");
                 return false;
             }
@@ -160,6 +168,7 @@ namespace FreeFormGraph.Agents {
         }
 
         private IStreetNode GetRandomNode(IStreetNode[] nodes) {
+            Debug.Assert(nodes.Length > 0, "PoIDeveloperAgent: No nodes to choose from.");
             return nodes[random.Next(0, nodes.Length)];
         }
 
@@ -177,7 +186,7 @@ namespace FreeFormGraph.Agents {
 
             public SdaParameters() { }
 
-            public SdaParameters(SdaParameters other) {
+            public SdaParameters(SdaParameters? other) {
                 if (other == null) {
                     return;
                 }
