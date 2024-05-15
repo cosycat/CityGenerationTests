@@ -87,11 +87,12 @@ namespace FreeFormGraph.Agents {
             if (currAgentIndex == 0) {
                 currCycleCounter++;
                 var timeSinceLastFrame = DateTime.Now - lastFrameTime;
-                timeToWaitSeconds = (float)(TargetFrameTimeSeconds - timeSinceLastFrame.TotalSeconds); // set wait time, if the previous frame was too fast
+                timeToWaitSeconds += (float)(TargetFrameTimeSeconds - timeSinceLastFrame.TotalSeconds); // set wait time, if the previous frame was too fast
                 lastFrameTime = DateTime.Now;
-                Debug.Log($"Cycle {currCycleCounter} started. Waiting {timeToWaitSeconds} seconds. {agents.Count} agents to run. {TargetFrameTimeSeconds} seconds per frame.");
+                // Debug.Log($"Cycle {currCycleCounter} started. Waiting {timeToWaitSeconds} seconds. {agents.Count} agents to run. {TargetFrameTimeSeconds} seconds per frame.");
             } else {
-                timeToWaitSeconds = 0; // no need to wait, if we are in the same frame as the last agent
+                // no need to wait, if we are in the same frame as the last agent
+                // timeToWaitSeconds = 0; // but take the time from the last agent into account
             }
             
             // get the agent and start the work, if the agent is ready
@@ -110,7 +111,7 @@ namespace FreeFormGraph.Agents {
             // run the task, but let it wait if the previous frame was too fast
             var task = Task.Run(() => {
                 if (timeToWaitSeconds > 0) {
-                    Debug.Log($"Waiting {timeToWaitSeconds} seconds.");
+                    // Debug.Log($"Waiting {timeToWaitSeconds} seconds.");
                     Thread.Sleep((int)(timeToWaitSeconds * 1000));
                 }
                 cancellationTokenSource.Token.ThrowIfCancellationRequested();
