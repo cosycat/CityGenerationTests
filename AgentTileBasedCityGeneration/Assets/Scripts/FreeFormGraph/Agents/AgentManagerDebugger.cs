@@ -3,6 +3,9 @@ using UnityEngine;
 
 namespace FreeFormGraph.Agents {
     public class AgentManagerDebugger : MonoBehaviour {
+        [SerializeField] private int minTargetFPS = 1;
+        [SerializeField] private int maxTargetFPS = 60;
+        
         private AgentManager agentManager;
 
         private AgentTestStatus currStatus = AgentTestStatus.Running;
@@ -18,7 +21,7 @@ namespace FreeFormGraph.Agents {
             GUILayout.Label($"Is Running: {agentManager.IsAgentRunning}");
             
             GUILayout.Label($"Target FPS: {agentManager.TargetFramesPerSecond}");
-            agentManager.TargetFramesPerSecond = Mathf.RoundToInt(GUILayout.HorizontalSlider(agentManager.TargetFramesPerSecond, 1, 30));
+            agentManager.TargetFramesPerSecond = Mathf.RoundToInt(GUILayout.HorizontalSlider(agentManager.TargetFramesPerSecond, minTargetFPS, maxTargetFPS));
             
             GUILayout.Label($"Current Agent: {agentManager.CurrAgent}");
             GUILayout.Label($"Frames since last work: {agentManager.CurrAgentFramesSinceWorked}");   

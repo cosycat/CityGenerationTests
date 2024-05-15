@@ -1,28 +1,31 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FreeFormGraph.World;
-using JetBrains.Annotations;
 using UnityEngine;
 using Random = System.Random;
 
 namespace FreeFormGraph.Agents {
     public class AgentManager : MonoBehaviour {
+
+        [SerializeField] private bool useSeed = true;
+        [SerializeField] private int seed = 1337;
         
         /// <summary>
         /// The target frames per second the agents should run at.
         ///
         /// If the agent is ever faster than this, it will wait until starting the next frame.
         /// </summary>
-        public int TargetFramesPerSecond { get; set; } = 1;
+        [field: SerializeField] public int TargetFramesPerSecond { get; set; } = 20;
         
         private float TargetFrameTimeSeconds => 1f / TargetFramesPerSecond;
-        
-        public static AgentManager Instance { get; private set; }
 
-        [ItemNotNull] private readonly List<(IAgent agent, int framesSinceWorked)> agents = new();
+        private static AgentManager Instance { get; set; } = null!;
+
+        private readonly List<(IAgent agent, int framesSinceWorked)> agents = new();
 
         private readonly object stopRequestLock = new();
 
@@ -34,14 +37,14 @@ namespace FreeFormGraph.Agents {
 
         internal bool IsAgentRunning => cancellationTokenSource != null;
 
-        [CanBeNull] private CancellationTokenSource cancellationTokenSource = null;
+        private CancellationTokenSource? cancellationTokenSource = null;
 
         private bool stopRequested = false;
-        [CanBeNull] private Action onStoppedMethod;
+        private Action? onStoppedMethod;
         
-        private IWorld world;
+        private IWorld world = null!;
 
-        private Context context;
+        private Context context = null!;
 
         private void Awake() {
             if (Instance != null) {
@@ -50,10 +53,7 @@ namespace FreeFormGraph.Agents {
             }
             Instance = this;
 
-            context = new Context() {
-                random = new Random(1337),
-                manager = this
-            };
+            context = new Context(useSeed ? new Random(seed) : new Random(), this);
         }
 
         private void Start() {
@@ -104,7 +104,6 @@ namespace FreeFormGraph.Agents {
                 HandleNextAgent(timeToWaitSeconds);
                 return;
             }
-            Debug.Assert(agent != null);
             agents[currAgentIndex] = (agent, 0); // reset the frame counter for the agent
             cancellationTokenSource = new CancellationTokenSource();
             
@@ -163,7 +162,7 @@ namespace FreeFormGraph.Agents {
                 if (!IsAgentRunning) return;
                 stopRequested = true;
                 cancellationTokenSource!.Cancel();
-                this.onStoppedMethod = onStopped;
+                onStoppedMethod = onStopped;
             }
         }
 
@@ -172,14 +171,19 @@ namespace FreeFormGraph.Agents {
                 if (IsAgentRunning) return;
                 Debug.Assert(cancellationTokenSource == null, $"cancellationTokenSource was not null");
                 stopRequested = false;
-                this.onStoppedMethod = null;
+                onStoppedMethod = null;
                 HandleNextAgent();
             }
         }
 
         public class Context {
-            public System.Random random;
-            public AgentManager manager;
+            public Random Random { get; }
+            public AgentManager Manager { get; }
+
+            public Context(Random random, AgentManager manager) {
+                Random = random;
+                Manager = manager;
+            }
         }
     }
 }
