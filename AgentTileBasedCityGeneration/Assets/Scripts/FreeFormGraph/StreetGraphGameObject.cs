@@ -109,9 +109,14 @@ namespace FreeFormGraph {
             return nodes.ToArray();
         }
 
-        public virtual IStreetEdge[] FindAllEdgesWithinRange(Vector2 position, float radius)
-        {
-            throw new NotImplementedException();
+        public virtual IStreetEdge[] FindAllEdgesWithinRange(Vector2 position, float radius) {
+            var edges = new List<IStreetEdge>();
+            foreach (var streetEdge in Edges) {
+                if (streetEdge.GetDistanceEdgeToPosition(position, out _) <= radius) {
+                    edges.Add(streetEdge);
+                }
+            }
+            return edges.ToArray();
         }
         
         public abstract IStreetGraph Copy();

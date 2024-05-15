@@ -130,7 +130,7 @@ namespace FreeFormGraph.LineBased {
             newNode = n;
             return true;
         }
-
+        
         /// <summary>
         /// Checks if two lines intersect and returns the intersection point. TODO is this description correct?
         /// </summary>
@@ -143,7 +143,7 @@ namespace FreeFormGraph.LineBased {
         /// <param name="s">TODO</param>
         /// <param name="eps"> The epsilon value for the intersection check. </param>
         /// <returns> True if the lines intersect, false otherwise. </returns>
-        public static bool Intersection(Vector3 aPosition, Vector3 aLineVector, Vector3 bPosition, Vector3 bLineVector,
+        private static bool Intersection(Vector3 aPosition, Vector3 aLineVector, Vector3 bPosition, Vector3 bLineVector,
             out Vector3 intersectionPoint, out float t, out float s, float eps = 0.0001f) {
             Vector2 p = aLineVector;
             Vector2 q = bLineVector;
