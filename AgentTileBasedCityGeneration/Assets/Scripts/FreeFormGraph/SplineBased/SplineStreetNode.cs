@@ -28,6 +28,8 @@ namespace FreeFormGraph.SplineBased {
         public Vector3 Position { get; }
         public int MaxConnectedEdges => 4;
         
+        public float MinAngleBetweenEdges { get; }
+
         // TODO this is just a placeholder:
         public float? EntranceAngle => correspondingSplines.Count == 0 ? null : Vector3.Angle(Vector3.right, SplineIndices.First().spline[SplineIndices.First().index].TangentIn);
         

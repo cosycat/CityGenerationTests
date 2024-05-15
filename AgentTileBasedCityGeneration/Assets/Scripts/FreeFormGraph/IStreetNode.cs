@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using FreeFormGraph.LineBased;
 using UnityEngine;
 
 namespace FreeFormGraph {
@@ -23,6 +24,12 @@ namespace FreeFormGraph {
         /// The maximum number of edges that can be connected to this node.
         /// </summary>
         public int MaxConnectedEdges { get; }
+        
+        /// <summary>
+        /// The minimum angle between edges connected to this node.
+        /// New edges with an angle to an existing connected edge smaller than this will fail to connect.
+        /// </summary>
+        public float MinAngleBetweenEdges { get; }
         
         /// <summary>
         /// Whether the maximum number of edges that can be connected to this node has been reached.

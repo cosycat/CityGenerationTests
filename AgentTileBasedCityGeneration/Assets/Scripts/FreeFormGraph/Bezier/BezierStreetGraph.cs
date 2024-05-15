@@ -149,7 +149,8 @@ namespace FreeFormGraph.Bezier {
         public int ConnectedEdgesCount => edges.Count;
 
         public int MaxConnectedEdges => 4;
-        
+        public float MinAngleBetweenEdges { get; }
+
         public float? EntranceAngle { get; internal set; }
         public Vector3? EntranceDirection => EntranceAngle.HasValue ? Quaternion.Euler(0, 0, EntranceAngle.Value) * Vector3.right : null;
 
