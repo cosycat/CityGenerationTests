@@ -28,14 +28,7 @@ namespace FreeFormGraph {
         /// Whether the maximum number of edges that can be connected to this node has been reached.
         /// </summary>
         public bool IsMaxConnectedEdgesReached => ConnectedEdgesCount >= MaxConnectedEdges;
-        
-        /// <summary>
-        /// The angle at which the first street enters this node.
-        /// Measured counter-clockwise in degrees where 0 (and 360) is the direction of the x-axis.
-        /// If no street enters this node, this value is not set.
-        /// </summary>
-        public float? EntranceAngle { get; }
-        
+
         /// <summary>
         /// Returns a string representation of the node for debugging purposes.
         /// </summary>

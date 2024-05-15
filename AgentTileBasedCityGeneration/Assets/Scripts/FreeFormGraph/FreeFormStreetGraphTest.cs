@@ -161,9 +161,6 @@ namespace FreeFormGraph {
             foreach (var node in streetGraphCopy.Nodes) {
                 Gizmos.color = node.IsMaxConnectedEdgesReached ? Color.red : node.ConnectedEdgesCount > 2 ? Color.yellow : Color.green;
                 Gizmos.DrawSphere(node.Position, 0.1f);
-                Gizmos.DrawLine(node.Position, node.Position +
-                                               (Quaternion.Euler(0, 0, node.EntranceAngle ?? 0) *
-                                                (Vector3.right * 0.3f)));
             }
 
             foreach (var edge in streetGraphCopy.Edges) {
