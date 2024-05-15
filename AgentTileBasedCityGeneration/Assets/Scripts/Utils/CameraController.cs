@@ -1,3 +1,4 @@
+using System;
 using FreeFormGraph.World;
 using UnityEngine;
 
@@ -11,12 +12,25 @@ namespace Utils {
         [field: SerializeField] private float MinZoom { get; set; } = 5f;
         [field: SerializeField] private float MaxZoom { get; set; } = 15f;
         [field: SerializeField] private float AllowedBounds { get; set; } = 2f;
+        [field: SerializeField] private bool StartInWorldCenter { get; set; } = true;
 
         private WorldGameObject world;
     
         private void Awake() {
             Camera = GetComponent<Camera>();
             world = FindObjectOfType<WorldGameObject>();
+        }
+
+        private void Start() {
+            SetCameraWorldCenter();
+        }
+
+        private void SetCameraWorldCenter() {
+            if (!StartInWorldCenter) return;
+            var position = transform.position;
+            position.x = world.Width / 2f;
+            position.y = world.Height / 2f;
+            transform.position = position;
         }
 
         private void Update() {
