@@ -19,7 +19,7 @@ namespace FreeFormGraph.LineBased {
         public override int NodeCount => nodes.Count;
         public override int EdgeCount => edges.Count;
 
-        private const float Eps = 0.0001f;
+        private const float EPS = 0.0001f;
 
 
         [field: SerializeField] public override float SnapToExistingNodeThreshold { get; set; } = 0.2f;
@@ -66,7 +66,7 @@ namespace FreeFormGraph.LineBased {
                             return false;
                         }
 
-                        Debug.Assert(!TryFindClosestNode(to, out _, Eps), $"Intersection with edge, but no node found at {to}");
+                        Debug.Assert(!TryFindClosestNode(to, out _, EPS), $"Intersection with edge, but no node found at {to}");
                         InsertNodeOnEdge(lastIntersectionEdge, to, out toNode, out _, out _);
                     }
 
@@ -76,9 +76,7 @@ namespace FreeFormGraph.LineBased {
                         isToNodeNew = false;
                     }
                     else {
-                        node = new LineNode() {
-                            Position = to
-                        };
+                        node = new LineNode(to);
                         nodes.Add((LineNode)node);
                         toNode = node;
                     }
@@ -123,9 +121,7 @@ namespace FreeFormGraph.LineBased {
         }
 
         public override bool CreateUnconnectedNode(Vector3 position, out IStreetNode newNode) {
-            var n = new LineNode() {
-                Position = position
-            };
+            var n = new LineNode(position);
             nodes.Add(n);
             newNode = n;
             return true;
@@ -166,9 +162,7 @@ namespace FreeFormGraph.LineBased {
         }
 
         public override void InsertNodeOnEdge(IStreetEdge foundEdge, Vector3 positionOnEdge, out IStreetNode node, out IStreetEdge leftEdge, out IStreetEdge rightEdge) {
-            var n = new LineNode() {
-                Position = positionOnEdge
-            };
+            var n = new LineNode(positionOnEdge);
             var e = (LineEdge) foundEdge;
             ((LineNode)e.NodeA).RemoveEdge(e);
             ((LineNode)e.NodeB).RemoveEdge(e);
@@ -188,8 +182,8 @@ namespace FreeFormGraph.LineBased {
             AddEdge(rEdge);
 
             //if this fails, we would have an edge with length 0, which is weird and should not happen
-            Debug.Assert(Vector3.Distance(lEdge.NodeA.Position, lEdge.NodeB.Position) > Eps);
-            Debug.Assert(Vector3.Distance(rEdge.NodeA.Position, rEdge.NodeB.Position) > Eps, $"Distance between {rEdge.NodeA.Position} and {rEdge.NodeB.Position} is {Vector3.Distance(rEdge.NodeA.Position, rEdge.NodeB.Position)}");
+            Debug.Assert(Vector3.Distance(lEdge.NodeA.Position, lEdge.NodeB.Position) > EPS);
+            Debug.Assert(Vector3.Distance(rEdge.NodeA.Position, rEdge.NodeB.Position) > EPS, $"Distance between {rEdge.NodeA.Position} and {rEdge.NodeB.Position} is {Vector3.Distance(rEdge.NodeA.Position, rEdge.NodeB.Position)}");
 
             ((LineNode)e.NodeA).AddEdge(lEdge);
             ((LineNode)e.NodeB).AddEdge(rEdge);
@@ -204,9 +198,7 @@ namespace FreeFormGraph.LineBased {
             var copy = new GameObject().AddComponent<LineGraph>();
             for (var i = 0; i < nodes.Count; i++) {
                 var node = nodes[i];
-                var n = new LineNode {
-                    Position = node.Position
-                };
+                var n = new LineNode(node.Position);
                 copy.nodes.Add(n);
             }
 
@@ -259,11 +251,17 @@ namespace FreeFormGraph.LineBased {
         public Vector3 Position { get; set; }
         
         private readonly List<LineEdge> edges = new();
+
+        public LineNode(Vector3 position, int maxConnectedEdges = 6) {
+            Position = position;
+            MaxConnectedEdges = maxConnectedEdges;
+        }
+
         public IEnumerable<IStreetEdge> Edges => edges;
         
         public int ConnectedEdgesCount => edges.Count;
         
-        public int MaxConnectedEdges => 4;
+        public int MaxConnectedEdges { get; set; }
 
         public bool IsMaxConnectedEdgesReached => ConnectedEdgesCount >= MaxConnectedEdges;
 
