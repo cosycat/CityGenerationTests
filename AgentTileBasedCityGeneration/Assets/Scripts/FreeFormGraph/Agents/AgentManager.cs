@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FreeFormGraph.World;
+using UnityEditor;
 using UnityEngine;
 using Random = System.Random;
 
@@ -60,6 +61,15 @@ namespace FreeFormGraph.Agents {
             world = FindObjectOfType<WorldGameObject>();
             GenerateAgents();
             HandleNextAgent();
+#if UNITY_EDITOR
+            EditorApplication.pauseStateChanged += (state) => {
+                if (state == PauseState.Paused) {
+                    RequestStopAgents(() => { Debug.Log("Editor paused stopped");});
+                } else {
+                    RestartAgents();
+                }
+            };
+#endif
         }
 
         private void OnDestroy() {
