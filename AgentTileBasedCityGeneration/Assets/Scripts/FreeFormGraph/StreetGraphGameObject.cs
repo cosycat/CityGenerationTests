@@ -119,7 +119,6 @@ namespace FreeFormGraph {
             return edges.ToArray();
         }
         
-        public abstract IStreetGraph Copy();
     }
     
 }

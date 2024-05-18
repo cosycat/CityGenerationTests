@@ -130,12 +130,5 @@ namespace FreeFormGraph {
         IStreetNode[] FindAllNodesWithinRange(Vector2 position, float radius);
         IStreetEdge[] FindAllEdgesWithinRange(Vector2 position, float radius);
         
-        /// <summary>
-        /// Copy the graph for reading from it on a different thread.
-        ///
-        /// Don't forget to destroy the copy when you are done with it.
-        /// </summary>
-        /// <returns> A copy of the graph. </returns>
-        IStreetGraph Copy();
     }
 }

@@ -476,10 +476,6 @@ namespace FreeFormGraph.SplineBased {
             throw new NotImplementedException();
         }
 
-        public override IStreetGraph Copy() {
-            throw new NotImplementedException();
-        }
-
         [Conditional("DEBUG")]
         private void SanityChecks() {
             foreach(var n in Nodes) {

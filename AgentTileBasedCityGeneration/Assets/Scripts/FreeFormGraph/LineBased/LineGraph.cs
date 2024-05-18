@@ -215,25 +215,6 @@ namespace FreeFormGraph.LineBased {
             rightEdge = rEdge;
             node = n;
         }
-
-        public override IStreetGraph Copy() {
-            var copy = new GameObject().AddComponent<LineGraph>();
-            for (var i = 0; i < nodes.Count; i++) {
-                var node = nodes[i];
-                var n = new LineNode(node.Position, node.MinAngleBetweenEdges, node.MaxConnectedEdges);
-                copy.nodes.Add(n);
-            }
-
-            for (var i = 0; i < edges.Count; i++) {
-                var edge = edges[i];
-                var e = new LineEdge(copy.nodes[nodes.IndexOf((LineNode)edge.NodeA)],copy.nodes[nodes.IndexOf((LineNode)edge.NodeB)]);
-                copy.edges.Add(e);
-                ((LineNode)e.NodeA).AddEdge(e);
-                ((LineNode)e.NodeB).AddEdge(e);
-            }
-
-            return copy;
-        }
         
         public override IStreetEdge[] FindAllEdgesWithinRange(Vector2 position, float radius) {
             var closeEdges = new List<IStreetEdge>();

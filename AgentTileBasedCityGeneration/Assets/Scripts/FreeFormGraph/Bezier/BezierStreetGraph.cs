@@ -85,10 +85,6 @@ namespace FreeFormGraph.Bezier {
             throw new System.NotImplementedException();
         }
 
-        public override IStreetGraph Copy() {
-            throw new System.NotImplementedException();
-        }
-
         public override bool RemoveNode(IStreetNode node) {
             Debug.Assert(node is BezierStreetNode);
             var bezierNode = (BezierStreetNode) node;
