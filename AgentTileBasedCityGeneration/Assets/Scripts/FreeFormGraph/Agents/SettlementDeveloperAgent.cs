@@ -1,10 +1,9 @@
+#nullable enable
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using FreeFormGraph.World;
 using FreeFormGraph.World.PoI;
-using JetBrains.Annotations;
 using UnityEngine;
 using Random = System.Random;
 
@@ -18,15 +17,21 @@ namespace FreeFormGraph.Agents {
 
         private readonly IPointOfInterest pointOfInterest;
         
-        private readonly Random random = new Random();
-
         private int lastWorkCycleWithChange = 0;
 
-        public SettlementDeveloperAgent([NotNull] IPointOfInterest pointOfInterest, [NotNull] IWorld world, [CanBeNull] SdaParameters parameters = null) {
+        public SettlementDeveloperAgent(IPointOfInterest pointOfInterest, IWorld world, SdaParameters? parameters = null) {
             this.pointOfInterest = pointOfInterest;
             this.parameters = parameters ?? new SdaParameters();
-            var startNode = world.StreetGraph.TryFindClosestNode(pointOfInterest.Position, out var closestNode, this.parameters.MinStreetLength) 
-                ? closestNode : world.StreetGraph.CreateUnconnectedNode(pointOfInterest.Position, out var newNode) ? newNode : throw new Exception("Could not find or create a node for the point of interest.");
+            CreateStartNode(world);
+        }
+
+        private IStreetNode CreateStartNode(IWorld world) {
+            if (world.StreetGraph.TryFindClosestNode(pointOfInterest.Position, out var closestNode,
+                    parameters.MinStreetLength))
+                return closestNode;
+            if (world.StreetGraph.CreateUnconnectedNode(pointOfInterest.Position, out var createdNode))
+                return createdNode; 
+            throw new Exception("Could not find or create a node for the point of interest.");
         }
 
         public void DoWork(CancellationToken cancellationToken, IWorld world, AgentManager.Context context) {
@@ -34,39 +39,45 @@ namespace FreeFormGraph.Agents {
                 lastWorkCycleWithChange++;
                 return;
             }
+            
             var nodes = pointOfInterest.FindAllNodes(world);
-            // Debug.Log("PoIDeveloperAgent: Growing road network.");
-            var roadNetworkGrown = GrowRoadNetwork(world, nodes);
+            if (nodes.Length == 0) {
+                Debug.LogWarning("PoIDeveloperAgent: No nodes found for the point of interest. Creating a new one at the center.");
+                var newNode = CreateStartNode(world);
+                nodes = new[] {newNode};
+            }
+            
+            var roadNetworkGrown = GrowRoadNetwork(world, nodes, context.Random);
             cancellationToken.ThrowIfCancellationRequested();
-            // Debug.Log("PoIDeveloperAgent: Connecting road network.");
-            var newConnections = ConnectRoadNetwork(world, nodes, cancellationToken);
-            // Debug.Log($"PoIDeveloperAgent: Connected {newConnections} cul-de-sacs.");
+            
+            var newConnections = ConnectRoadNetwork(world, nodes, cancellationToken, context.Random);
             var didChange = roadNetworkGrown || newConnections > 0;
             if (didChange) lastWorkCycleWithChange = 0;
             else lastWorkCycleWithChange++;
             cancellationToken.ThrowIfCancellationRequested();
         }
 
-        private bool GrowRoadNetwork(IWorld world, IStreetNode[] nodes) {
-            var node = GetRandomNode(nodes);
-            Debug.Assert(node != null, $"PoIDeveloperAgent: Node is null.");
+        private bool GrowRoadNetwork(IWorld world, IStreetNode[] nodes, Random random) {
+            var node = GetRandomNode(nodes, random);
+            // Debug.Assert(node != null, $"PoIDeveloperAgent: Node is null.");
             // var averageInPosition = GetAverageInPosition(node); // TODO take a random incoming edge as direction
-            var averageInPosition = GetRandomConnectedNodePosition(node);
+            var averageInPosition = GetRandomConnectedNodePosition(node, random);
             var direction = node.Position - averageInPosition;
-            var angle = Mathf.Atan2(direction.y, direction.x);
+            var inStreetAngle = Mathf.Atan2(direction.y, direction.x);
             var angleRandom = (float)random.NextDouble() * 2f * parameters.AngleRandomMax - parameters.AngleRandomMax; //UnityEngine.Random.Range(-angleRandomMax, angleRandomMax);
+            var angleOffset = parameters.AngleInBothDirections ? random.Next(2) == 1 ? parameters.AngleOffset : -parameters.AngleOffset : parameters.AngleOffset;
+            var combinedAngle = inStreetAngle + angleOffset + angleRandom;
             var length = (float)random.NextDouble() * (parameters.MaxStreetLength - parameters.MinStreetLength) + parameters.MinStreetLength; //UnityEngine.Random.Range(minStreetLength, maxStreetLength);
-            // TODO take either + or - angleOffset
-            var newPointPosition = new Vector2(node.Position.x + Mathf.Cos(angle + parameters.AngleOffset + angleRandom) * length, node.Position.y + Mathf.Sin(angle + parameters.AngleOffset + angleRandom) * length);
+            var newPointPosition = new Vector2(node.Position.x + Mathf.Cos(combinedAngle) * length, node.Position.y + Mathf.Sin(combinedAngle) * length);
             var newPoint = parameters.SnapToGrid ? new Vector2(Mathf.Round(newPointPosition.x), Mathf.Round(newPointPosition.y)) : newPointPosition;
             
             // TODO check for steepness with parameter
             // TODO check if the new angle is in a legal range for every edge
-            if(world.StreetGraph.TryFindClosestNode(newPoint, out var closestNode, length)) {
+            if(world.StreetGraph.TryFindClosestNode(newPoint, out _, length)) {
                 // Debug.Log($"PoIDeveloperAgent: New point {newPoint} is too close to an existing node: {closestNode.Position}");
                 return false;
             }
-            if (world.StreetGraph.TryFindClosestEdge(newPoint, out var foundEdge, out var positionOnEdge, parameters.MinNodeEdgeDistance)) {
+            if (world.StreetGraph.TryFindClosestEdge(newPoint, out _, out _, parameters.MinNodeEdgeDistance)) {
                 // Debug.Log($"PoIDeveloperAgent: New point {newPoint} is too close to an existing edge: {foundEdge.NodeA.Position} - {foundEdge.NodeB.Position}");
                 return false;
             }
@@ -74,16 +85,20 @@ namespace FreeFormGraph.Agents {
                 // Debug.Log($"PoIDeveloperAgent: New point {newPoint} is outside the point of interest.");
                 return false;
             }
+            if (node.IsMaxConnectedEdgesReached) {
+                // Debug.Log($"PoIDeveloperAgent: Node {node.Position} has too many connected edges.");
+                return false;
+            }
 
-            if (!world.StreetGraph.CreateEdge(node, new Vector3(newPoint.x, newPoint.y), out var newEdge, out var toNode, out var isToNodeNew, out var isEdgeNew, failIfIntersection: true)) {
-                Debug.LogWarning("Could not create a new node for the PoIDeveloperAgent.");
+            if (!world.StreetGraph.CreateEdge(node, new Vector3(newPoint.x, newPoint.y), out _, out _, out _, out _, failIfIntersection: true)) {
+                Debug.LogWarning($"Could not create a new node for the PoIDeveloperAgent at {newPoint} from {node.Position}.");
                 return false;
             }
 
             return true;
         }
 
-        private int ConnectRoadNetwork(IWorld world, IStreetNode[] nodes, CancellationToken cancellationToken) {
+        private int ConnectRoadNetwork(IWorld world, IStreetNode[] nodes, CancellationToken cancellationToken, Random random) {
             
             if (nodes.Length < 2) return 0;
             switch (parameters.ConnectCulDeSacs) {
@@ -91,10 +106,10 @@ namespace FreeFormGraph.Agents {
                     return 0;
                 
                 case SdaParameters.ConnectionHandling.ConnectSlowly: {
-                    var nodeA = GetRandomNode(nodes);
-                    var nodeB = GetRandomNode(nodes);
+                    var nodeA = GetRandomNode(nodes, random);
+                    var nodeB = GetRandomNode(nodes, random);
                     while (nodeA == nodeB) {
-                        nodeB = GetRandomNode(nodes);
+                        nodeB = GetRandomNode(nodes, random);
                         if (nodes.Length < 2) { // sanity check and in case some parallel code modifies the nodes list (which it shouldn't)
                             Debug.LogError("PoIDeveloperAgent: Not enough nodes to connect. Nodes modified during connection.");
                             return 0;
@@ -130,7 +145,7 @@ namespace FreeFormGraph.Agents {
                 || !parameters.ConnectCulDeSacWithNonCulDeSac && nodeA.Edges.Count() > 1 || nodeB.Edges.Count() > 1) return false; // Too many nodes are not cul-de-sacs
             // TODO check if nodeA and nodeB are connected already.
             
-            if (!world.StreetGraph.CreateEdge(nodeA, nodeB.Position, out var newEdge, out var toNode, out var isToNodeNew, out var isEdgeNew, failIfIntersection: true)) {
+            if (!world.StreetGraph.CreateEdge(nodeA, nodeB.Position, out _, out var toNode, out var isToNodeNew, out var isEdgeNew, failIfIntersection: true)) {
                 // Debug.Log("Could not connect the cul-de-sacs.");
                 return false;
             }
@@ -139,7 +154,7 @@ namespace FreeFormGraph.Agents {
             return isEdgeNew;
         }
 
-        private Vector3 GetRandomConnectedNodePosition(IStreetNode node) {
+        private Vector3 GetRandomConnectedNodePosition(IStreetNode node, Random random) {
             if (node.ConnectedEdgesCount == 0) {
                 Debug.Log("PoIDeveloperAgent: Node has no connected edges.");
                 return node.Position + new Vector3(1, 0, 0);
@@ -159,7 +174,8 @@ namespace FreeFormGraph.Agents {
             return average / node.ConnectedEdgesCount;
         }
 
-        private IStreetNode GetRandomNode(IStreetNode[] nodes) {
+        private IStreetNode GetRandomNode(IStreetNode[] nodes, Random random) {
+            Debug.Assert(nodes.Length > 0, "PoIDeveloperAgent: No nodes to choose from.");
             return nodes[random.Next(0, nodes.Length)];
         }
 
@@ -174,10 +190,12 @@ namespace FreeFormGraph.Agents {
             [field: SerializeField] public bool SnapToGrid { get; set; } = false;
             [field: SerializeField] public ConnectionHandling ConnectCulDeSacs { get; set; } = ConnectionHandling.ConnectSlowly;
             [field: SerializeField] public bool ConnectCulDeSacWithNonCulDeSac { get; set; } = true;
+            [field: SerializeField] public bool AngleInBothDirections { get; set; } = true;
+            
 
             public SdaParameters() { }
 
-            public SdaParameters(SdaParameters other) {
+            public SdaParameters(SdaParameters? other) {
                 if (other == null) {
                     return;
                 }
@@ -190,9 +208,10 @@ namespace FreeFormGraph.Agents {
                 SnapToGrid = other.SnapToGrid;
                 ConnectCulDeSacs = other.ConnectCulDeSacs;
                 ConnectCulDeSacWithNonCulDeSac = other.ConnectCulDeSacWithNonCulDeSac;
+                AngleInBothDirections = other.AngleInBothDirections;
             }
 
-            public SdaParameters(float minStreetLength, float maxStreetLength, float minNodeEdgeDistance, float angleOffset, float angleRandomMax, float maxConnectionDistance, bool snapToGrid, ConnectionHandling connectCulDeSacs, bool connectCulDeSacWithNonCulDeSac) {
+            public SdaParameters(float minStreetLength, float maxStreetLength, float minNodeEdgeDistance, float angleOffset, float angleRandomMax, float maxConnectionDistance, bool snapToGrid, ConnectionHandling connectCulDeSacs, bool connectCulDeSacWithNonCulDeSac, bool angleInBothDirections) {
                 MinStreetLength = minStreetLength;
                 MaxStreetLength = maxStreetLength;
                 MinNodeEdgeDistance = minNodeEdgeDistance;
@@ -202,6 +221,7 @@ namespace FreeFormGraph.Agents {
                 SnapToGrid = snapToGrid;
                 ConnectCulDeSacs = connectCulDeSacs;
                 ConnectCulDeSacWithNonCulDeSac = connectCulDeSacWithNonCulDeSac;
+                AngleInBothDirections = angleInBothDirections;
             }
 
             public enum ConnectionHandling {

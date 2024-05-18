@@ -8,6 +8,9 @@ namespace FreeFormGraph.World.PoI {
     
     public class PointOfInterestDebugVisualizer : MonoBehaviour {
 
+        [SerializeField] private bool showBoundaries = false;
+        [SerializeField] private bool showLabel = false;
+        
         private IWorld world;
         private IPointOfInterestCollection pointsOfInterest;
 
@@ -29,17 +32,20 @@ namespace FreeFormGraph.World.PoI {
                 return;
             }
             
-            for (int i = 0; i < POIs.Count; i++) {
-                var pointOfInterest = POIs[i];
-                if (pointOfInterest is SpherePointOfInterest spherePointOfInterest) {
-                    Gizmos.color = Color.green;
-                    Gizmos.DrawWireSphere(spherePointOfInterest.Position, spherePointOfInterest.Radius);
-                }
-                else {
-                    Debug.LogWarning("Unknown point of interest type");
+            foreach (var pointOfInterest in POIs) {
+                if (showBoundaries) {
+                    if (pointOfInterest is SpherePointOfInterest spherePointOfInterest) {
+                        Gizmos.color = Color.green;
+                        Gizmos.DrawWireSphere(spherePointOfInterest.Position, spherePointOfInterest.Radius);
+                    }
+                    else {
+                        Debug.LogWarning("Unknown point of interest type");
+                    }
                 }
 
-                // Handles.Label(pointOfInterest.Position, $"{pointOfInterest}");
+                if (showLabel) {
+                    Handles.Label(pointOfInterest.Position, $"{pointOfInterest}");
+                }
             }
         }
     }

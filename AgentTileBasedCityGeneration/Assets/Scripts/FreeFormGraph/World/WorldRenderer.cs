@@ -8,29 +8,40 @@ namespace FreeFormGraph.World {
         public Material material;
         private bool didCreateMesh = false;
 
+        [SerializeField] private Color[] colors = {
+            Color.blue,
+            Color.green,
+            Color.red,
+            Color.white,
+        };
+
         private Gradient colorGradient;
 
-        void Start() {
+        private void Start() {
             colorGradient = new Gradient();
-            var colorGradients = new GradientColorKey[4];
-            colorGradients[0] = new GradientColorKey(Color.blue, 0.0f);
-            colorGradients[1] = new GradientColorKey(Color.green, 0.25f);
-            colorGradients[2] = new GradientColorKey(Color.red, 0.75f);
-            colorGradients[3] = new GradientColorKey(Color.white, 1.0f);
+            if (colors == null || colors.Length < 2) {
+                colors = new Color[2];
+                colors[0] = Color.white;
+                colors[1] = Color.red;
+            }
+            var colorGradients = new GradientColorKey[colors.Length];
+            for (int i = 0; i < colors.Length; i++) {
+                colorGradients[i] = new GradientColorKey(colors[i], (float)i / (colors.Length - 1));
+            }
             var alphas = new GradientAlphaKey[2];
             alphas[0] = new GradientAlphaKey(1.0f, 0.0f);
             alphas[1] = new GradientAlphaKey(1.0f, 1.0f);
             colorGradient.SetKeys(colorGradients, alphas);
         }
 
-        void Update() {
+        private void Update() {
             if(World != null) {
                 if(!didCreateMesh) {
                     RenderSubmaps();
                     didCreateMesh = true; //ugh
                 }
             } else {
-                World = FindObjectOfType<WorldGameObject>() as IWorld;
+                World = FindObjectOfType<WorldGameObject>();
             }
         }
 
@@ -101,7 +112,7 @@ namespace FreeFormGraph.World {
             mesh.normals = normals;
 
 
-            GameObject terrainObject = new GameObject("Terrain");
+            var terrainObject = new GameObject("Terrain");
             terrainObject.transform.position = Vector3.zero;
             terrainObject.AddComponent<MeshFilter>().mesh = mesh;
             terrainObject.AddComponent<MeshRenderer>().material = material;

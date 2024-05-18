@@ -1,7 +1,5 @@
 using System.Threading;
 using FreeFormGraph.World;
-using JetBrains.Annotations;
-using UnityEngine;
 
 namespace FreeFormGraph.Agents {
     
@@ -20,6 +18,7 @@ namespace FreeFormGraph.Agents {
         /// </summary>
         /// <param name="cancellationToken"> The cancellation token to check if the agent should cancel. </param>
         /// <param name="world"> The world the agent is working on. </param>
+        /// <param name="context"> The context of the agent. </param>
         void DoWork(CancellationToken cancellationToken, IWorld world, AgentManager.Context context);
     }
 }

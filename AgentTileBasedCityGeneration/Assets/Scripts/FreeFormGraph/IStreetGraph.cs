@@ -1,3 +1,4 @@
+#nullable enable
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -50,13 +51,13 @@ namespace FreeFormGraph {
         public bool CreateEdge(Vector3 from, Vector3 to, out IStreetEdge newEdge, out IStreetNode fromNode,
             out IStreetNode toNode, out bool isFromNodeNew, out bool isToNodeNew) {
             if (!GetOrCreateNode(from, SnapToExistingNodeThreshold, out fromNode, out isFromNodeNew)) {
-                newEdge = null;
-                toNode = null;
+                newEdge = null!;
+                toNode = null!;
                 isToNodeNew = false;
                 return false;
             }
             // try to create the edge
-            var success = CreateEdge(fromNode, to, out newEdge, out toNode, out isToNodeNew, out var isEdgeNew);
+            var success = CreateEdge(fromNode, to, out newEdge, out toNode, out isToNodeNew, out _);
             if (success) {
                 return true;
             }
@@ -129,12 +130,5 @@ namespace FreeFormGraph {
         IStreetNode[] FindAllNodesWithinRange(Vector2 position, float radius);
         IStreetEdge[] FindAllEdgesWithinRange(Vector2 position, float radius);
         
-        /// <summary>
-        /// Copy the graph for reading from it on a different thread.
-        ///
-        /// Don't forget to destroy the copy when you are done with it.
-        /// </summary>
-        /// <returns> A copy of the graph. </returns>
-        IStreetGraph Copy();
     }
 }

@@ -9,7 +9,7 @@ namespace FreeFormGraph.LineBased {
 
         private readonly List<LineEdge> edges = new();
 
-        public BVH<LineEdge> bvh = new BVH<LineEdge>(new BVHLineAdapter(), new()); 
+        private readonly BVH<LineEdge> bvh = new(new BVHLineAdapter(), new List<LineEdge>()); 
 
         private readonly List<LineNode> nodes = new();
         public override IEnumerable<IStreetNode> Nodes => nodes;
@@ -19,11 +19,13 @@ namespace FreeFormGraph.LineBased {
         public override int NodeCount => nodes.Count;
         public override int EdgeCount => edges.Count;
 
-        private float eps = 0.0001f;
-        
+        private const float EPS = 0.0001f;
 
-        public override float SnapToExistingNodeThreshold { get; set; } = 0.2f;
-        public override float SnapToExistingEdgeThreshold { get; set; } = 0;
+
+        [field: SerializeField] public override float SnapToExistingNodeThreshold { get; set; } = 0.2f;
+        [field: SerializeField] public override float SnapToExistingEdgeThreshold { get; set; } // TODO this is not used yet
+        [field: SerializeField] public float MinAngleBetweenNewEdgesDegree { get; set; } = 15f;
+        public float MinAngleBetweenNewEdgesRad => Mathf.Deg2Rad * MinAngleBetweenNewEdgesDegree;
 
         public override bool CreateEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode,
             out bool isToNodeNew, out bool isEdgeNew, bool failIfIntersection = false) {
@@ -34,11 +36,11 @@ namespace FreeFormGraph.LineBased {
                 foreach(var e in edges) {
                     //skip node we are coming from to prevent finding intersection with edge we are connected to
                     if(e.NodeA == from || e.NodeB == from) continue;
-                    var A = from.Position;
-                    var a = to-A;
-                    var B = e.NodeA.Position;
-                    var b = e.NodeB.Position - B;
-                    var intersects = Intersection(A, a, B, b, out var crossPoint, out var t, out var s);
+                    var aPosition = from.Position;
+                    var aDirection = to-aPosition;
+                    var bPosition = e.NodeA.Position;
+                    var bDirection = e.NodeB.Position - bPosition;
+                    var intersects = Intersection(aPosition, aDirection, bPosition, bDirection, out var crossPoint, out _, out _);
 
                     if(intersects) {
                         to = crossPoint;
@@ -66,20 +68,17 @@ namespace FreeFormGraph.LineBased {
                             return false;
                         }
 
-                        Debug.Assert(!TryFindClosestNode(to, out var node, eps), $"Intersection with edge, but no node found at {to}");
+                        Debug.Assert(!TryFindClosestNode(to, out _, EPS), $"Intersection with edge, but no node found at {to}");
                         InsertNodeOnEdge(lastIntersectionEdge, to, out toNode, out _, out _);
                     }
 
                 } else {
-                    IStreetNode node = null;
-                    if (((IStreetGraph)this).TryFindClosestNode(to, out node, SnapToExistingNodeThreshold)) {
+                    if (TryFindClosestNode(to, out var node, SnapToExistingNodeThreshold)) {
                         toNode = node;
                         isToNodeNew = false;
                     }
                     else {
-                        node = new LineNode() {
-                            Position = to
-                        };
+                        node = new LineNode(to, MinAngleBetweenNewEdgesRad);
                         nodes.Add((LineNode)node);
                         toNode = node;
                     }
@@ -89,33 +88,60 @@ namespace FreeFormGraph.LineBased {
             }
         
         public override bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge, out bool isEdgeNew) {
-            if (from == null || to == null) {
+            if (from is not LineNode fromLineNode || to is not LineNode toLineNode) { // is checks for null as well
                 newEdge = null;
                 isEdgeNew = false;
                 return false;
             }
-
-            // check if edge already exists
+            
             foreach (var fromEdge in from.Edges) {
+                // check if edge already exists
                 if (fromEdge.NodeA == to || fromEdge.NodeB == to) {
                     newEdge = fromEdge;
                     isEdgeNew = false;
                     return true;
                 }
+                
+            }
+
+            if (!IsAngleOfNewEdgePossible(toLineNode, fromLineNode)) {
+                newEdge = null;
+                isEdgeNew = false;
+                return false;
             }
 
             // TODO check intersections here
-            var fromNode = (LineNode)from; //why...
-            var toNode = (LineNode)to;
-            var edge = new LineEdge() {
-                NodeA = fromNode,
-                NodeB = toNode
-            };
-            addEdge(edge);
-            fromNode.AddEdge(edge);
-            toNode.AddEdge(edge);
+            
+            var edge = new LineEdge(fromLineNode, toLineNode);
+            AddEdge(edge);
+            fromLineNode.AddEdge(edge);
+            toLineNode.AddEdge(edge);
             newEdge = edge;
             isEdgeNew = true;
+            return true;
+        }
+
+        private static bool IsAngleOfNewEdgePossible(LineNode toLineNode, LineNode fromLineNode) {
+            foreach (var fromEdge in fromLineNode.Edges) {
+                // check if angle to another edge is too small on the from-node
+                var newEdgeDirectionFrom = toLineNode.Position - fromLineNode.Position;
+                var existingEdgeDirectionFrom = fromEdge.NodeA == fromLineNode ? fromEdge.NodeB.Position - fromLineNode.Position : fromEdge.NodeA.Position - fromLineNode.Position;
+                if (Vector3.Angle(newEdgeDirectionFrom, existingEdgeDirectionFrom) * Mathf.Deg2Rad < fromLineNode.MinAngleBetweenEdges) {
+                    Debug.Log($"Angle between edges too small: {Vector3.Angle(newEdgeDirectionFrom, existingEdgeDirectionFrom)} < {fromLineNode.MinAngleBetweenEdges * Mathf.Rad2Deg}. On node {fromLineNode.Position}");
+                    return false;
+                }
+            }
+
+            foreach (var toEdge in toLineNode.Edges) {
+                // check if angle to another edge is too small on the to-node
+                var newEdgeDirectionTo = fromLineNode.Position - toLineNode.Position;
+                var existingEdgeDirectionTo = toEdge.NodeA == toLineNode ? toEdge.NodeB.Position - toLineNode.Position : toEdge.NodeA.Position - toLineNode.Position;
+                if (Vector3.Angle(newEdgeDirectionTo, existingEdgeDirectionTo) < toLineNode.MinAngleBetweenEdges) {
+                    Debug.Log($"Angle between edges too small: {Vector3.Angle(newEdgeDirectionTo, existingEdgeDirectionTo)} < {toLineNode.MinAngleBetweenEdges * Mathf.Rad2Deg}. On node {toLineNode.Position}");
+                    return false;
+                }
+            }
+
             return true;
         }
 
@@ -124,29 +150,33 @@ namespace FreeFormGraph.LineBased {
         }
 
         public override bool CreateUnconnectedNode(Vector3 position, out IStreetNode newNode) {
-            var n = new LineNode() {
-                Position = position
-            };
+            var n = new LineNode(position, MinAngleBetweenNewEdgesRad);
             nodes.Add(n);
             newNode = n;
             return true;
         }
+        
+        /// <summary>
+        /// Checks if two lines intersect and returns the intersection point. TODO is this description correct?
+        /// </summary>
+        /// <param name="aPosition"> The position of the first line. </param>
+        /// <param name="aLineVector"> The direction and length of the first line. </param>
+        /// <param name="bPosition"> The position of the second line. </param>
+        /// <param name="bLineVector"> The direction and length of the second line. </param>
+        /// <param name="intersectionPoint"> The intersection point of the two lines. </param>
+        /// <param name="t">TODO</param>
+        /// <param name="s">TODO</param>
+        /// <param name="eps"> The epsilon value for the intersection check. </param>
+        /// <returns> True if the lines intersect, false otherwise. </returns>
+        private static bool Intersection(Vector3 aPosition, Vector3 aLineVector, Vector3 bPosition, Vector3 bLineVector,
+            out Vector3 intersectionPoint, out float t, out float s, float eps = 0.0001f) {
+            Vector2 p = aLineVector;
+            Vector2 q = bLineVector;
+            Vector2 r = bPosition - aPosition;
 
-        public static bool Intersection(Vector3 A, 
-                Vector3 a, 
-                Vector3 B, 
-                Vector3 b, 
-                out Vector3 intersectionPoint, 
-                out float t, 
-                out float s,
-                float eps = 0.0001f) {
-            Vector2 p = a;
-            Vector2 q = b;
-            Vector2 r = B - A;
+            var denominator = p.y * q.x - p.x * q.y;
 
-            float denom = p.y * q.x - p.x * q.y;
-
-            if (denom == 0) {
+            if (denominator == 0) {
                 //line parallel
                 t = float.NaN;
                 s = float.NaN;
@@ -154,37 +184,29 @@ namespace FreeFormGraph.LineBased {
                 return false;
             }
 
-            t = (r.y * q.x - r.x * q.y) / denom;
-            s = (r.y * p.x - r.x * p.y) / denom;
-            intersectionPoint = A + t * a;
+            t = (r.y * q.x - r.x * q.y) / denominator;
+            s = (r.y * p.x - r.x * p.y) / denominator;
+            intersectionPoint = aPosition + t * aLineVector;
             return (t > 0 - eps && t < 1 + eps && s > 0 - eps && s < 1 + eps);
         }
 
         public override void InsertNodeOnEdge(IStreetEdge foundEdge, Vector3 positionOnEdge, out IStreetNode node, out IStreetEdge leftEdge, out IStreetEdge rightEdge) {
-            var n = new LineNode() {
-                Position = positionOnEdge
-            };
+            var n = new LineNode(positionOnEdge, MinAngleBetweenNewEdgesRad);
             var e = (LineEdge) foundEdge;
             ((LineNode)e.NodeA).RemoveEdge(e);
             ((LineNode)e.NodeB).RemoveEdge(e);
-            removeEdge(e);
-
-            var lEdge = new LineEdge() {
-                NodeA = foundEdge.NodeA,
-                NodeB = n
-            };
-
-            var rEdge = new LineEdge() {
-                NodeA = n,
-                NodeB = foundEdge.NodeB
-            };
+            RemoveEdge(e);
+            
+            var lEdge = new LineEdge(foundEdge.NodeA, n);
+            var rEdge = new LineEdge(n, foundEdge.NodeB);
+            
             nodes.Add(n);
-            addEdge(lEdge);
-            addEdge(rEdge);
+            AddEdge(lEdge);
+            AddEdge(rEdge);
 
             //if this fails, we would have an edge with length 0, which is weird and should not happen
-            Debug.Assert(Vector3.Distance(lEdge.NodeA.Position, lEdge.NodeB.Position) > eps);
-            Debug.Assert(Vector3.Distance(rEdge.NodeA.Position, rEdge.NodeB.Position) > eps, $"Distance between {rEdge.NodeA.Position} and {rEdge.NodeB.Position} is {Vector3.Distance(rEdge.NodeA.Position, rEdge.NodeB.Position)}");
+            Debug.Assert(Vector3.Distance(lEdge.NodeA.Position, lEdge.NodeB.Position) > EPS);
+            Debug.Assert(Vector3.Distance(rEdge.NodeA.Position, rEdge.NodeB.Position) > EPS, $"Distance between {rEdge.NodeA.Position} and {rEdge.NodeB.Position} is {Vector3.Distance(rEdge.NodeA.Position, rEdge.NodeB.Position)}");
 
             ((LineNode)e.NodeA).AddEdge(lEdge);
             ((LineNode)e.NodeB).AddEdge(rEdge);
@@ -194,55 +216,30 @@ namespace FreeFormGraph.LineBased {
             rightEdge = rEdge;
             node = n;
         }
-
-        public override IStreetGraph Copy() {
-            var copy = new GameObject().AddComponent<LineGraph>();
-            for (var i = 0; i < nodes.Count; i++) {
-                var node = nodes[i];
-                var n = new LineNode {
-                    Position = node.Position
-                };
-                copy.nodes.Add(n);
-            }
-
-            for (var i = 0; i < edges.Count; i++) {
-                var edge = edges[i];
-                var e = new LineEdge {
-                    NodeA = copy.nodes[nodes.IndexOf((LineNode)edge.NodeA)],
-                    NodeB = copy.nodes[nodes.IndexOf((LineNode)edge.NodeB)]
-                };
-                copy.edges.Add(e);
-                ((LineNode)e.NodeA).AddEdge(e);
-                ((LineNode)e.NodeB).AddEdge(e);
-            }
-
-            return copy;
-        }
         
         public override IStreetEdge[] FindAllEdgesWithinRange(Vector2 position, float radius) {
             var closeEdges = new List<IStreetEdge>();
             var bvhHits = bvh.Traverse(BVHHelper.RadialNodeTraversalTest(position, radius));
 
             foreach(var g in bvhHits) {
-                if(g.GObjects != null) {
-                    foreach(var edge in g.GObjects) {
-                        var distance = edge.GetDistanceEdgeToPosition(position, out var posOnEdgeTmp);
-                        if (distance < radius) {
-                            closeEdges.Add(edge);
-                        }
+                if (g.GObjects == null) continue;
+                foreach(var edge in g.GObjects) {
+                    var distance = edge.GetDistanceEdgeToPosition(position, out _);
+                    if (distance < radius) {
+                        closeEdges.Add(edge);
                     }
                 }
             }
             return closeEdges.ToArray();
         }
 
-        private void addEdge(LineEdge edge) {
+        private void AddEdge(LineEdge edge) {
             edges.Add(edge);
             bvh.Add(edge);
             bvh.Optimize(); //maybe use batch operations for adding?
         }
 
-        private void removeEdge(LineEdge edge) {
+        private void RemoveEdge(LineEdge edge) {
             edges.Remove(edge);
             bvh.Remove(edge);
             bvh.Optimize();
@@ -253,13 +250,22 @@ namespace FreeFormGraph.LineBased {
         
         public Vector3 Position { get; set; }
         
-        private List<LineEdge> _edges = new List<LineEdge>();
-        public IEnumerable<IStreetEdge> Edges => _edges;
+        private readonly List<LineEdge> edges = new();
+
+        public LineNode(Vector3 position, float minAngleBetweenEdges = Mathf.Deg2Rad * 30f, int maxConnectedEdges = 6) {
+            Position = position;
+            MinAngleBetweenEdges = minAngleBetweenEdges;
+            MaxConnectedEdges = maxConnectedEdges;
+        }
+
+        public IEnumerable<IStreetEdge> Edges => edges;
         
-        public int ConnectedEdgesCount => _edges.Count;
+        public int ConnectedEdgesCount => edges.Count;
         
-        public int MaxConnectedEdges { get; }
+        public int MaxConnectedEdges { get; set; }
         
+        public float MinAngleBetweenEdges { get; }
+
         public bool IsMaxConnectedEdgesReached => ConnectedEdgesCount >= MaxConnectedEdges;
 
         public override string ToString() {
@@ -267,16 +273,15 @@ namespace FreeFormGraph.LineBased {
         }
 
         public void AddEdge(LineEdge e) {
-            if(!_edges.Contains(e)) {
-                _edges.Add(e);
+            if(!edges.Contains(e)) {
+                edges.Add(e);
             }
         }
 
         public void RemoveEdge(LineEdge e) {
-            _edges.Remove(e);
+            edges.Remove(e);
         }
 
-        public float? EntranceAngle { get; }
     }
 
     public class LineEdge: IStreetEdge {
@@ -285,11 +290,17 @@ namespace FreeFormGraph.LineBased {
 
         public Vector3 Position => PositionNodeA + (PositionNodeB-PositionNodeA)/2.0f;
         public float Radius => Vector3.Distance(PositionNodeB, PositionNodeA) / 2.0f;
-
-        public IStreetNode NodeA { get; set;}
-        public IStreetNode NodeB { get; set;}
-        public float StreetWidth { get; set;} = 1;
         
+        public IStreetNode NodeA { get; }
+        public IStreetNode NodeB { get; }
+        public float StreetWidth { get; set;}
+
+        public LineEdge(IStreetNode nodeA, IStreetNode nodeB, float streetWidth = 1f) {
+            NodeA = nodeA;
+            NodeB = nodeB;
+            StreetWidth = streetWidth;
+        }
+
         public Vector3[] SplitIntoEvenlySpacedPoints(float stepSize = 0.1f) {
             return new Vector3[] {};
         }

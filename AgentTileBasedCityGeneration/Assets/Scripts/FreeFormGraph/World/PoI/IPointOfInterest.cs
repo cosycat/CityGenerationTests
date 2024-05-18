@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+#nullable enable
 using UnityEngine;
 
 namespace FreeFormGraph.World.PoI {

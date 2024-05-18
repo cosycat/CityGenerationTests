@@ -7,19 +7,19 @@ namespace FreeFormGraph.LineBased
 {
     public class BVHLineAdapter: IBVHNodeAdapter<LineEdge>
     {
-        private BVH<LineEdge> _bvh;
-        Dictionary<LineEdge, BVHNode<LineEdge>> gameObjectToLeafMap = new Dictionary<LineEdge, BVHNode<LineEdge>>();
-        private event Action<LineEdge> _onPositionOrSizeChanged;
+        private BVH<LineEdge> bvh;
+        private readonly Dictionary<LineEdge, BVHNode<LineEdge>> gameObjectToLeafMap = new();
+        private event Action<LineEdge> onPositionOrSizeChanged;
 
         BVH<LineEdge> IBVHNodeAdapter<LineEdge>.BVH
         {
             get
             {
-                return _bvh;
+                return bvh;
             }
             set
             {
-                _bvh = value;
+                bvh = value;
             }
         }
 

@@ -85,10 +85,6 @@ namespace FreeFormGraph.Bezier {
             throw new System.NotImplementedException();
         }
 
-        public override IStreetGraph Copy() {
-            throw new System.NotImplementedException();
-        }
-
         public override bool RemoveNode(IStreetNode node) {
             Debug.Assert(node is BezierStreetNode);
             var bezierNode = (BezierStreetNode) node;
@@ -149,7 +145,8 @@ namespace FreeFormGraph.Bezier {
         public int ConnectedEdgesCount => edges.Count;
 
         public int MaxConnectedEdges => 4;
-        
+        public float MinAngleBetweenEdges { get; }
+
         public float? EntranceAngle { get; internal set; }
         public Vector3? EntranceDirection => EntranceAngle.HasValue ? Quaternion.Euler(0, 0, EntranceAngle.Value) * Vector3.right : null;
 

@@ -14,16 +14,16 @@ namespace FreeFormGraph.Agents {
 
         public int WorkFrequency { get; set; } = 100;
         
-        private object pathFindingLock = new();
+        private readonly object pathFindingLock = new();
         private Pathfinding? pathfinding;
 
-        private HashSet<IPointOfInterest> connectedPOIs = new();
+        private readonly HashSet<IPointOfInterest> connectedPOIs = new();
 
         private int frameCounter = 0;
 
 
         /// <summary>
-        /// Actual best path that pathfiding has achieved (but didn't reach target yet). Set to empty when no pathfinding is active.
+        /// Actual best path that pathfinding has achieved (but didn't reach target yet). Set to empty when no pathfinding is active.
         /// </summary>
         private List<Pathfinding.Waypoint> currentBestPath = new();
 
@@ -76,8 +76,9 @@ namespace FreeFormGraph.Agents {
                 lock(pathFindingLock) {
 
                     if(pathfinding != null) {
-                        currentBestPath = pathfinding.GetShortestPath(pathfinding.startPosition, pathfinding.current);
-                        currentTarget = pathfinding.target;
+                        Debug.Assert(pathfinding.Current != null && pathfinding.Target != null && pathfinding.StartPosition != null);
+                        currentBestPath = pathfinding.GetShortestPath(pathfinding.StartPosition!, pathfinding.Current!);
+                        currentTarget = pathfinding.Target!.Value;
                     } else {
                         currentBestPath.Clear();
                     }
@@ -93,18 +94,18 @@ namespace FreeFormGraph.Agents {
                 }
 
                 //draw flags
-                if (currentBestPath == null || currentBestPath.Count == 0) return;
+                if (currentBestPath.Count == 0) return;
                 var currentStartPosition = currentBestPath[0].Pos; // this threw a null reference exception
                 var postHeight = 4;
                 var flagSize = 2;
                 Gizmos.color = Color.green;
                 //casting to force unwrap nullable...
                 Gizmos.DrawLine(currentStartPosition, currentStartPosition + Vector3.up * postHeight);
-                Gizmos.DrawCube(currentStartPosition + Vector3.up * (postHeight - (flagSize / 2)) + Vector3.right * (flagSize / 2.0f), new Vector3(flagSize, flagSize, 0));
+                Gizmos.DrawCube(currentStartPosition + Vector3.up * (postHeight - (flagSize / 2f)) + Vector3.right * (flagSize / 2.0f), new Vector3(flagSize, flagSize, 0));
                 Gizmos.color = Color.red;
                 Gizmos.DrawLine(currentTarget, currentStartPosition);
                 Gizmos.DrawLine(currentTarget, currentTarget + Vector3.up * postHeight);
-                Gizmos.DrawCube(currentTarget + Vector3.up * (postHeight - (flagSize / 2)) + Vector3.right * (flagSize / 2.0f), new Vector3(flagSize, flagSize, 0));
+                Gizmos.DrawCube(currentTarget + Vector3.up * (postHeight - (flagSize / 2f)) + Vector3.right * (flagSize / 2.0f), new Vector3(flagSize, flagSize, 0));
             }
 
 
