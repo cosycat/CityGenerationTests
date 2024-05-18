@@ -1,4 +1,5 @@
 #nullable enable
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -129,6 +130,38 @@ namespace FreeFormGraph {
         void InsertNodeOnEdge(IStreetEdge edge, Vector3 positionOnEdge, out IStreetNode node, out IStreetEdge leftEdge, out IStreetEdge rightEdge);
         IStreetNode[] FindAllNodesWithinRange(Vector2 position, float radius);
         IStreetEdge[] FindAllEdgesWithinRange(Vector2 position, float radius);
+
+        #region Events
+        
+        public event EventHandler<NodeEventArgs> NodeAdded;
+        
+        public event EventHandler<NodeEventArgs> NodeRemoved;
+        
+        public event EventHandler<EdgeEventArgs> EdgeAdded;
+        
+        public event EventHandler<EdgeEventArgs> EdgeRemoved;
+        
+        
+        
+        #endregion
         
     }
+    
+    public class NodeEventArgs : EventArgs {
+        public IStreetNode Node { get; }
+
+        public NodeEventArgs(IStreetNode node) {
+            Node = node;
+        }
+    }
+    
+    public class EdgeEventArgs : EventArgs {
+        public IStreetEdge Edge { get; }
+
+        public EdgeEventArgs(IStreetEdge edge) {
+            Edge = edge;
+        }
+    }
+    
+    
 }

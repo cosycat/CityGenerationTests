@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,7 +18,7 @@ namespace FreeFormGraph {
             out bool isToNodeNew, out bool isEdgeNew, bool failIfIntersection = false) {
             if (!GetOrCreateNode(to, SnapToExistingNodeThreshold, out toNode, out isToNodeNew)) {
                 Debug.Log("IStreetGraph::CreateEdge - Failed to create node at to position");
-                newEdge = null;
+                newEdge = null!;
                 isEdgeNew = false;
                 return false;
             }
@@ -117,6 +118,31 @@ namespace FreeFormGraph {
                 }
             }
             return edges.ToArray();
+        }
+
+        #region Events
+        
+        public event EventHandler<NodeEventArgs>? NodeAdded;
+        public event EventHandler<NodeEventArgs>? NodeRemoved;
+        public event EventHandler<EdgeEventArgs>? EdgeAdded;
+        public event EventHandler<EdgeEventArgs>? EdgeRemoved;
+        
+        #endregion
+
+        protected virtual void OnNodeAdded(IStreetNode node) {
+            NodeAdded?.Invoke(this, new NodeEventArgs(node));
+        }
+        
+        protected virtual void OnNodeRemoved(IStreetNode node) {
+            NodeRemoved?.Invoke(this, new NodeEventArgs(node));
+        }
+        
+        protected virtual void OnEdgeAdded(IStreetEdge edge) {
+            EdgeAdded?.Invoke(this, new EdgeEventArgs(edge));
+        }
+        
+        protected virtual void OnEdgeRemoved(IStreetEdge edge) {
+            EdgeRemoved?.Invoke(this, new EdgeEventArgs(edge));
         }
         
     }

@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using UnityEngine;
 using System.Collections.Generic;
@@ -79,7 +80,7 @@ namespace FreeFormGraph.LineBased {
                     }
                     else {
                         node = new LineNode(to, MinAngleBetweenNewEdgesRad);
-                        nodes.Add((LineNode)node);
+                        AddNode((LineNode)node);
                         toNode = node;
                     }
                 }
@@ -89,7 +90,7 @@ namespace FreeFormGraph.LineBased {
         
         public override bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge, out bool isEdgeNew) {
             if (from is not LineNode fromLineNode || to is not LineNode toLineNode) { // is checks for null as well
-                newEdge = null;
+                newEdge = null!;
                 isEdgeNew = false;
                 return false;
             }
@@ -105,7 +106,7 @@ namespace FreeFormGraph.LineBased {
             }
 
             if (!IsAngleOfNewEdgePossible(toLineNode, fromLineNode)) {
-                newEdge = null;
+                newEdge = null!;
                 isEdgeNew = false;
                 return false;
             }
@@ -113,15 +114,15 @@ namespace FreeFormGraph.LineBased {
             // TODO check intersections here
             
             var edge = new LineEdge(fromLineNode, toLineNode);
-            AddEdge(edge);
             fromLineNode.AddEdge(edge);
             toLineNode.AddEdge(edge);
+            AddEdge(edge);
             newEdge = edge;
             isEdgeNew = true;
             return true;
         }
 
-        private static bool IsAngleOfNewEdgePossible(LineNode toLineNode, LineNode fromLineNode) {
+        public static bool IsAngleOfNewEdgePossible(LineNode toLineNode, LineNode fromLineNode) {
             foreach (var fromEdge in fromLineNode.Edges) {
                 // check if angle to another edge is too small on the from-node
                 var newEdgeDirectionFrom = toLineNode.Position - fromLineNode.Position;
@@ -151,11 +152,11 @@ namespace FreeFormGraph.LineBased {
 
         public override bool CreateUnconnectedNode(Vector3 position, out IStreetNode newNode) {
             var n = new LineNode(position, MinAngleBetweenNewEdgesRad);
-            nodes.Add(n);
+            AddNode(n);
             newNode = n;
             return true;
         }
-        
+
         /// <summary>
         /// Checks if two lines intersect and returns the intersection point. TODO is this description correct?
         /// </summary>
@@ -191,25 +192,27 @@ namespace FreeFormGraph.LineBased {
         }
 
         public override void InsertNodeOnEdge(IStreetEdge foundEdge, Vector3 positionOnEdge, out IStreetNode node, out IStreetEdge leftEdge, out IStreetEdge rightEdge) {
-            var n = new LineNode(positionOnEdge, MinAngleBetweenNewEdgesRad);
             var e = (LineEdge) foundEdge;
-            ((LineNode)e.NodeA).RemoveEdge(e);
-            ((LineNode)e.NodeB).RemoveEdge(e);
+            var nodeA = e.NodeA as LineNode ?? throw new ArgumentException();
+            var nodeB = e.NodeB as LineNode ?? throw new ArgumentException();
+            nodeA.RemoveEdge(e);
+            nodeB.RemoveEdge(e);
             RemoveEdge(e);
             
-            var lEdge = new LineEdge(foundEdge.NodeA, n);
-            var rEdge = new LineEdge(n, foundEdge.NodeB);
+            var n = new LineNode(positionOnEdge, MinAngleBetweenNewEdgesRad);
+            AddNode(n);
             
-            nodes.Add(n);
+            var lEdge = new LineEdge(foundEdge.NodeA, n);
             AddEdge(lEdge);
+            var rEdge = new LineEdge(n, foundEdge.NodeB);
             AddEdge(rEdge);
 
             //if this fails, we would have an edge with length 0, which is weird and should not happen
             Debug.Assert(Vector3.Distance(lEdge.NodeA.Position, lEdge.NodeB.Position) > EPS);
             Debug.Assert(Vector3.Distance(rEdge.NodeA.Position, rEdge.NodeB.Position) > EPS, $"Distance between {rEdge.NodeA.Position} and {rEdge.NodeB.Position} is {Vector3.Distance(rEdge.NodeA.Position, rEdge.NodeB.Position)}");
 
-            ((LineNode)e.NodeA).AddEdge(lEdge);
-            ((LineNode)e.NodeB).AddEdge(rEdge);
+            nodeA.AddEdge(lEdge);
+            nodeB.AddEdge(rEdge);
             n.AddEdge(lEdge);
             n.AddEdge(rEdge);
             leftEdge = lEdge;
@@ -237,12 +240,24 @@ namespace FreeFormGraph.LineBased {
             edges.Add(edge);
             bvh.Add(edge);
             bvh.Optimize(); //maybe use batch operations for adding?
+            OnEdgeAdded(edge);
         }
 
         private void RemoveEdge(LineEdge edge) {
             edges.Remove(edge);
             bvh.Remove(edge);
             bvh.Optimize();
+            OnEdgeRemoved(edge);
+        }
+        
+        private void AddNode(LineNode n) {
+            nodes.Add(n);
+            OnNodeAdded(n);
+        }
+        
+        private void RemoveNode(LineNode n) {
+            nodes.Remove(n);
+            OnNodeRemoved(n);
         }
     }
 
