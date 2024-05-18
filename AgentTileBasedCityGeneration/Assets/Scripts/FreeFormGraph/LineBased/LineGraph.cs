@@ -24,6 +24,7 @@ namespace FreeFormGraph.LineBased {
 
         [field: SerializeField] public override float SnapToExistingNodeThreshold { get; set; } = 0.2f;
         [field: SerializeField] public override float SnapToExistingEdgeThreshold { get; set; } // TODO this is not used yet
+        [field: SerializeField] public float MinAngleBetweenNewEdgesDegree { get; set; } = 15f;
 
         public override bool CreateEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode,
             out bool isToNodeNew, out bool isEdgeNew, bool failIfIntersection = false) {
@@ -76,7 +77,7 @@ namespace FreeFormGraph.LineBased {
                         isToNodeNew = false;
                     }
                     else {
-                        node = new LineNode(to);
+                        node = new LineNode(to, Mathf.Deg2Rad * MinAngleBetweenNewEdgesDegree);
                         nodes.Add((LineNode)node);
                         toNode = node;
                     }
@@ -148,7 +149,7 @@ namespace FreeFormGraph.LineBased {
         }
 
         public override bool CreateUnconnectedNode(Vector3 position, out IStreetNode newNode) {
-            var n = new LineNode(position);
+            var n = new LineNode(position, Mathf.Deg2Rad * MinAngleBetweenNewEdgesDegree);
             nodes.Add(n);
             newNode = n;
             return true;
@@ -189,7 +190,7 @@ namespace FreeFormGraph.LineBased {
         }
 
         public override void InsertNodeOnEdge(IStreetEdge foundEdge, Vector3 positionOnEdge, out IStreetNode node, out IStreetEdge leftEdge, out IStreetEdge rightEdge) {
-            var n = new LineNode(positionOnEdge);
+            var n = new LineNode(positionOnEdge, Mathf.Deg2Rad * MinAngleBetweenNewEdgesDegree);
             var e = (LineEdge) foundEdge;
             ((LineNode)e.NodeA).RemoveEdge(e);
             ((LineNode)e.NodeB).RemoveEdge(e);
@@ -219,7 +220,7 @@ namespace FreeFormGraph.LineBased {
             var copy = new GameObject().AddComponent<LineGraph>();
             for (var i = 0; i < nodes.Count; i++) {
                 var node = nodes[i];
-                var n = new LineNode(node.Position);
+                var n = new LineNode(node.Position, node.MinAngleBetweenEdges, node.MaxConnectedEdges);
                 copy.nodes.Add(n);
             }
 

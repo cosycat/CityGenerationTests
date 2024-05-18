@@ -91,7 +91,7 @@ namespace FreeFormGraph.Agents {
             }
 
             if (!world.StreetGraph.CreateEdge(node, new Vector3(newPoint.x, newPoint.y), out _, out _, out _, out _, failIfIntersection: true)) {
-                Debug.LogWarning("Could not create a new node for the PoIDeveloperAgent.");
+                Debug.LogWarning($"Could not create a new node for the PoIDeveloperAgent at {newPoint} from {node.Position}.");
                 return false;
             }
 
