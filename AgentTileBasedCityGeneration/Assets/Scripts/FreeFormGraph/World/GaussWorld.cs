@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using FreeFormGraph.World.PoI;
 
@@ -24,6 +25,10 @@ namespace FreeFormGraph.World
         private IStreetGraph streetGraph;
         public override IStreetGraph StreetGraph => streetGraph;
 
+        private void Awake() {
+            streetGraph = FindObjectOfType<StreetGraphGameObject>();
+        }
+
         public void Start() {
             heights = new float[Width, Height];
 
@@ -38,7 +43,6 @@ namespace FreeFormGraph.World
                 }
             }
 
-            streetGraph = FindObjectOfType<StreetGraphGameObject>();
         }
 
         private void PlaceGauss(int centerX, int centerY, float amplitude = 10, float spread = 5.0f) {

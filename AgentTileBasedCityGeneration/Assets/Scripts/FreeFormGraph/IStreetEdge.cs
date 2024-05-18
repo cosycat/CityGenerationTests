@@ -35,7 +35,18 @@ namespace FreeFormGraph {
             return $"Edge from {NodeA}\nto {NodeB}";
         }
 
-        Vector3[] SplitIntoEvenlySpacedPoints(float stepSize = 0.1f);
+        /// <summary>
+        /// Splits the edge into evenly spaced points.
+        ///
+        /// The last point is always the position of <see cref="NodeB"/> and the first point is always the position of <see cref="NodeA"/>.
+        /// The last point disregards the step size.
+        /// The number of points is always >= 2
+        /// The tangents are the tangents of the points in the direction from <see cref="NodeA"/> to <see cref="NodeB"/>.
+        /// </summary>
+        /// <param name="tangents"> The tangents of the points in the direction from <see cref="NodeA"/> to <see cref="NodeB"/>. </param>
+        /// <param name="stepSize"> The distance between the points. </param>
+        /// <returns> The evenly spaced points. </returns>
+        Vector3[] SplitIntoEvenlySpacedPoints(out Vector3[] tangents, float stepSize = 0.1f);
         
         /// <summary>
         /// Returns the distance from the given position to the edge.

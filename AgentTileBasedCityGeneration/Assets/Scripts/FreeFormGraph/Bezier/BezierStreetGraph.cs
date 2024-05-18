@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Splines;
@@ -204,7 +205,7 @@ namespace FreeFormGraph.Bezier {
             StreetWidth = streetWidth;
         }
 
-        public Vector3[] SplitIntoEvenlySpacedPoints(float stepSize = 0.1f) {
+        public Vector3[] SplitIntoEvenlySpacedPoints(out Vector3[] tangents, float stepSize = 0.1f) {
             var distance = CurveUtility.ApproximateLength(Curve);
             var steps = Mathf.CeilToInt(distance / stepSize);
             var step = 1f / steps;
@@ -212,13 +213,14 @@ namespace FreeFormGraph.Bezier {
             for (var i = 0; i < steps; i++) {
                 points[i] = CurveUtility.EvaluatePosition(Curve, i * step);
             }
+            tangents = Array.Empty<Vector3>();
             return points;
         }
         
         public float GetDistanceEdgeToPosition(Vector3 position, out Vector3 positionOnEdge) {
             var minDistance = float.MaxValue;
             positionOnEdge = default;
-            foreach (var point in SplitIntoEvenlySpacedPoints()) {
+            foreach (var point in SplitIntoEvenlySpacedPoints(out _)) {
                 var distance = Vector3.Distance(point, position);
                 if (distance < minDistance) {
                     minDistance = distance;

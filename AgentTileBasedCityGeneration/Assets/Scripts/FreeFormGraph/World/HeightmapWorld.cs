@@ -27,6 +27,10 @@ namespace FreeFormGraph.World {
 
         private IStreetGraph streetGraph;
         public override IStreetGraph StreetGraph => streetGraph;
+        
+        private void Awake() {
+            streetGraph = FindObjectOfType<StreetGraphGameObject>();
+        }
 
         public void Start() {
             if(heightmap != null) {
@@ -63,7 +67,6 @@ namespace FreeFormGraph.World {
                 }
             }
 
-            streetGraph = FindObjectOfType<StreetGraphGameObject>();
         }
 
         public override float GetHeightAt(float x, float y)

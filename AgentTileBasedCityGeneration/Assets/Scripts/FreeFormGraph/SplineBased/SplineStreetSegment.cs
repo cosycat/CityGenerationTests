@@ -22,7 +22,8 @@ namespace FreeFormGraph.SplineBased {
 
         public float StreetWidth { get; } = 0.3f;
         
-        public Vector3[] SplitIntoEvenlySpacedPoints(float stepSize = 0.1f) {
+        public Vector3[] SplitIntoEvenlySpacedPoints(out Vector3[] tangents, float stepSize = 0.1f) {
+            tangents = Array.Empty<Vector3>();
             return Curve.CalculateEvenlySpacedPoints(stepSize);
         }
 
@@ -95,7 +96,7 @@ namespace FreeFormGraph.SplineBased {
         }
         
         public float GetDistanceEdgeToPosition(Vector3 position, out Vector3 positionOnEdge) {
-            var evenlySpacedPoints = SplitIntoEvenlySpacedPoints();
+            var evenlySpacedPoints = SplitIntoEvenlySpacedPoints(out _);
             var closestPoint = Vector3.zero;
             var secondClosestPoint = Vector3.zero;
             var closestDistance = float.MaxValue;

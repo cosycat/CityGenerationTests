@@ -35,7 +35,7 @@ namespace FreeFormGraph.SplineBased {
             var stepSize = 0.05f;
             var distanceThreshold = 0.3f;
 
-            var pointsOnSpline = newSegment.SplitIntoEvenlySpacedPoints(stepSize);
+            var pointsOnSpline = newSegment.SplitIntoEvenlySpacedPoints(out _, stepSize);
 
             var foundIntersections = new List<Intersection>();
 
@@ -58,7 +58,7 @@ namespace FreeFormGraph.SplineBased {
                 if (!segmentBounds.Intersects(otherBounds)) continue; // no intersection possible
                 
                 // check for intersections
-                var otherPointsOnSpline = otherSegment.SplitIntoEvenlySpacedPoints(stepSize);
+                var otherPointsOnSpline = otherSegment.SplitIntoEvenlySpacedPoints(out _, stepSize);
                 for (int thisI = 0; thisI < pointsOnSpline.Length; thisI++) {
                     var point = pointsOnSpline[thisI];
                     for (int otherI = 0; otherI < otherPointsOnSpline.Length; otherI++) {

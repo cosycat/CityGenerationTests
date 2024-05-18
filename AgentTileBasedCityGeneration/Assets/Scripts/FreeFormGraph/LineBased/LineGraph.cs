@@ -27,6 +27,7 @@ namespace FreeFormGraph.LineBased {
         [field: SerializeField] public override float SnapToExistingEdgeThreshold { get; set; } // TODO this is not used yet
         [field: SerializeField] public float MinAngleBetweenNewEdgesDegree { get; set; } = 15f;
         public float MinAngleBetweenNewEdgesRad => Mathf.Deg2Rad * MinAngleBetweenNewEdgesDegree;
+        [SerializeField] private float edgeWidthMeters = 5f;
 
         public override bool CreateEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode,
             out bool isToNodeNew, out bool isEdgeNew, bool failIfIntersection = false) {
@@ -113,7 +114,7 @@ namespace FreeFormGraph.LineBased {
 
             // TODO check intersections here
             
-            var edge = new LineEdge(fromLineNode, toLineNode);
+            var edge = new LineEdge(fromLineNode, toLineNode, edgeWidthMeters);
             fromLineNode.AddEdge(edge);
             toLineNode.AddEdge(edge);
             AddEdge(edge);
@@ -193,6 +194,7 @@ namespace FreeFormGraph.LineBased {
 
         public override void InsertNodeOnEdge(IStreetEdge foundEdge, Vector3 positionOnEdge, out IStreetNode node, out IStreetEdge leftEdge, out IStreetEdge rightEdge) {
             var e = (LineEdge) foundEdge;
+            var prevStreetWidth = e.StreetWidth;
             var nodeA = e.NodeA as LineNode ?? throw new ArgumentException();
             var nodeB = e.NodeB as LineNode ?? throw new ArgumentException();
             nodeA.RemoveEdge(e);
@@ -202,9 +204,9 @@ namespace FreeFormGraph.LineBased {
             var n = new LineNode(positionOnEdge, MinAngleBetweenNewEdgesRad);
             AddNode(n);
             
-            var lEdge = new LineEdge(foundEdge.NodeA, n);
+            var lEdge = new LineEdge(foundEdge.NodeA, n, prevStreetWidth);
             AddEdge(lEdge);
-            var rEdge = new LineEdge(n, foundEdge.NodeB);
+            var rEdge = new LineEdge(n, foundEdge.NodeB, prevStreetWidth);
             AddEdge(rEdge);
 
             //if this fails, we would have an edge with length 0, which is weird and should not happen
@@ -310,14 +312,28 @@ namespace FreeFormGraph.LineBased {
         public IStreetNode NodeB { get; }
         public float StreetWidth { get; set;}
 
-        public LineEdge(IStreetNode nodeA, IStreetNode nodeB, float streetWidth = 1f) {
+        public LineEdge(IStreetNode nodeA, IStreetNode nodeB, float streetWidth) {
             NodeA = nodeA;
             NodeB = nodeB;
             StreetWidth = streetWidth;
         }
 
-        public Vector3[] SplitIntoEvenlySpacedPoints(float stepSize = 0.1f) {
-            return new Vector3[] {};
+        public Vector3[] SplitIntoEvenlySpacedPoints(out Vector3[] tangents, float stepSize = 0.1f) {
+            var points = new List<Vector3>();
+            var direction = NodeB.Position - NodeA.Position;
+            var distance = direction.magnitude;
+            var steps = Mathf.CeilToInt(distance / stepSize);
+            var step = direction / steps;
+            for (var i = 0; i < steps; i++) {
+                points.Add(NodeA.Position + i * step);
+            }
+            points.Add(NodeB.Position);
+            tangents = new Vector3[points.Count];
+            var directionNormalized = direction.normalized;
+            for (var i = 0; i < points.Count; i++) {
+                tangents[i] = directionNormalized;
+            }
+            return points.ToArray();
         }
 
         public float GetDistanceEdgeToPosition(Vector3 position, out Vector3 positionOnEdge) {
