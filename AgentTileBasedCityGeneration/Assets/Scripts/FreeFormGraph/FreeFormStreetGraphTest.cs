@@ -14,13 +14,13 @@ namespace FreeFormGraph {
 
         [CanBeNull] private IStreetNode dragStartNode;
         
-        private bool drawGrid = true;
-        private bool drawCurveBoxes;
-        private bool drawIntersectionLines = true;
-        private bool drawLabelsEdges = false;
-        private bool drawLabelsNodes = false;
-        private bool drawMouseLabel = true;
-        private float mouseNodeDistanceThreshold = 0.3f;
+        [SerializeField] private bool drawGrid = true;
+        [SerializeField] private bool drawCurveBoxes;
+        [SerializeField] private bool drawIntersectionLines = true;
+        [SerializeField] private bool drawLabelsEdges = false;
+        [SerializeField] private bool drawLabelsNodes = false;
+        [SerializeField] private bool drawMouseLabel = true;
+        [SerializeField] private float mouseNodeDistanceThreshold = 0.3f;
 
         private readonly Dictionary<IStreetEdge, Color> edgeColors = new();
 
@@ -57,7 +57,7 @@ namespace FreeFormGraph {
                 if (dragStartNode == null) {
                     return;
                 }
-                if (!streetGraph.CreateEdge(dragStartNode, mousePositionWorld, out _, out _, out _, out var isEdgeNew)) {
+                if (!streetGraph.CreateEdge(dragStartNode, mousePositionWorld, out _, out _, out _, out _)) {
                     Debug.LogWarning("FreeFormStreetGraphTest - Failed to create new edge.");
                 }
 
@@ -209,8 +209,8 @@ namespace FreeFormGraph {
                         $"{mouseWorldPosition}{(foundANode ? $" {closestNode}" : "")}");
                 }
             }
-            catch (Exception e) {
-                Debug.LogWarning(e);
+            catch (InvalidOperationException) {
+                
             }
 
         }

@@ -25,6 +25,7 @@ namespace FreeFormGraph.LineBased {
         [field: SerializeField] public override float SnapToExistingNodeThreshold { get; set; } = 0.2f;
         [field: SerializeField] public override float SnapToExistingEdgeThreshold { get; set; } // TODO this is not used yet
         [field: SerializeField] public float MinAngleBetweenNewEdgesDegree { get; set; } = 15f;
+        public float MinAngleBetweenNewEdgesRad => Mathf.Deg2Rad * MinAngleBetweenNewEdgesDegree;
 
         public override bool CreateEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode,
             out bool isToNodeNew, out bool isEdgeNew, bool failIfIntersection = false) {
@@ -77,7 +78,7 @@ namespace FreeFormGraph.LineBased {
                         isToNodeNew = false;
                     }
                     else {
-                        node = new LineNode(to, Mathf.Deg2Rad * MinAngleBetweenNewEdgesDegree);
+                        node = new LineNode(to, MinAngleBetweenNewEdgesRad);
                         nodes.Add((LineNode)node);
                         toNode = node;
                     }
@@ -149,7 +150,7 @@ namespace FreeFormGraph.LineBased {
         }
 
         public override bool CreateUnconnectedNode(Vector3 position, out IStreetNode newNode) {
-            var n = new LineNode(position, Mathf.Deg2Rad * MinAngleBetweenNewEdgesDegree);
+            var n = new LineNode(position, MinAngleBetweenNewEdgesRad);
             nodes.Add(n);
             newNode = n;
             return true;
@@ -190,7 +191,7 @@ namespace FreeFormGraph.LineBased {
         }
 
         public override void InsertNodeOnEdge(IStreetEdge foundEdge, Vector3 positionOnEdge, out IStreetNode node, out IStreetEdge leftEdge, out IStreetEdge rightEdge) {
-            var n = new LineNode(positionOnEdge, Mathf.Deg2Rad * MinAngleBetweenNewEdgesDegree);
+            var n = new LineNode(positionOnEdge, MinAngleBetweenNewEdgesRad);
             var e = (LineEdge) foundEdge;
             ((LineNode)e.NodeA).RemoveEdge(e);
             ((LineNode)e.NodeB).RemoveEdge(e);
