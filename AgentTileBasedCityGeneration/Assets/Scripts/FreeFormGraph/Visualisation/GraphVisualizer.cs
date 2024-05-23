@@ -13,9 +13,10 @@ namespace FreeFormGraph.Visualisation {
         private readonly List<IStreetEdge> edgesToAdd = new();
         private readonly List<IStreetEdge> edgesToRemove = new();
         private readonly object edgeLock = new();
+        private IWorld world;
         
         private void Start() {
-            var world = FindObjectOfType<WorldGameObject>();
+            world = FindObjectOfType<WorldGameObject>();
             var graph = world.StreetGraph;
             
             // Initialise the visualisation
@@ -63,8 +64,12 @@ namespace FreeFormGraph.Visualisation {
             var verticesRight = new Vector3[points.Length];
             for (var i = 0; i < points.Length; i++) {
                 var point = points[i];
+                point.z = point.y;
+                point.y = world.GetHeightAt(point.x, point.z);
                 var tangent = tangents[i];
-                var right = Vector3.Cross(tangent, Vector3.forward).normalized * (edge.StreetWidth / 2f) / Constants.METERS_PER_UNIT;
+                tangent.z = tangent.y;
+                tangent.y = 0;
+                var right = Vector3.Cross(tangent, Vector3.down).normalized * (edge.StreetWidth / 2f) / Constants.METERS_PER_UNIT;
                 verticesLeft[i] = point + right; // TODO maybe this should be -right?
                 verticesRight[i] = point - right;
             }

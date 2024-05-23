@@ -71,7 +71,22 @@ namespace FreeFormGraph.World {
 
         public override float GetHeightAt(float x, float y)
         {
-            return heights[(int)x, (int)y];
+            var lowerX = Mathf.FloorToInt(x);
+            var upperX = (int)Mathf.Min(Mathf.Ceil(x), width-1);
+            var lowerY = Mathf.FloorToInt(y);
+            var upperY = (int)Mathf.Min(Mathf.Ceil(y), height-1);
+            
+            //bilinear interpolation 
+
+            var h1 = heights[lowerX, lowerY];
+            var h2 = heights[upperX, lowerY];
+            var h3 = heights[lowerX, upperY];
+            var h4 = heights[upperX, upperY];
+
+            var interpolation1 = Mathf.Lerp(h1,h2, x%1); //modulo to get part after point
+            var interpolation2 = Mathf.Lerp(h3,h4, x%1); //modulo to get part after point
+            var interpolationFinal = Mathf.Lerp(interpolation1, interpolation2, y%1);
+            return interpolationFinal;
         }
     }
 
