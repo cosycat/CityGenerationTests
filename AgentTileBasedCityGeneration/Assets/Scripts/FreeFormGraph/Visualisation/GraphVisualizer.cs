@@ -14,10 +14,22 @@ namespace FreeFormGraph.Visualisation {
         private readonly List<IStreetEdge> edgesToRemove = new();
         private readonly object edgeLock = new();
         private IWorld world;
+        private ITerrainGenerator terrainGenerator;
+
+        /// <summary>
+        /// Road thickness describes how thick the road in world units is.
+        /// The thickness will grow downwards: if the road height is set to 50.0,
+        /// with a RoadThickness of 0.5f, the lowest point of the road will be at 45.5, the
+        /// highest at 50.0.
+        /// </summary>
+        [SerializeField]
+        public float RoadThickness = 0.5f;
         
         private void Start() {
             world = FindObjectOfType<WorldGameObject>();
             var graph = world.StreetGraph;
+            terrainGenerator = FindObjectOfType<MeshTerrainGenerator>() as ITerrainGenerator;
+            terrainGenerator.Render(world);
             
             // Initialise the visualisation
             lock (edgeLock) {
@@ -60,8 +72,7 @@ namespace FreeFormGraph.Visualisation {
             edgeVisualisations[edge] = edgeGameObject;
 
             var points = edge.SplitIntoEvenlySpacedPoints(out var tangents);
-            var verticesLeft = new Vector3[points.Length];
-            var verticesRight = new Vector3[points.Length];
+            var verticesList = new Vector3[points.Length*4];
             for (var i = 0; i < points.Length; i++) {
                 var point = points[i];
                 point.z = point.y;
@@ -70,32 +81,101 @@ namespace FreeFormGraph.Visualisation {
                 tangent.z = tangent.y;
                 tangent.y = 0;
                 var right = Vector3.Cross(tangent, Vector3.down).normalized * (edge.StreetWidth / 2f) / Constants.METERS_PER_UNIT;
-                verticesLeft[i] = point + right; // TODO maybe this should be -right?
-                verticesRight[i] = point - right;
+
+                //vertices for top surface, "top plane"
+                verticesList[i] = point + right; //top plane right vertex
+                verticesList[points.Length * 2 - 1 - i] = point - right; //top plane left vertex
+
+                //vertices for side surfaces, "bottom plane"
+                verticesList[i + points.Length * 2] = point + right - Vector3.up * RoadThickness; //bottom plane right vertex
+                verticesList[points.Length * 4 - 1 - i] = point - right - Vector3.up * RoadThickness; //bottom plane left vertex
             }
 
-            var verticesList = new List<Vector3>();
-            var trianglesList = new List<int>();
+            /*
+                #top triangles: (points.Length - 1) * 2
+                #left triangles: (points.Length - 1) * 2
+                #right triangles: (points.Length - 1) * 2
+                front and backface triangles: 2 + 2
+            */
+            var triangleList = new int[((points.Length - 1) * 2 * 2 * 2 + 4) * 3]; //sorry
+            var triangleIdx = 0;
+
+            //triangles for top surface
+            var offset = 2 * points.Length - 1;
             for (var i = 0; i < points.Length - 1; i++) {
-                var p1 = verticesLeft[i];
-                var p2 = verticesRight[i];
-                var p3 = verticesLeft[i + 1];
-                var p4 = verticesRight[i + 1];
-            
-                var offset = 4 * i;
-                var t1 = offset + 0;
-                var t2 = offset + 3;
-                var t3 = offset + 2;
-                var t4 = offset + 3;
-                var t5 = offset + 0;
-                var t6 = offset + 1;
+                var t1 = i;
+                var t2 = i + offset - 1;
+                var t3 = i + 1;
+                var t4 = i;
+                var t5 = i + offset;
+                var t6 = i + offset - 1;
                 
-                verticesList.AddRange(new[] {p1, p2, p3, p4});
-                trianglesList.AddRange(new[] {t1, t2, t3, t4, t5, t6});
+                triangleList[triangleIdx++] = t1;
+                triangleList[triangleIdx++] = t2;
+                triangleList[triangleIdx++] = t3;
+                triangleList[triangleIdx++] = t4;
+                triangleList[triangleIdx++] = t5;
+                triangleList[triangleIdx++] = t6;
+                offset -= 2;
             }
-            mesh.SetVertices(verticesList.ToArray());
-            mesh.SetTriangles(trianglesList.ToArray(), 0);
+
+            int numTopVertices = points.Length * 2;            
+            //triangles for thickness surface
+            offset = numTopVertices;
+            for (var i = 0; i < numTopVertices; i++) {
+                var t1 = i;
+                var t2 = ((i + 1) % numTopVertices) + offset;
+                var t3 = i + offset;
+                var t4 = i;
+                var t5 = (i + 1) % numTopVertices;
+                var t6 = ((i + 1) % numTopVertices) + offset;
+                triangleList[triangleIdx++] = t1;
+                triangleList[triangleIdx++] = t2;
+                triangleList[triangleIdx++] = t3;
+                triangleList[triangleIdx++] = t4;
+                triangleList[triangleIdx++] = t5;
+                triangleList[triangleIdx++] = t6;
+            }
+
+            mesh.SetVertices(verticesList);
+            mesh.SetTriangles(triangleList, 0);
+            EmbedIntoTerrain(mesh, numTopVertices);
             
+        }
+
+        /// <summary>
+        /// Embed a mesh into the terrain by lowering/heightening the vertecies in the terrain.
+        /// Consider this example:
+        ///
+        /// x------x
+        /// |......|
+        /// |......|
+        /// |...y--|--y
+        /// |......|
+        /// x------x
+        /// 
+        /// x marks the terrain verticies
+        /// y marks the mesh vertices
+        /// The left y vertex lies inside a "quad" of the terrain. This quad is made out of
+        /// two triangles. As a result, all 4 terrain vertices will be adjusted to the y
+        /// vertex height. The same procedure will apply to the second y vertex.
+        /// 
+        /// </summary>
+        /// <param name="m">The mesh to be embedded into the terrain.</param>
+        /// <param name="n">The first n vertices of this mesh will be used for embedding.</param>
+        private void EmbedIntoTerrain(Mesh m, int n) {
+            for(int i = 0; i < n; i++) {
+                var vertex = m.vertices[i];
+                var roundedX = Mathf.FloorToInt(vertex.x);
+                var roundedZ = Mathf.FloorToInt(vertex.z);
+
+                terrainGenerator.SetHeightAt(world, new () {
+                    (vertex.y - (RoadThickness + 0.1f), roundedX, roundedZ),
+                    (vertex.y - (RoadThickness + 0.1f), roundedX+1, roundedZ),
+                    (vertex.y - (RoadThickness + 0.1f), roundedX, roundedZ+1),
+                    (vertex.y - (RoadThickness + 0.1f), roundedX+1, roundedZ+1)
+                });
+            }
         }
         
         private void RemoveEdgeVisualisation(IStreetEdge edge) {
