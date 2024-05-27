@@ -13,8 +13,10 @@ namespace SUMO {
     /// </summary>
     public class SumoNetworkGenerator : MonoBehaviour {
         private const string NETCONVERT_PATH_HOMEBREW = "/opt/homebrew/bin/netconvert"; // TODO Add more systems and installations. This only works on macOS with Homebrew installation of SUMO. alternatives: "/usr/local/bin/netconvert"
+        private const string SUMO_GUI_PATH_HOMEBREW = "/opt/homebrew/bin/sumo-gui";
         
         [SerializeField] private bool openFolderAfterGeneration = true;
+        [SerializeField] private bool openSumoGUIAfterGeneration = true;
         
         private string SumoPath { get; set; }
 
@@ -35,8 +37,12 @@ namespace SUMO {
             var routesFilePath = sumoFileGenerator.RoutesFilePath;
             var outputNetFilePath = sumoFileGenerator.OutputNetFilePath;
             var configurationFilePath = sumoFileGenerator.ConfigurationFilePath;
-            
-            var arguments = $"--node-files=\"{nodesFilePath}\" --edge-files=\"{edgesFilePath}\" --connection-files=\"{connectionsFilePath}\" --output-file=\"{outputNetFilePath}\"";
+
+            var arguments = "";
+            arguments += $"--node-files=\"{nodesFilePath}\" ";
+            arguments += $"--edge-files=\"{edgesFilePath}\" ";
+            // arguments += $"--connection-files=\"{connectionsFilePath}\" ";
+            arguments += $"--output-file=\"{outputNetFilePath}\" ";
 
             var startInfo = new ProcessStartInfo {
                 FileName = NETCONVERT_PATH_HOMEBREW,
@@ -69,27 +75,55 @@ namespace SUMO {
             }
             
             if (openFolderAfterGeneration) {
-                using var process = new Process();
-                process.StartInfo.FileName = "open";
-                process.StartInfo.Arguments = $"\"{SumoPath}\"";
+                yield return OpenFolder();
+            }
+            
+            if (openSumoGUIAfterGeneration) {
+                yield return OpenSumoGUI(sumoFileGenerator);
+            }
+
+            Debug.Log("Conversion completed.");
+        }
+
+        private IEnumerator OpenFolder() {
+            using var process = new Process();
+            process.StartInfo.FileName = "open";
+            process.StartInfo.Arguments = $"\"{SumoPath}\"";
+
+            process.Start();
+
+            while (!process.HasExited) {
+                yield return null;
+            }
+                    
+            if (process.ExitCode != 0) {
+                Debug.LogError($"Failed to open folder with exit code {process.ExitCode}");
+            }
+            else {
+                Debug.Log($"Opened folder {SumoPath}.");
+            }
+        }
+        
+        private IEnumerator OpenSumoGUI(SumoFileGenerator sumoFileGenerator) {
+            using (var process = new Process()) {
+                process.StartInfo.FileName = SUMO_GUI_PATH_HOMEBREW;
+                process.StartInfo.Arguments = $"-c \"{sumoFileGenerator.ConfigurationFilePath}\"";
 
                 process.Start();
 
                 while (!process.HasExited) {
                     yield return null;
                 }
-                    
+
                 if (process.ExitCode != 0) {
-                    Debug.LogError($"Failed to open folder with exit code {process.ExitCode}");
+                    Debug.LogError($"Failed to open SUMO GUI with exit code {process.ExitCode}");
                 }
                 else {
-                    Debug.Log($"Opened folder {SumoPath}.");
+                    Debug.Log("Opened SUMO GUI.");
                 }
+                
             }
-
-            Debug.Log("Conversion completed.");
         }
-        
     }
 
     internal class SumoFileGenerator {
@@ -252,7 +286,7 @@ namespace SUMO {
             AddRoute(routesDoc, "route1", "e3_reverse e2_reverse e1_reverse e0_reverse");
             AddVehicle(routesDoc, "veh1", "route1", "Car");
             
-            AddRoute(routesDoc, "route2", "e1 e3");
+            AddRoute(routesDoc, "route2", "e1 e2 e3");
             AddVehicle(routesDoc, "veh2", "route2", "Car");
             
             routesDoc.Save(RoutesFilePath);
