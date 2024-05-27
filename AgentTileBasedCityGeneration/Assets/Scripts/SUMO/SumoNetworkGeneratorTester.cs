@@ -16,7 +16,7 @@ namespace SUMO {
         }
 
         private void Start() {
-            sumoNetworkGenerator.GenerateNetwork(LineGraphTestCreator.GenerateSquareGraph(), 
+            sumoNetworkGenerator.GenerateNetwork(LineGraphTestCreator.GenerateHShapedGraph(), 
                 true, 
                 openFolderAfterGeneration, 
                 openSumoGUIAfterGeneration);

@@ -24,7 +24,7 @@ namespace SUMO {
 
         public void GenerateNetwork(IStreetGraph graph, bool convertToSumoNetwork = true, bool openFolderAfterGeneration = true, bool openSumoGUIAfterGeneration = true) {
             Debug.Log($"Generating SUMO network from graph with {graph.NodeCount} nodes and {graph.EdgeCount} edges in {SumoPath}..");
-            sumoFileGenerator = SumoFileGenerator.Create(SumoPath, graph);
+            sumoFileGenerator = SumoFileGenerator.Create(SumoPath, graph, new SumoSimulationOptions());
             if (convertToSumoNetwork || openFolderAfterGeneration || openSumoGUIAfterGeneration) {
                 StartCoroutine(DoBackgroundTasks(convertToSumoNetwork, openFolderAfterGeneration, openSumoGUIAfterGeneration));
             }

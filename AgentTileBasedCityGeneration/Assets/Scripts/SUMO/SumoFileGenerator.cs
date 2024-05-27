@@ -4,6 +4,11 @@ using FreeFormGraph;
 using UnityEngine;
 
 namespace SUMO {
+
+    public class SumoSimulationOptions {
+        public float SimulationStepLengthSeconds { get; set; } = 0.03f;
+    }
+    
     internal class SumoFileGenerator {
         private const string EDGES_FILE_NAME = "edges.edg.xml";
         private const string NODES_FILE_NAME = "nodes.nod.xml";
@@ -14,6 +19,7 @@ namespace SUMO {
 
         private IStreetGraph Graph { get; }
         private string SumoPath { get; }
+        public SumoSimulationOptions SimulationOptions { get; }
 
         public string NodesFilePath => $"{SumoPath}/{NODES_FILE_NAME}";
         public string EdgesFilePath => $"{SumoPath}/{EDGES_FILE_NAME}";
@@ -22,15 +28,16 @@ namespace SUMO {
         public string OutputNetFilePath => $"{SumoPath}/{OUTPUT_NET_FILE_NAME}";
         public string ConfigurationFilePath => $"{SumoPath}/{CONFIGURATION_FILE_NAME}";
 
-        private SumoFileGenerator(string sumoPath, IStreetGraph graph) {
+        private SumoFileGenerator(string sumoPath, IStreetGraph graph, SumoSimulationOptions simulationOptions) {
             Graph = graph;
+            SimulationOptions = simulationOptions;
             SumoPath = sumoPath;
             InitializeDirectory(sumoPath);
             CreateNetworkFiles();
         }
         
-        internal static SumoFileGenerator Create(string sumoPath, IStreetGraph graph) {
-            return new SumoFileGenerator(sumoPath, graph);
+        internal static SumoFileGenerator Create(string sumoPath, IStreetGraph graph, SumoSimulationOptions simulationOptions) {
+            return new SumoFileGenerator(sumoPath, graph, simulationOptions);
         }
 
         private static void InitializeDirectory(string sumoPath) {
@@ -110,8 +117,7 @@ namespace SUMO {
                 new XAttribute("speed", speed)
             );
 
-            Debug.Assert(edgesDoc.Root != null, "edgesDoc.Root != null");
-            edgesDoc.Root.Add(newEdge);
+            edgesDoc.Root!.Add(newEdge);
         }
 
         private void GenerateConnections()
@@ -149,8 +155,7 @@ namespace SUMO {
                 new XAttribute("toLane", toLane)
             );
 
-            Debug.Assert(connectionsDoc.Root != null, "connectionsDoc.Root != null");
-            connectionsDoc.Root.Add(newConnection);
+            connectionsDoc.Root!.Add(newConnection);
         }
 
         private void GenerateRoutes() {
@@ -158,14 +163,9 @@ namespace SUMO {
 
             AddCarType(routesDoc, "Car", 15.0f, 2.0f, 1.0f, 5.0f, 0.0f);
             
-            AddRoute(routesDoc, "route0", "e0 e1 e2 e3");
-            AddVehicle(routesDoc, "veh0", "route0", "Car");
+            AddTrip(routesDoc, "trip0", "e0", "e3", "Car");
             
-            AddRoute(routesDoc, "route1", "e3_reverse e2_reverse e1_reverse e0_reverse");
-            AddVehicle(routesDoc, "veh1", "route1", "Car");
-            
-            AddRoute(routesDoc, "route2", "e1 e2 e3");
-            AddVehicle(routesDoc, "veh2", "route2", "Car");
+            AddTrip(routesDoc, "trip1", "e0", "e4", "Car", 10);
             
             routesDoc.Save(RoutesFilePath);
         }
@@ -180,8 +180,7 @@ namespace SUMO {
                 new XAttribute("sigma", sigma)
             );
 
-            Debug.Assert(routesDoc.Root != null, "routesDoc.Root != null");
-            routesDoc.Root.Add(vType);
+            routesDoc.Root!.Add(vType);
         }
         
         private static void AddRoute(XDocument routesDoc, string id, string edges) {
@@ -190,8 +189,33 @@ namespace SUMO {
                 new XAttribute("edges", edges)
             );
 
-            Debug.Assert(routesDoc.Root != null, "routesDoc.Root != null");
-            routesDoc.Root.Add(route);
+            routesDoc.Root!.Add(route);
+        }
+        
+        private static void AddTrip(XDocument routesDoc, string id, string fromEdge, string toEdge, string vehicleType, int depart = 0) {
+            var trip = new XElement("trip",
+                new XAttribute("id", id),
+                new XAttribute("from", fromEdge),
+                new XAttribute("to", toEdge),
+                new XAttribute("depart", depart),
+                new XAttribute("type", vehicleType)
+            );
+
+            routesDoc.Root!.Add(trip);
+        }
+        
+        private static void AddFlow(XDocument routesDoc, string id, string fromEdge, string toEdge, int beginTime, int endTime, int period, string vehicleType) {
+            var flow = new XElement("flow",
+                new XAttribute("id", id),
+                new XAttribute("from", fromEdge),
+                new XAttribute("to", toEdge),
+                new XAttribute("begin", beginTime),
+                new XAttribute("end", endTime),
+                new XAttribute("period", period),
+                new XAttribute("type", vehicleType)
+            );
+
+            routesDoc.Root!.Add(flow);
         }
         
         private static void AddVehicle(XDocument routesDoc, string id, string route, string type) {
@@ -202,8 +226,7 @@ namespace SUMO {
                 new XAttribute("type", type)
             );
 
-            Debug.Assert(routesDoc.Root != null, "routesDoc.Root != null");
-            routesDoc.Root.Add(vehicle);
+            routesDoc.Root!.Add(vehicle);
         }
 
         private void GenerateConfiguration() {
@@ -212,13 +235,14 @@ namespace SUMO {
                 new XElement("net-file", new XAttribute("value", OUTPUT_NET_FILE_NAME)),
                 new XElement("route-files", new XAttribute("value", ROUTES_FILE_NAME))
             );
-            configurationDoc.Root?.Add(input);
+            configurationDoc.Root!.Add(input);
             
             var time = new XElement("time",
                 new XElement("begin", new XAttribute("value", "0")),
-                new XElement("end", new XAttribute("value", "10000"))
+                new XElement("end", new XAttribute("value", "10000")),
+                new XElement("step", new XAttribute("value", SimulationOptions.SimulationStepLengthSeconds))
             );
-            configurationDoc.Root?.Add(time);
+            configurationDoc.Root!.Add(time);
             
             configurationDoc.Save(ConfigurationFilePath);
         }
