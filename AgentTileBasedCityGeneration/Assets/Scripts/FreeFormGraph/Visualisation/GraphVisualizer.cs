@@ -73,10 +73,14 @@ namespace FreeFormGraph.Visualisation {
 
             var points = edge.SplitIntoEvenlySpacedPoints(out var tangents);
             var verticesList = new Vector3[points.Length*4];
+
+            var firstPointHeight = world.GetHeightAt(points[0].x, points[0].y);
+            var lastPointHeight = world.GetHeightAt(points[^1].x, points[^1].y);
+
             for (var i = 0; i < points.Length; i++) {
                 var point = points[i];
                 point.z = point.y;
-                point.y = world.GetHeightAt(point.x, point.z);
+                point.y = Mathf.Lerp(firstPointHeight, lastPointHeight, (float)i/(float)(points.Length-1));
                 var tangent = tangents[i];
                 tangent.z = tangent.y;
                 tangent.y = 0;
