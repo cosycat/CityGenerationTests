@@ -168,18 +168,21 @@ namespace FreeFormGraph.Visualisation {
         /// <param name="m">The mesh to be embedded into the terrain.</param>
         /// <param name="n">The first n vertices of this mesh will be used for embedding.</param>
         private void EmbedIntoTerrain(Mesh m, int n) {
+
+            var updateHeights = new (float height, int x, int y)[n * 4];
+
             for(int i = 0; i < n; i++) {
                 var vertex = m.vertices[i];
                 var roundedX = Mathf.FloorToInt(vertex.x);
                 var roundedZ = Mathf.FloorToInt(vertex.z);
 
-                terrainGenerator.SetHeightAt(world, new () {
-                    (vertex.y - (RoadThickness + 0.1f), roundedX, roundedZ),
-                    (vertex.y - (RoadThickness + 0.1f), roundedX+1, roundedZ),
-                    (vertex.y - (RoadThickness + 0.1f), roundedX, roundedZ+1),
-                    (vertex.y - (RoadThickness + 0.1f), roundedX+1, roundedZ+1)
-                });
+                updateHeights[i*4] = (vertex.y - (RoadThickness + 0.1f), roundedX, roundedZ);
+                updateHeights[i*4+1] = (vertex.y - (RoadThickness + 0.1f), roundedX+1, roundedZ);
+                updateHeights[i*4+2] = (vertex.y - (RoadThickness + 0.1f), roundedX, roundedZ+1);
+                updateHeights[i*4+3] = (vertex.y - (RoadThickness + 0.1f), roundedX+1, roundedZ+1);
             }
+
+            terrainGenerator.SetHeightAt(world, updateHeights);
         }
         
         private void RemoveEdgeVisualisation(IStreetEdge edge) {
