@@ -19,6 +19,8 @@ namespace FreeFormGraph {
         public int NodeCount { get; }
         public int EdgeCount { get; }
         
+        // public float MinEdgeLength { get; } // TODO implement this
+        
         /// <summary>
         /// The threshold for snapping the to position to an existing node when adding a new edge.
         ///
