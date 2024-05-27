@@ -13,6 +13,7 @@ namespace SUMO {
     public class SumoNetworkGenerator : MonoBehaviour {
         private const string NETCONVERT_PATH_HOMEBREW = "/opt/homebrew/bin/netconvert"; // TODO Add more systems and installations. This only works on macOS with Homebrew installation of SUMO. alternatives: "/usr/local/bin/netconvert"
         private const string SUMO_GUI_PATH_HOMEBREW = "/opt/homebrew/bin/sumo-gui";
+        public SumoSimulationOptions SimulationOptions { get; } = new();
 
         private string SumoPath { get; set; }
         
@@ -24,7 +25,7 @@ namespace SUMO {
 
         public void GenerateNetwork(IStreetGraph graph, bool convertToSumoNetwork = true, bool openFolderAfterGeneration = true, bool openSumoGUIAfterGeneration = true) {
             Debug.Log($"Generating SUMO network from graph with {graph.NodeCount} nodes and {graph.EdgeCount} edges in {SumoPath}..");
-            sumoFileGenerator = SumoFileGenerator.Create(SumoPath, graph, new SumoSimulationOptions());
+            sumoFileGenerator = SumoFileGenerator.Create(SumoPath, graph, SimulationOptions);
             if (convertToSumoNetwork || openFolderAfterGeneration || openSumoGUIAfterGeneration) {
                 StartCoroutine(DoBackgroundTasks(convertToSumoNetwork, openFolderAfterGeneration, openSumoGUIAfterGeneration));
             }
