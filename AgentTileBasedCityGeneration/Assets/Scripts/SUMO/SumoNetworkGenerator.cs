@@ -244,32 +244,54 @@ namespace SUMO {
         private void GenerateRoutes() {
             var routesDoc = new XDocument(new XElement("routes"));
 
-            // example route
-            var vType = new XElement("vType",
-                new XAttribute("accel", 1.0),
-                new XAttribute("decel", 5.0),
-                new XAttribute("id", "Car"),
-                new XAttribute("length", 2.0),
-                new XAttribute("maxSpeed", 15.0),
-                new XAttribute("sigma", 0.0)
-            );
-            routesDoc.Root?.Add(vType);
+            AddCarType(routesDoc, "Car", 15.0f, 2.0f, 1.0f, 5.0f, 0.0f);
             
-            var route = new XElement("route",
-                new XAttribute("id", "route0"),
-                new XAttribute("edges", "e0 e1 e2 e3")
-            );
-            routesDoc.Root?.Add(route);
+            AddRoute(routesDoc, "route0", "e0 e1 e2 e3");
+            AddVehicle(routesDoc, "veh0", "route0", "Car");
             
-            var vehicle = new XElement("vehicle",
-                new XAttribute("depart", 1),
-                new XAttribute("id", "veh0"),
-                new XAttribute("route", "route0"),
-                new XAttribute("type", "Car")
-            );
-            routesDoc.Root?.Add(vehicle);
+            AddRoute(routesDoc, "route1", "e3_reverse e2_reverse e1_reverse e0_reverse");
+            AddVehicle(routesDoc, "veh1", "route1", "Car");
+            
+            AddRoute(routesDoc, "route2", "e1 e3");
+            AddVehicle(routesDoc, "veh2", "route2", "Car");
             
             routesDoc.Save(RoutesFilePath);
+        }
+        
+        private static void AddCarType(XDocument routesDoc, string id, float maxSpeed, float length, float accel, float decel, float sigma) {
+            var vType = new XElement("vType",
+                new XAttribute("id", id),
+                new XAttribute("maxSpeed", maxSpeed),
+                new XAttribute("length", length),
+                new XAttribute("accel", accel),
+                new XAttribute("decel", decel),
+                new XAttribute("sigma", sigma)
+            );
+
+            Debug.Assert(routesDoc.Root != null, "routesDoc.Root != null");
+            routesDoc.Root.Add(vType);
+        }
+        
+        private static void AddRoute(XDocument routesDoc, string id, string edges) {
+            var route = new XElement("route",
+                new XAttribute("id", id),
+                new XAttribute("edges", edges)
+            );
+
+            Debug.Assert(routesDoc.Root != null, "routesDoc.Root != null");
+            routesDoc.Root.Add(route);
+        }
+        
+        private static void AddVehicle(XDocument routesDoc, string id, string route, string type) {
+            var vehicle = new XElement("vehicle",
+                new XAttribute("depart", 1),
+                new XAttribute("id", id),
+                new XAttribute("route", route),
+                new XAttribute("type", type)
+            );
+
+            Debug.Assert(routesDoc.Root != null, "routesDoc.Root != null");
+            routesDoc.Root.Add(vehicle);
         }
 
         private void GenerateConfiguration() {
