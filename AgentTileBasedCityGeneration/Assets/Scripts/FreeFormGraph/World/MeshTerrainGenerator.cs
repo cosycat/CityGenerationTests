@@ -14,7 +14,7 @@ namespace FreeFormGraph.World {
         public Gradient gradient;
 
         [SerializeField]
-        public int meshSize = 200;
+        public int meshSize = 2000;
 
         private readonly List<Mesh> meshes = new();
         private readonly List<(int xSize, int zSize)> meshIndexSizes = new();

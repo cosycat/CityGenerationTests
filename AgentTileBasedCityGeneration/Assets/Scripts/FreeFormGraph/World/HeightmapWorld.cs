@@ -33,8 +33,8 @@ namespace FreeFormGraph.World {
             
             if(heightmap != null) {
                 var pixels = heightmap.GetPixels();  
-                width = heightmap.width;
-                height = heightmap.height;
+                width = heightmap.width * 10;
+                height = heightmap.height * 10;
                 heights = new float[Width, Height];
 
                 float maxHeightTexture = float.MinValue;
