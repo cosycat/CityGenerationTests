@@ -27,9 +27,7 @@ namespace FreeFormGraph.World
 
         private void Awake() {
             streetGraph = FindObjectOfType<StreetGraphGameObject>();
-        }
-
-        public void Start() {
+            
             heights = new float[Width, Height];
 
             PlaceGauss(Width/2, Height/2, spread: 5);
@@ -42,7 +40,6 @@ namespace FreeFormGraph.World
                     maxHeight = Mathf.Max(MaxHeight, heights[x,y]);
                 }
             }
-
         }
 
         private void PlaceGauss(int centerX, int centerY, float amplitude = 10, float spread = 5.0f) {
