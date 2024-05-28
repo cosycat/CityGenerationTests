@@ -165,9 +165,6 @@ namespace FreeFormGraph {
                 foreach (var edge in edges) {
                     Gizmos.color = edgeColors.TryGetValue(edge, out var color) ? color : Color.grey;
                     Gizmos.DrawLine(edge.PositionNodeA, edge.PositionNodeB);
-                    foreach (var point in edge.SplitIntoEvenlySpacedPoints(out _)) {
-                        Gizmos.DrawSphere(point, 0.05f);
-                    }
                 }
 
                 Gizmos.color = Color.green;
