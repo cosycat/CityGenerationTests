@@ -55,9 +55,9 @@ namespace FreeFormGraph.World {
         }
 
         //chatgpt...
-        void RenderHeightmap(int startX, int endX, int startY, int endY)
+        private void RenderHeightmap(int startX, int endX, int startY, int endY)
         {
-            Debug.Log($"Render {startX} {endX} {startY} {endY}");
+            // Debug.Log($"Render {startX} {endX} {startY} {endY}");
             Debug.Assert(startX < endX);
             Debug.Assert(startY < endY);
             endX = (int)Mathf.Min(endX, World.Width);
@@ -74,8 +74,8 @@ namespace FreeFormGraph.World {
             var triangles = new int[(width - 1) * (height - 1) * 6];
             var triangleIndex = 0;
             
-            int worldX = startX;
-            int worldY = startY;
+            var worldX = startX;
+            var worldY = startY;
             for (int meshY = 0; meshY < height; meshY++)
             {
                 for (int meshX = 0; meshX < width; meshX++)
@@ -112,8 +112,12 @@ namespace FreeFormGraph.World {
             mesh.normals = normals;
 
 
-            var terrainObject = new GameObject("Terrain");
-            terrainObject.transform.position = Vector3.zero;
+            var terrainObject = new GameObject("Terrain") {
+                transform = {
+                    position = Vector3.zero,
+                    parent = transform
+                }
+            };
             terrainObject.AddComponent<MeshFilter>().mesh = mesh;
             terrainObject.AddComponent<MeshRenderer>().material = material;
 ;
