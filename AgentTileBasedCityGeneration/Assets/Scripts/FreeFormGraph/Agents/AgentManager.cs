@@ -131,6 +131,8 @@ namespace FreeFormGraph.Agents {
             task.ContinueWith(completedTask => {
                 lock (stopRequestLock) {
                     cancellationTokenSource = null;
+                    Debug.Log($"Application.IsPlaying(Instance): {Application.IsPlaying(Instance)} - If this is false only when a thread continues to run after play stopped, then this could be used here to stop a thread."); // TODO does this help in stopping tasks?
+                    Debug.Log($"Application.isPlaying: {Application.isPlaying} - If this is false only when a thread continues to run after play stopped, then this could be used here to stop a thread.");
                     
                     if(completedTask.IsFaulted) {
                         var exceptions = completedTask.Exception?.Flatten().InnerExceptions;
