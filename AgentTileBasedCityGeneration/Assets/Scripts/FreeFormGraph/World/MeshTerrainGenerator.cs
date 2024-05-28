@@ -16,6 +16,27 @@ namespace FreeFormGraph.World {
         [SerializeField]
         public int meshSize = 200;
 
+        [SerializeField]
+        public float treeCutoffHeight = 70;
+        [SerializeField]
+        public int maxObjectCount = 50000;
+
+        [SerializeField]
+        public float forestNoiseFrequency = 1;
+
+        [SerializeField]
+        public int forestStepSize = 2;
+
+        private int objectCount = 0;
+
+        [SerializeField]
+        public List<GameObject> treePrefabs;
+
+        [SerializeField]
+        public List<GameObject> rockPrefabs;
+
+        private Dictionary<(int x, int y), GameObject> objectDetailMap = new();
+
         private readonly List<Mesh> meshes = new();
         private readonly List<(int xSize, int zSize)> meshIndexSizes = new();
 
@@ -24,6 +45,12 @@ namespace FreeFormGraph.World {
             var changedMeshes = new Dictionary<int, Vector3[]>();
             
             foreach((var height, var x, var z) in heights) {
+                
+                if(objectDetailMap.ContainsKey((x,z))) {
+                    Destroy(objectDetailMap[(x,z)]);
+                    objectDetailMap.Remove((x,z));
+                }
+
                 var terrainWidth = world.Width;
                 var meshIndexX = Mathf.FloorToInt(x/meshSize);
                 var meshIndexZ = Mathf.FloorToInt(z/meshSize);
@@ -74,9 +101,43 @@ namespace FreeFormGraph.World {
                     RenderHeightmap(World, x,x+meshSize-1, y, y+meshSize-1);
                 }
             }
+            AddForests(World);
         }
 
-        void RenderHeightmap(IWorld World, int startX, int endX, int startY, int endY)
+        private void AddForests(IWorld World) {
+            var freq = forestNoiseFrequency;
+            var step = forestStepSize;
+
+            void placeObjectAt(int x, int y, List<GameObject> prefabs, float elevation, string name) {
+                if(objectDetailMap.ContainsKey((x,y))) return;
+                var treeIndex = (x*y) % prefabs.Count;
+                var g = Instantiate(prefabs[treeIndex]);
+                g.transform.position = new Vector3(x,elevation,y);
+                g.transform.Rotate(new Vector3(0, x*y, 0));
+                objectDetailMap[(x,y)] = g;
+            }
+
+            //var maxTreeElevation = Mathf.Lerp(World.MinHeight, World.MaxHeight, treeCutoffPercentageHeight);
+            for(int y = 0; y < World.Height; y+=step) {
+                for(int x = 0; x < World.Width; x+=step) {
+                    if(objectCount > maxObjectCount) return;
+
+                    var elevation = World.GetHeightAt(x,y);
+                    if(elevation > treeCutoffHeight) continue;
+                    //var noiseValue = Mathf.PerlinNoise((float)x/freq, (float)y/freq);
+                    var noiseValue = Mathf.Cos((float)x/freq) + Mathf.Sin((float)y/freq);
+                    if(noiseValue > 0.5f && noiseValue < 0.9f) {
+                        placeObjectAt(x,y,treePrefabs, elevation, $"Tree {objectCount}");
+                    }
+                    else if(noiseValue > 0.9f && noiseValue < 1.6f) {
+                        objectCount++;
+                        placeObjectAt(x,y, rockPrefabs, elevation, $"Rock {objectCount}");
+                    }
+                }
+            }
+        }
+
+        private void RenderHeightmap(IWorld World, int startX, int endX, int startY, int endY)
         {
             Debug.Assert(startX < endX);
             Debug.Assert(startY < endY);
