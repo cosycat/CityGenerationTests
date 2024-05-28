@@ -8,22 +8,45 @@ namespace FreeFormGraph.World {
         
         [SerializeField]
         public Material material;
-        private bool didCreateMesh = false;
 
+        /// <summary>
+        /// Gradient use for color map according to elevation data.
+        /// </summary>
         [SerializeField]
         public Gradient gradient;
 
+        /// <summary>
+        /// Terrain will be made out of multiple meshes, where each
+        /// mesh will have a maxium size of meshSize*meshSize.
+        /// It will be smaller on the edges if the world is not a multiple of 
+        /// meshSize
+        /// </summary>
         [SerializeField]
         public int meshSize = 200;
 
+        /// <summary>
+        /// Defines the maximum height in world unity at which trees can be placed.
+        /// </summary>
         [SerializeField]
         public float treeCutoffHeight = 70;
+
+        /// <summary>
+        /// Defines the maximum number of objects (trees, stones) which can be placed in the world.
+        /// </summary>
         [SerializeField]
         public int maxObjectCount = 50000;
 
+        /// <summary>
+        /// Frequency adjustment for the noise used in object placement.
+        /// </summary>
         [SerializeField]
         public float forestNoiseFrequency = 1;
 
+        /// <summary>
+        /// Defines which step is used to iterate over the world and place objects.
+        /// Using a step size of 1 means at every position in the world, object placement
+        /// will be evaluated.
+        /// </summary>
         [SerializeField]
         public int forestStepSize = 2;
 
@@ -35,9 +58,13 @@ namespace FreeFormGraph.World {
         [SerializeField]
         public List<GameObject> rockPrefabs;
 
+        //Needed for road placement, when placing new roads we need to remove potential objects which
+        //are in the way.
         private Dictionary<(int x, int y), GameObject> objectDetailMap = new();
 
         private readonly List<Mesh> meshes = new();
+        
+        //For each corresponding entry in meshes, this list saves the size of the mesh in vertex count.
         private readonly List<(int xSize, int zSize)> meshIndexSizes = new();
 
         public void SetHeightAt(IWorld world, IList<(float height, int x, int z)> heights) {
