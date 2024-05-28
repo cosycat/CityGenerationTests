@@ -31,9 +31,9 @@ namespace FreeFormGraph.LineBased {
 
         public override bool CreateEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode,
             out bool isToNodeNew, out bool isEdgeNew, bool failIfIntersection = false) {
-                Debug.Assert(from != null, $"CreateEdge: From node is null, to position: {to}");
+                // Debug.Assert(from != null, $"CreateEdge: From node is null, to position: {to}");
 
-                IStreetEdge lastIntersectionEdge = null;
+                IStreetEdge? lastIntersectionEdge = null;
                 //check for intersections
                 foreach(var e in edges) {
                     //skip node we are coming from to prevent finding intersection with edge we are connected to
@@ -63,8 +63,8 @@ namespace FreeFormGraph.LineBased {
                     }
                     else {
                         if(failIfIntersection) {
-                            newEdge = null;
-                            toNode = null;
+                            newEdge = null!;
+                            toNode = null!;
                             isToNodeNew = false;
                             isEdgeNew = false;
                             return false;

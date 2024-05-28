@@ -26,7 +26,6 @@ namespace FreeFormGraph.Agents {
         public Waypoint? Current { get; private set; } = null;
         public Vector3? Target { get; private set; } = null;
 
-        private int cacheHits = 0; // TODO why is this not used?
         private int getNeighborsCalled = 0;
 
         public Pathfinding(IStreetGraph streetGraph, IWorld world) {
@@ -117,14 +116,10 @@ namespace FreeFormGraph.Agents {
 
         private Waypoint GetWaypoint(Vector3 pos) {
             if(streetGraph.TryFindClosestNode(pos, out var node, SnapFactorNode)) {
-                return new Waypoint(node.Position) {
-                    GraphNode = node
-                };
+                return new Waypoint(node.Position, node);
             }
             else if(streetGraph.TryFindClosestEdge(pos, out var edge, out var posOnEdge, SnapFactorEdge)) {
-                return new Waypoint(posOnEdge) {
-                    GraphEdge = edge
-                };
+                return new Waypoint(posOnEdge, edge: edge);
             }
             return new Waypoint(pos);
 
@@ -196,7 +191,7 @@ namespace FreeFormGraph.Agents {
                     }
                 } else {
                     Debug.Assert(lastNode != null, "Last node is null");
-                    streetGraph.CreateEdge(lastNode, wp.Pos, out _, out lastNode, out _, out _);
+                    streetGraph.CreateEdge(lastNode!, wp.Pos, out _, out lastNode, out _, out _);
 
                     if(Vector3.Distance(lastNode.Position, wp.Pos) > 0.001f) {
                         //found an intersection, keep next waypoint
@@ -310,26 +305,24 @@ namespace FreeFormGraph.Agents {
             //this is the case were we are currently not on existing roads
             for(int i = -k; i <= k; i++) {
                 for(int j = -k; j <= k; j++) {
-                    if(GCD(i, j) == 1) {
-                        var newPos = new Vector3(i, j, 0) + currentPosition;
-                        var wp = new Waypoint(newPos);
-                        if(streetGraph.TryFindClosestNode(possibleNodes, newPos, out var node, snapFactorNode)) {
-                            //move this point to the closest node
-                            if(!skipNode.Contains(node)) {
-                                wp.Pos = node.Position;
-                                wp.GraphNode = node;
-                                list.Add(wp);
-                            }
-                        } else if(streetGraph.TryFindClosestEdge(possibleEdges, newPos, out var edge, out var posOnEdge, snapFactorEdge)) {
-                            //move this point to the closest edge
-                            if(!skipEdge.Contains(edge)) {
-                                wp.Pos = posOnEdge;
-                                wp.GraphEdge = edge;
-                                list.Add(wp);
-                            }
-                        } else {
+                    if (GCD(i, j) != 1) continue;
+                    
+                    var newPos = new Vector3(i, j, 0) + currentPosition;
+                    if(streetGraph.TryFindClosestNode(possibleNodes, newPos, out var node, snapFactorNode)) {
+                        //move this point to the closest node
+                        if(!skipNode.Contains(node)) {
+                            var wp = new Waypoint(node.Position, node);
                             list.Add(wp);
                         }
+                    } else if(streetGraph.TryFindClosestEdge(possibleEdges, newPos, out var edge, out var posOnEdge, snapFactorEdge)) {
+                        //move this point to the closest edge
+                        if(!skipEdge.Contains(edge)) {
+                            var wp = new Waypoint(posOnEdge, edge: edge);
+                            list.Add(wp);
+                        }
+                    } else {
+                        var wp = new Waypoint(newPos);
+                        list.Add(wp);
                     }
                 }
             }
@@ -391,16 +384,16 @@ namespace FreeFormGraph.Agents {
         }
 
         public class Waypoint {
-            public Vector3 Pos {get; set;}
+            public Vector3 Pos { get; }
 
             public IStreetNode? GraphNode {get; set;}
             public IStreetEdge? GraphEdge {get; set;}
             public Waypoint? CameFrom {get; set;}
 
-            public Waypoint(Vector3 p) {
+            public Waypoint(Vector3 p, IStreetNode? node = null, IStreetEdge? edge = null) {
                 Pos = p;
-                GraphEdge = null;
-                GraphNode = null;
+                GraphNode = node;
+                GraphEdge = edge;
                 CameFrom = null;
             }
 

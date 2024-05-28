@@ -7,21 +7,10 @@ namespace FreeFormGraph.LineBased
 {
     public class BVHLineAdapter: IBVHNodeAdapter<LineEdge>
     {
-        private BVH<LineEdge> bvh;
         private readonly Dictionary<LineEdge, BVHNode<LineEdge>> gameObjectToLeafMap = new();
-        private event Action<LineEdge> onPositionOrSizeChanged;
+        public event Action<LineEdge> PositionOrSizeChanged; // TODO is this event needed?
 
-        BVH<LineEdge> IBVHNodeAdapter<LineEdge>.BVH
-        {
-            get
-            {
-                return bvh;
-            }
-            set
-            {
-                bvh = value;
-            }
-        }
+        BVH<LineEdge> IBVHNodeAdapter<LineEdge>.BVH { get; set; }
 
         //TODO: this is not used?
         public void CheckMap(LineEdge edge)
@@ -58,11 +47,13 @@ namespace FreeFormGraph.LineBased
         {
             // the SSObject has changed, so notify the BVH leaf to refit for the object
             gameObjectToLeafMap[changed].RefitObjectChanged(this, changed);
+            PositionOrSizeChanged?.Invoke(changed);
         }
 
         public void UnmapObject(LineEdge particle)
         {
             gameObjectToLeafMap.Remove(particle);
         }
+        
     }
 }

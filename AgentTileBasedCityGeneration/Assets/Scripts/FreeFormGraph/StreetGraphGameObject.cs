@@ -37,36 +37,37 @@ namespace FreeFormGraph {
         public abstract bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge, out bool isEdgeNew);
         public abstract bool RemoveNode(IStreetNode node);
         public virtual bool TryFindClosestNode(IEnumerable<IStreetNode> nodes, Vector3 position, out IStreetNode foundNode, float threshold = Single.MaxValue) {
-            foundNode = null;
+            IStreetNode? optionalFoundNode = null;
             var minDistance = threshold;
             foreach (var node in nodes) {
                 var distance = Vector3.Distance(node.Position, position);
                 if (distance < minDistance) {
                     minDistance = distance;
-                    foundNode = node;
+                    optionalFoundNode = node;
                 }
             }
-            return foundNode != null;
+            foundNode = optionalFoundNode ?? null!;
+            return optionalFoundNode != null;
         }
 
         public bool TryFindClosestNode(Vector3 position, out IStreetNode foundNode, float threshold = float.MaxValue) =>
             TryFindClosestNode(Nodes, position, out foundNode, threshold);
 
         public virtual bool TryFindClosestEdge(IEnumerable<IStreetEdge> edges, Vector3 position, out IStreetEdge foundEdge, out Vector3 positionOnEdge,
-            float threshold = Single.MaxValue) {
-
-            foundEdge = null;
+            float threshold = float.MaxValue) {
+            IStreetEdge? optionalFoundEdge = null;
             var minDistance = threshold;
             positionOnEdge = default;
             foreach (var edge in edges) {
                 var distance = edge.GetDistanceEdgeToPosition(position, out var posOnEdgeTmp);
                 if (distance < minDistance) {
                     minDistance = distance;
-                    foundEdge = edge;
+                    optionalFoundEdge = edge;
                     positionOnEdge = posOnEdgeTmp;
                 }
             }
-            return foundEdge != null;
+            foundEdge = optionalFoundEdge ?? null!;
+            return optionalFoundEdge != null;
         }
 
         public bool TryFindClosestEdge(Vector3 position, out IStreetEdge foundEdge, out Vector3 positionOnEdge, float threshold = float.MaxValue) =>
