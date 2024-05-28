@@ -240,7 +240,7 @@ namespace SUMO {
             var time = new XElement("time",
                 new XElement("begin", new XAttribute("value", "0")),
                 new XElement("end", new XAttribute("value", "10000")),
-                new XElement("step", new XAttribute("value", SimulationOptions.SimulationStepLengthSeconds))
+                new XElement("step-length", new XAttribute("value", SimulationOptions.SimulationStepLengthSeconds))
             );
             configurationDoc.Root!.Add(time);
             

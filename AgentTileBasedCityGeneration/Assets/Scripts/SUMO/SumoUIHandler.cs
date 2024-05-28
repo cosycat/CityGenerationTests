@@ -1,18 +1,31 @@
-using System.Collections;
-using System.Collections.Generic;
+using System;
+using FreeFormGraph;
+using FreeFormGraph.Agents;
 using UnityEngine;
 
-public class SumoUIHandler : MonoBehaviour
-{
-    // Start is called before the first frame update
-    void Start()
-    {
+namespace SUMO {
+    [RequireComponent(typeof(SumoNetworkGenerator))]
+    public class SumoUIHandler : MonoBehaviour {
         
-    }
+        private SumoNetworkGenerator networkGenerator;
+        private IStreetGraph graph;
+        
+        private void Awake() {
+            networkGenerator = GetComponent<SumoNetworkGenerator>();
+            graph = FindObjectOfType<StreetGraphGameObject>();
+        }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
+        private void OnGUI() {
+            GUILayout.BeginArea(new Rect(10, 500, 150, 100));
+            if (GUILayout.Button("Convert to Sumo")) {
+                AgentManager.Instance.RequestStopAgents(() => {
+                    networkGenerator.GenerateNetwork(graph, true, true, true, () => {
+                        Debug.Log("Done generating SUMO network.");
+                        AgentManager.Instance.RestartAgents();
+                    });
+                });
+            }
+            GUILayout.EndArea();
+        }
     }
 }

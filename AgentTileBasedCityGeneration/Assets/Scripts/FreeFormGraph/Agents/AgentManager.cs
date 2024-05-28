@@ -23,7 +23,7 @@ namespace FreeFormGraph.Agents {
         
         private float TargetFrameTimeSeconds => 1f / TargetFramesPerSecond;
 
-        private static AgentManager Instance { get; set; } = null!;
+        public static AgentManager Instance { get; private set; } = null!;
 
         private readonly List<(IAgent agent, int framesSinceWorked)> agents = new();
 

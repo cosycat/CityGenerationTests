@@ -1,3 +1,5 @@
+#nullable enable
+using System;
 using System.Collections;
 using System.Diagnostics;
 using FreeFormGraph;
@@ -23,22 +25,23 @@ namespace SUMO {
             SumoPath = $"{Application.persistentDataPath}/SUMO";
         }
 
-        public void GenerateNetwork(IStreetGraph graph, bool convertToSumoNetwork = true, bool openFolderAfterGeneration = true, bool openSumoGUIAfterGeneration = true) {
+        public void GenerateNetwork(IStreetGraph graph, bool convertToSumoNetwork = true, bool openFolderAfterGeneration = true, bool openSumoGUIAfterGeneration = true, Action? onDone = null) {
             Debug.Log($"Generating SUMO network from graph with {graph.NodeCount} nodes and {graph.EdgeCount} edges in {SumoPath}..");
             sumoFileGenerator = SumoFileGenerator.Create(SumoPath, graph, SimulationOptions);
             if (convertToSumoNetwork || openFolderAfterGeneration || openSumoGUIAfterGeneration) {
-                StartCoroutine(DoBackgroundTasks(convertToSumoNetwork, openFolderAfterGeneration, openSumoGUIAfterGeneration));
+                StartCoroutine(DoBackgroundTasks(convertToSumoNetwork, openFolderAfterGeneration, openSumoGUIAfterGeneration, onDone));
             }
         }
-        
+
         /// <summary>
         /// Sequential tasks to be executed in the background.
         /// </summary>
         /// <param name="convertToSumoNetwork"> Whether to call <see cref="ConvertToSumoNetwork"/> afterwards </param>
         /// <param name="openFolderAfterGeneration"> Whether to call <see cref="OpenSUMOFolder"/> afterwards </param>
         /// <param name="openSumoGUIAfterGeneration"> Whether to call <see cref="OpenSumoGUI"/> afterwards </param>
+        /// <param name="onDone"></param>
         /// <returns> An enumerator for the coroutine. </returns>
-        private IEnumerator DoBackgroundTasks(bool convertToSumoNetwork, bool openFolderAfterGeneration, bool openSumoGUIAfterGeneration) {
+        private IEnumerator DoBackgroundTasks(bool convertToSumoNetwork, bool openFolderAfterGeneration, bool openSumoGUIAfterGeneration, Action? onDone) {
             if (convertToSumoNetwork) {
                 yield return ConvertToSumoNetwork();
             }
@@ -50,6 +53,8 @@ namespace SUMO {
             if (openSumoGUIAfterGeneration) {
                 yield return OpenSumoGUI();
             }
+            
+            onDone?.Invoke();
         }
 
         private IEnumerator ConvertToSumoNetwork() {
@@ -82,7 +87,7 @@ namespace SUMO {
             using var process = new Process();
             process.StartInfo = startInfo;
             process.OutputDataReceived += (_, e) => Debug.Log(e.Data);
-            process.ErrorDataReceived += (_, e) => Debug.LogError(e.Data);
+            process.ErrorDataReceived += (_, e) => Debug.LogError($"{e.GetType()}: {e.Data}");
 
             process.Start();
             process.BeginOutputReadLine();
