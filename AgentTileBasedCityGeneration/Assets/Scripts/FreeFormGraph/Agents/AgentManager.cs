@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FreeFormGraph.World;
-using UnityEditor;
 using UnityEngine;
 using Random = System.Random;
 
@@ -39,6 +38,9 @@ namespace FreeFormGraph.Agents {
         internal bool IsAgentRunning => cancellationTokenSource != null;
 
         private CancellationTokenSource? cancellationTokenSource = null;
+        
+        private Task? completedTask = null;
+        private readonly object completedTaskLock = new();
 
         private bool stopRequested = false;
         private Action? onStoppedMethod;
@@ -61,15 +63,62 @@ namespace FreeFormGraph.Agents {
             world = FindObjectOfType<WorldGameObject>();
             GenerateAgents();
             HandleNextAgent();
-#if UNITY_EDITOR
-            EditorApplication.pauseStateChanged += (state) => {
-                if (state == PauseState.Paused) {
-                    RequestStopAgents(() => { Debug.Log("Editor paused stopped");});
-                } else {
-                    RestartAgents();
+            
+// #if UNITY_EDITOR
+// // not needed anymore, since if the editor is paused, the task that ended just does not get handled until the next time it is run again.
+//             EditorApplication.pauseStateChanged += (state) => {
+//                 if (state == PauseState.Paused) {
+//                     RequestStopAgents(() => { Debug.Log("Editor paused stopped");});
+//                 } else {
+//                     RestartAgents();
+//                 }
+//             };
+// #endif
+        }
+
+        private void Update() {
+            HandleCompletedTask();
+            return;
+
+            void HandleCompletedTask() {
+                if (!Monitor.TryEnter(completedTaskLock)) return;
+                
+                try {
+                    if (completedTask == null) return;
+                    
+                    var currCompletedTask = completedTask!;
+                    completedTask = null;
+                    
+                    Debug.Log($"Completed task, Before Lock - Application.IsPlaying(Instance): {Application.IsPlaying(Instance)}, Application.isPlaying: {Application.isPlaying}");
+                    lock (stopRequestLock) {
+                        cancellationTokenSource = null;
+                        Debug.Log($"Application.IsPlaying(Instance): {Application.IsPlaying(Instance)} - If this is false only when a thread continues to run after play stopped, then this could be used here to stop a thread."); // TODO does this help in stopping tasks?
+                        Debug.Log($"Application.isPlaying: {Application.isPlaying} - If this is false only when a thread continues to run after play stopped, then this could be used here to stop a thread.");
+                    
+                        if(currCompletedTask.IsFaulted) {
+                            var exceptions = currCompletedTask.Exception?.Flatten().InnerExceptions;
+                            Debug.LogError("Aborted AgentManager due to unhandled exception in child task");
+                            if (exceptions == null) return;
+                            foreach (var exception in exceptions) {
+                                Debug.LogError(exception.ToString());
+                            }
+                            return;
+                        }
+                    
+                        if (stopRequested) {
+                            onStoppedMethod?.Invoke();
+                            onStoppedMethod = null; // to make sure it is not called again
+                        }
+                    
+                        else {
+                            HandleNextAgent();
+                        }
+                    }
+                    
+                } finally {
+                    Monitor.Exit(completedTaskLock);
                 }
-            };
-#endif
+            }
         }
 
         private void OnDestroy() {
@@ -116,49 +165,45 @@ namespace FreeFormGraph.Agents {
             }
             agents[currAgentIndex] = (agent, 0); // reset the frame counter for the agent
             cancellationTokenSource = new CancellationTokenSource();
+            Debug.Log($"Starting agent {agent.GetType().Name} with frequency {agent.WorkFrequency}.");
             
-            // run the task, but let it wait if the previous frame was too fast
-            var task = Task.Run(() => {
+            // initialize the task, but let it wait if the previous frame was too fast
+            var task = new Task(() => {
                 if (timeToWaitSeconds > 0) {
-                    // Debug.Log($"Waiting {timeToWaitSeconds} seconds.");
+                    Debug.Log($"Waiting {timeToWaitSeconds} seconds.");
                     Thread.Sleep((int)(timeToWaitSeconds * 1000));
                 }
+
+                Debug.Log($"Starting agent {agent.GetType().Name} with frequency {agent.WorkFrequency}.");
+
                 cancellationTokenSource.Token.ThrowIfCancellationRequested();
+                Debug.Log($"DoWork {agent.GetType().Name} with frequency {agent.WorkFrequency}.");
+                
                 agent.DoWork(cancellationTokenSource.Token, world, context);
+                Thread.Sleep(1); // make sure the task is not too fast, not sure if needed.
+                Debug.Log($"Finished agent {agent.GetType().Name} with frequency {agent.WorkFrequency}.");
+                
             }, cancellationTokenSource.Token);
             
             // once the agent is done, either start the next agent or stop the manager, if requested
-            task.ContinueWith(completedTask => {
-                lock (stopRequestLock) {
-                    cancellationTokenSource = null;
-                    Debug.Log($"Application.IsPlaying(Instance): {Application.IsPlaying(Instance)} - If this is false only when a thread continues to run after play stopped, then this could be used here to stop a thread."); // TODO does this help in stopping tasks?
-                    Debug.Log($"Application.isPlaying: {Application.isPlaying} - If this is false only when a thread continues to run after play stopped, then this could be used here to stop a thread.");
-                    
-                    if(completedTask.IsFaulted) {
-                        var exceptions = completedTask.Exception?.Flatten().InnerExceptions;
-                        Debug.LogError("Aborted AgentManager due to unhandled exception in child task");
-                        if (exceptions == null) return;
-                        foreach (var exception in exceptions) {
-                            Debug.LogError(exception.ToString());
-                        }
-                        return;
-                    }
-                    
-                    if (stopRequested) {
-                        onStoppedMethod?.Invoke();
-                        onStoppedMethod = null; // to make sure it is not called again
-                    }
-                    
-                    else {
-                        HandleNextAgent();
-                    }
+            task.ContinueWith(currCompletedTask => {
+                Debug.Log($"Task completed.");
+                Monitor.Enter(completedTaskLock);
+                try {
+                    if (completedTask != null) throw new Exception($"Somehow the next task was started before the previous one was handled. Tasks should always run in sequence. current: {completedTask}, new: {currCompletedTask}, status: {currCompletedTask.Status}");
+                    completedTask = currCompletedTask;
+                } finally {
+                    Monitor.Exit(completedTaskLock);
                 }
             });
+            
+            task.Start();
         }
 
         private void GenerateAgents() {
             foreach (var agent in FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).OfType<IAgent>()) {
                 agents.Add((agent, agent.WorkFrequency));
+                Debug.Log($"Added agent {agent.GetType().Name} with frequency {agent.WorkFrequency}");
             }
         }
         
