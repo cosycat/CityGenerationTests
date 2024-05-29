@@ -104,7 +104,17 @@ namespace FreeFormGraph.Agents {
             if(perfStats) {
                 sw.Stop();
                 var secs = sw.ElapsedMilliseconds / 1000.0f;
-                Debug.Log($"A* perf: Elapsed (s): {secs}; Nodes checked {nodesChecked}; Throughput (nodes/sec): {nodesChecked/secs}; World edges count: {streetGraph.Edges.ToList().Count}; Queue size: {q.Count}; get neighbors calls: {getNeighborsCalled}; visited count: {qSet.Count}");
+                var heuristicCost = Heuristic(start, target);
+                // current is not null because it enters the loop at least once (start node)
+                var actualCost = costSoFar[Current!];
+                Debug.Log($"A* perf: Elapsed (s): {secs}; " +
+                        $"Nodes checked: {nodesChecked}; " +
+                        $"Throughput (nodes/sec): {nodesChecked / secs}; " +
+                        $"World edges count: {streetGraph.Edges.ToList().Count}; " +
+                        $"Queue size: {q.Count}; " +
+                        $"Get neighbors calls: {getNeighborsCalled}; " +
+                        $"Visited count: {qSet.Count}; " +
+                        $"Cost ratio: {actualCost / heuristicCost}");
             }
 
             if (targetWaypoint != null) {
