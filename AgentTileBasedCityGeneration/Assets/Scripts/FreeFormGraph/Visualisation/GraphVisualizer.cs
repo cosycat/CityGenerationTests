@@ -28,7 +28,7 @@ namespace FreeFormGraph.Visualisation {
         private void Start() {
             world = FindObjectOfType<WorldGameObject>();
             var graph = world.StreetGraph;
-            terrainGenerator = FindObjectOfType<MeshTerrainGenerator>() as ITerrainGenerator;
+            terrainGenerator = FindObjectOfType<Terrain3DGameObject>() as ITerrainGenerator;
             terrainGenerator.Render(world);
             
             // Initialise the visualisation

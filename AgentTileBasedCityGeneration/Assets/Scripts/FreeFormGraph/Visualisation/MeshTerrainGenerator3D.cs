@@ -1,10 +1,10 @@
 using UnityEngine;
-using FreeFormGraph.LineBased;
+using FreeFormGraph.World;
 using System.Collections.Generic;
 
-namespace FreeFormGraph.World {
+namespace FreeFormGraph.Visualisation {
 
-    public class MeshTerrainGenerator: MonoBehaviour, ITerrainGenerator {
+    public class MeshTerrainGenerator3D: Terrain3DGameObject {
         
         [SerializeField]
         public Material material;
@@ -67,7 +67,7 @@ namespace FreeFormGraph.World {
         //For each corresponding entry in meshes, this list saves the size of the mesh in vertex count.
         private readonly List<(int xSize, int zSize)> meshIndexSizes = new();
 
-        public void SetHeightAt(IWorld world, IList<(float height, int x, int z)> heights) {
+        public override void SetHeightAt(IWorld world, IList<(float height, int x, int z)> heights) {
             
             var changedMeshes = new Dictionary<int, Vector3[]>();
             
@@ -122,7 +122,7 @@ namespace FreeFormGraph.World {
 
         }
 
-        public void Render(IWorld World) {
+        public override void Render(IWorld World) {
             for(int y = 0; y < World.Width; y+=meshSize-1) {
                 for(int x = 0; x < World.Width; x+=meshSize-1) {
                     RenderHeightmap(World, x,x+meshSize-1, y, y+meshSize-1);

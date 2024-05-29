@@ -1,6 +1,7 @@
 using System.Collections.Generic;
+using FreeFormGraph.World;
 
-namespace FreeFormGraph.World {
+namespace FreeFormGraph.Visualisation {
     public interface ITerrainGenerator {
         
         /// <summary>

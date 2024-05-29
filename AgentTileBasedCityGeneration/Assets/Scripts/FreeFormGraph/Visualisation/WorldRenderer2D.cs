@@ -1,8 +1,8 @@
 using UnityEngine;
 using FreeFormGraph.World;
 
-namespace FreeFormGraph.World {
-    public class WorldRenderer: MonoBehaviour {
+namespace FreeFormGraph.Visualisation {
+    public class WorldRenderer2D: MonoBehaviour {
         public IWorld World;
         [SerializeField]
         public Material material;
