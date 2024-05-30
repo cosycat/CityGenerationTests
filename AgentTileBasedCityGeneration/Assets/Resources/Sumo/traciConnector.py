@@ -56,7 +56,7 @@ def move_vehicle(vehicle_id, x, y):
 def run_sumo_simulation():
     # Setup SUMO
     sumoBinary = "sumo"
-    sumoCmd = [sumoBinary, "-c", "configuration.sumocfg"]
+    sumoCmd = [sumoBinary, "-c", "configuration.sumocfg", "--ignore-route-errors"]
     traci.start(sumoCmd)
 
 #    # Connect to SUMO with TraCI
