@@ -153,6 +153,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8976563ee45de41738b3fcfa6e51b8fc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  runSimulationAfterGeneration: 0
+  openFolderAfterGeneration: 1
+  openSumoGUIAfterGeneration: 0
 --- !u!114 &214455606
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -507,7 +510,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
       propertyPath: maxObjectCount
-      value: 10000
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
