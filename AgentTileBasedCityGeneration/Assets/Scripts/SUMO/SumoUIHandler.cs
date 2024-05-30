@@ -4,18 +4,18 @@ using FreeFormGraph.Agents;
 using UnityEngine;
 
 namespace SUMO {
-    [RequireComponent(typeof(SumoNetworkGenerator))]
+    [RequireComponent(typeof(SumoNetworkManager))]
     public class SumoUIHandler : MonoBehaviour {
         
         [SerializeField] private bool runSimulationAfterGeneration = false;
         [SerializeField] private bool openFolderAfterGeneration = true;
         [SerializeField] private bool openSumoGUIAfterGeneration = false;
         
-        private SumoNetworkGenerator networkGenerator;
+        private SumoNetworkManager networkManager;
         private IStreetGraph graph;
         
         private void Awake() {
-            networkGenerator = GetComponent<SumoNetworkGenerator>();
+            networkManager = GetComponent<SumoNetworkManager>();
             graph = FindObjectOfType<StreetGraphGameObject>();
         }
 
@@ -23,31 +23,32 @@ namespace SUMO {
             GUILayout.BeginArea(new Rect(10, 500, 150, 100));
             if (GUILayout.Button("Convert to Sumo")) {
                 AgentManager.Instance.RequestStopAgents(() => {
-                    networkGenerator.GenerateNetwork(graph, 
+                    networkManager.GenerateNetwork(graph, 
                         convertToSumoNetwork: true,
                         runSimulationAfterGeneration: runSimulationAfterGeneration, 
                         openFolderAfterGeneration: openFolderAfterGeneration, 
                         openSumoGUIAfterGeneration: openSumoGUIAfterGeneration,
                         onDone: () => {
                             Debug.Log("Done generating SUMO network.");
+                            networkManager.StartClient();
                             // AgentManager.Instance.RestartAgents();
                         });
                 });
             }
 
-            if (!networkGenerator.IsNetworkGenerated) {
+            if (!networkManager.IsNetworkGenerated) {
                 GUILayout.EndArea();
                 return;
             }
 
-            if (!networkGenerator.IsSimulationRunning) {
+            if (!networkManager.IsSimulationRunning) {
                 if (GUILayout.Button("Connect Simulation")) {
-                    networkGenerator.StartClient();
+                    networkManager.StartClient();
                 }
             }
             else {
                 if (GUILayout.Button("Stop Simulation")) {
-                    networkGenerator.RequestStopSimulation();
+                    networkManager.RequestStopSimulation();
                 }
             }
             

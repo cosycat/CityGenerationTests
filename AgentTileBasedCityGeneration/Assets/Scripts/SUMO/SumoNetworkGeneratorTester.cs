@@ -3,20 +3,20 @@ using UnityEngine;
 
 namespace SUMO {
     public class SumoNetworkGeneratorTester : MonoBehaviour {
-        private SumoNetworkGenerator sumoNetworkGenerator;
+        private SumoNetworkManager sumoNetworkManager;
         [SerializeField] private bool openFolderAfterGeneration = true;
         [SerializeField] private bool openSumoGUIAfterGeneration = true;
 
         private void Awake() {
-            sumoNetworkGenerator = FindObjectOfType<SumoNetworkGenerator>();
-            if (sumoNetworkGenerator == null) {
+            sumoNetworkManager = FindObjectOfType<SumoNetworkManager>();
+            if (sumoNetworkManager == null) {
                 Debug.LogError("No SumoNetworkGenerator found in scene!");
                 enabled = false;
             }
         }
 
         private void Start() {
-            sumoNetworkGenerator.GenerateNetwork(LineGraphTestCreator.GenerateHShapedGraph(),
+            sumoNetworkManager.GenerateNetwork(LineGraphTestCreator.GenerateHShapedGraph(),
                 convertToSumoNetwork: true, 
                 runSimulationAfterGeneration: true, 
                 openFolderAfterGeneration: openFolderAfterGeneration, openSumoGUIAfterGeneration: openSumoGUIAfterGeneration);

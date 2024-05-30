@@ -12,7 +12,7 @@ namespace SUMO {
     /// <summary>
     /// Generates a SUMO network from a given graph.
     /// </summary>
-    public class SumoNetworkGenerator : MonoBehaviour {
+    public class SumoNetworkManager : MonoBehaviour {
         private const string NETCONVERT_PATH_HOMEBREW = "/opt/homebrew/bin/netconvert"; // TODO Add more systems and installations. This only works on macOS with Homebrew installation of SUMO. alternatives: "/usr/local/bin/netconvert"
         private const string SUMO_GUI_PATH_HOMEBREW = "/opt/homebrew/bin/sumo-gui";
         private const string SUMO_EXECUTION_PATH_HOMEBREW = "/opt/homebrew/bin/sumo";
