@@ -440,6 +440,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: AgentManagerStartStop
       objectReference: {fileID: 0}
+    - target: {fileID: 7685810169078461720, guid: e87f31d4faaab46c69c46cdba82278b3, type: 3}
+      propertyPath: maxTargetFPS
+      value: 120
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
