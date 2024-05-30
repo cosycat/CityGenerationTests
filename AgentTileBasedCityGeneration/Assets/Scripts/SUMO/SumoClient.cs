@@ -3,6 +3,7 @@ using System.Collections;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
+using FreeFormGraph;
 using UnityEngine;
 
 namespace SUMO {
@@ -16,7 +17,11 @@ namespace SUMO {
         private NetworkStream stream;
 
         private readonly Regex singleVehicleRegex = new Regex(@"\('(?<name>\w+\d+\.\d+)', \((?<x>\d+\.\d+), (?<y>\d+\.\d+)\)\)");
-        
+
+        public void StartClient() {
+            StartCoroutine(WaitForConnection());
+        }
+
         private void Update() {
             if (socketConnection == null) {
                 return;
@@ -55,8 +60,8 @@ namespace SUMO {
             for (var i = 0; i < matches.Count; i++) {
                 var match = matches[i];
                 var vehicleID = match.Groups["name"].Value;
-                var x = float.Parse(match.Groups["x"].Value);
-                var y = float.Parse(match.Groups["y"].Value);
+                var x = float.Parse(match.Groups["x"].Value) / Constants.METERS_PER_UNIT;
+                var y = float.Parse(match.Groups["y"].Value) / Constants.METERS_PER_UNIT;
                 // Debug.Log($"Vehicle {vehicleID} at ({x}, {y})");
                 vehicleInfo[i] = new VehicleInfo(vehicleID, x, y);
             }
@@ -64,12 +69,9 @@ namespace SUMO {
             OnVehicleDataReceived(vehicleInfo);
         }
 
-        public void StartClient() {
-            StartCoroutine(WaitForConnection());
-        }
-
         private IEnumerator WaitForConnection() {
             while (socketConnection is not { Connected: true }) {
+                yield return new WaitForSeconds(1f);
                 try {
                     socketConnection = new TcpClient("localhost", 9999);
                     stream = socketConnection.GetStream();
@@ -79,8 +81,6 @@ namespace SUMO {
                 catch (Exception e) {
                     Debug.Log("Socket error: " + e);
                 }
-
-                yield return new WaitForSeconds(1f);
             }
         }
 

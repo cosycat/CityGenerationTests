@@ -4,6 +4,7 @@ using System.Collections;
 using System.Diagnostics;
 using FreeFormGraph;
 using JetBrains.Annotations;
+using Simulation;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
@@ -244,9 +245,6 @@ namespace SUMO {
                 Debug.Log("Opened SUMO GUI.");
             }
         }
-
-        public void StartClient() {
-            sumoClient.StartClient();
-        }
+        
     }
 }

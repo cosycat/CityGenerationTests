@@ -1,6 +1,7 @@
 using System;
 using FreeFormGraph;
 using FreeFormGraph.Agents;
+using Simulation;
 using UnityEngine;
 
 namespace SUMO {
@@ -13,10 +14,12 @@ namespace SUMO {
         
         private SumoNetworkManager networkManager;
         private IStreetGraph graph;
+        private SimulationManager simulationManager;
         
         private void Awake() {
             networkManager = GetComponent<SumoNetworkManager>();
             graph = FindObjectOfType<StreetGraphGameObject>();
+            simulationManager = FindObjectOfType<SimulationManager>();
         }
 
         private void OnGUI() {
@@ -30,7 +33,7 @@ namespace SUMO {
                         openSumoGUIAfterGeneration: openSumoGUIAfterGeneration,
                         onDone: () => {
                             Debug.Log("Done generating SUMO network.");
-                            networkManager.StartClient();
+                            simulationManager.StartSimulation();
                             // AgentManager.Instance.RestartAgents();
                         });
                 });
@@ -42,8 +45,8 @@ namespace SUMO {
             }
 
             if (!networkManager.IsSimulationRunning) {
-                if (GUILayout.Button("Connect Simulation")) {
-                    networkManager.StartClient();
+                if (GUILayout.Button("Start Simulation")) {
+                    simulationManager.StartSimulation();
                 }
             }
             else {
