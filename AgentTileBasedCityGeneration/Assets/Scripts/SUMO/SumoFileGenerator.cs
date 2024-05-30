@@ -8,7 +8,7 @@ namespace SUMO {
     public class SumoSimulationOptions {
         public float SimulationStepLengthSeconds { get; set; } = 0.03f;
         public int RandomTripCount { get; set; } = 10;
-        public int RandomFlowCount { get; set; } = 100;
+        public int RandomFlowCount { get; set; } = 10;
     }
     
     internal class SumoFileGenerator {
@@ -168,12 +168,14 @@ namespace SUMO {
             for (int i = 0; i < SimulationOptions.RandomTripCount; i++) {
                 var fromEdge = GetRandomEdge();
                 var toEdge = GetRandomEdge();
+                if (fromEdge == toEdge) continue;
                 AddTrip(routesDoc, $"trip{i}", fromEdge, toEdge, "Car");
             }
             
             for (int i = 0; i < SimulationOptions.RandomFlowCount; i++) {
                 var fromEdge = GetRandomEdge();
                 var toEdge = GetRandomEdge();
+                if (fromEdge == toEdge) continue;
                 AddFlow(routesDoc, $"flow{i}", fromEdge, toEdge, 0, 10000, 20, "Car");
             }
 
