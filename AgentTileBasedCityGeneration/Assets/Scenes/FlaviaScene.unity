@@ -497,6 +497,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: forestStepSize
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: maxObjectCount
+      value: 10000
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

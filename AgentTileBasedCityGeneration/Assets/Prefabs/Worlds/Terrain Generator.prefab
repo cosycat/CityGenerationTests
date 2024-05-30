@@ -76,3 +76,21 @@ MonoBehaviour:
     m_NumColorKeys: 5
     m_NumAlphaKeys: 2
   meshSize: 200
+  treeCutoffHeight: 55
+  maxObjectCount: 10000
+  forestNoiseFrequency: 0.001
+  forestStepSize: 2
+  treePrefabs:
+  - {fileID: 919132149155446097, guid: ed907f81ae411467b968b9e1cb876dc3, type: 3}
+  - {fileID: 919132149155446097, guid: 7e3fbf7f39c054cd1a3b082def917160, type: 3}
+  - {fileID: 919132149155446097, guid: 4a659000c597242409a81585bbe8eea1, type: 3}
+  - {fileID: 919132149155446097, guid: ba076253cead64f0cb7118ba72c20dae, type: 3}
+  - {fileID: 919132149155446097, guid: c3a64e4ed60b64d2dbabaaee9087f557, type: 3}
+  - {fileID: 919132149155446097, guid: 9d5f45f907cf54934ba51b3ab143a5c0, type: 3}
+  - {fileID: 919132149155446097, guid: 137501ca01fa94d5c9b98f8f50d2442f, type: 3}
+  rockPrefabs:
+  - {fileID: 919132149155446097, guid: d46d25eae73ea40fe97ff591e6807614, type: 3}
+  - {fileID: 919132149155446097, guid: 4c0ce1469b97e45b7905e6928fc71be5, type: 3}
+  - {fileID: 919132149155446097, guid: ec54d3b2669124f1eb231e3e362c3296, type: 3}
+  - {fileID: 919132149155446097, guid: 109536afd38a24f6bae1bada9b762bfc, type: 3}
+  - {fileID: 919132149155446097, guid: b5b9d865f37dc44c9a8e34867c0fb18a, type: 3}
