@@ -938,6 +938,186 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: material
+      value: 
+      objectReference: {fileID: 2100000, guid: c9f025abb8aea450fbd5cb1eabc39b28, type: 2}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: treePrefab
+      value: 
+      objectReference: {fileID: 919132149155446097, guid: ed907f81ae411467b968b9e1cb876dc3, type: 3}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: maxTreeCount
+      value: 10000
+      objectReference: {fileID: 0}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: forestStepSize
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: maxObjectCount
+      value: 10000
+      objectReference: {fileID: 0}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: gradient.ctime1
+      value: 22268
+      objectReference: {fileID: 0}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: gradient.ctime2
+      value: 34310
+      objectReference: {fileID: 0}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: gradient.ctime3
+      value: 48444
+      objectReference: {fileID: 0}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: gradient.ctime4
+      value: 65535
+      objectReference: {fileID: 0}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: gradient.ctime5
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: gradient.key0.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: gradient.key0.g
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: gradient.key0.r
+      value: 0.119199276
+      objectReference: {fileID: 0}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: gradient.key1.b
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: gradient.key1.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: gradient.key1.r
+      value: 0.49536443
+      objectReference: {fileID: 0}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: gradient.key2.b
+      value: 0.34269592
+      objectReference: {fileID: 0}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: gradient.key2.g
+      value: 0.7422313
+      objectReference: {fileID: 0}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: gradient.key2.r
+      value: 0.88642454
+      objectReference: {fileID: 0}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: gradient.key3.b
+      value: 0.042179585
+      objectReference: {fileID: 0}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: gradient.key3.g
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: gradient.key3.r
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: gradient.key4.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: gradient.key4.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: gradient.key4.r
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: gradient.key5.b
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: gradient.key5.g
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: gradient.key5.r
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: treeCutoffHeight
+      value: 55
+      objectReference: {fileID: 0}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: forestNoiseFrequency
+      value: 0.001
+      objectReference: {fileID: 0}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: rockPrefabs.Array.size
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: treePrefabs.Array.size
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: gradient.m_NumColorKeys
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: rockPrefabs.Array.data[0]
+      value: 
+      objectReference: {fileID: 919132149155446097, guid: d46d25eae73ea40fe97ff591e6807614, type: 3}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: rockPrefabs.Array.data[1]
+      value: 
+      objectReference: {fileID: 919132149155446097, guid: 4c0ce1469b97e45b7905e6928fc71be5, type: 3}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: rockPrefabs.Array.data[2]
+      value: 
+      objectReference: {fileID: 919132149155446097, guid: ec54d3b2669124f1eb231e3e362c3296, type: 3}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: rockPrefabs.Array.data[3]
+      value: 
+      objectReference: {fileID: 919132149155446097, guid: 109536afd38a24f6bae1bada9b762bfc, type: 3}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: rockPrefabs.Array.data[4]
+      value: 
+      objectReference: {fileID: 919132149155446097, guid: b5b9d865f37dc44c9a8e34867c0fb18a, type: 3}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: treePrefabs.Array.data[0]
+      value: 
+      objectReference: {fileID: 919132149155446097, guid: ed907f81ae411467b968b9e1cb876dc3, type: 3}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: treePrefabs.Array.data[1]
+      value: 
+      objectReference: {fileID: 919132149155446097, guid: 7e3fbf7f39c054cd1a3b082def917160, type: 3}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: treePrefabs.Array.data[2]
+      value: 
+      objectReference: {fileID: 919132149155446097, guid: 4a659000c597242409a81585bbe8eea1, type: 3}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: treePrefabs.Array.data[3]
+      value: 
+      objectReference: {fileID: 919132149155446097, guid: ba076253cead64f0cb7118ba72c20dae, type: 3}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: treePrefabs.Array.data[4]
+      value: 
+      objectReference: {fileID: 919132149155446097, guid: c3a64e4ed60b64d2dbabaaee9087f557, type: 3}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: treePrefabs.Array.data[5]
+      value: 
+      objectReference: {fileID: 919132149155446097, guid: 9d5f45f907cf54934ba51b3ab143a5c0, type: 3}
+    - target: {fileID: 7238051879630263862, guid: a8838866ef475f671b89d9171b611f17, type: 3}
+      propertyPath: treePrefabs.Array.data[6]
+      value: 
+      objectReference: {fileID: 919132149155446097, guid: 137501ca01fa94d5c9b98f8f50d2442f, type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

@@ -1,29 +1,83 @@
 using UnityEngine;
-using FreeFormGraph.LineBased;
+using FreeFormGraph.World;
 using System.Collections.Generic;
 
-namespace FreeFormGraph.World {
+namespace FreeFormGraph.Visualisation {
 
-    public class MeshTerrainGenerator: MonoBehaviour, ITerrainGenerator {
+    public class MeshTerrainGenerator3D: Terrain3DGameObject {
         
         [SerializeField]
         public Material material;
-        private bool didCreateMesh = false;
 
+        /// <summary>
+        /// Gradient use for color map according to elevation data.
+        /// </summary>
         [SerializeField]
         public Gradient gradient;
 
+        /// <summary>
+        /// Terrain will be made out of multiple meshes, where each
+        /// mesh will have a maxium size of meshSize*meshSize.
+        /// It will be smaller on the edges if the world is not a multiple of 
+        /// meshSize
+        /// </summary>
         [SerializeField]
         public int meshSize = 200;
 
+        /// <summary>
+        /// Defines the maximum height in world unity at which trees can be placed.
+        /// </summary>
+        [SerializeField]
+        public float treeCutoffHeight = 70;
+
+        /// <summary>
+        /// Defines the maximum number of objects (trees, stones) which can be placed in the world.
+        /// </summary>
+        [SerializeField]
+        public int maxObjectCount = 50000;
+
+        /// <summary>
+        /// Frequency adjustment for the noise used in object placement.
+        /// </summary>
+        [SerializeField]
+        public float forestNoiseFrequency = 1;
+
+        /// <summary>
+        /// Defines which step is used to iterate over the world and place objects.
+        /// Using a step size of 1 means at every position in the world, object placement
+        /// will be evaluated.
+        /// </summary>
+        [SerializeField]
+        public int forestStepSize = 2;
+
+        private int objectCount = 0;
+
+        [SerializeField]
+        public List<GameObject> treePrefabs;
+
+        [SerializeField]
+        public List<GameObject> rockPrefabs;
+
+        //Needed for road placement, when placing new roads we need to remove potential objects which
+        //are in the way.
+        private Dictionary<(int x, int y), GameObject> objectDetailMap = new();
+
         private readonly List<Mesh> meshes = new();
+        
+        //For each corresponding entry in meshes, this list saves the size of the mesh in vertex count.
         private readonly List<(int xSize, int zSize)> meshIndexSizes = new();
 
-        public void SetHeightAt(IWorld world, IList<(float height, int x, int z)> heights) {
+        public override void SetHeightAt(IWorld world, IList<(float height, int x, int z)> heights) {
             
             var changedMeshes = new Dictionary<int, Vector3[]>();
             
             foreach((var height, var x, var z) in heights) {
+                
+                if(objectDetailMap.ContainsKey((x,z))) {
+                    Destroy(objectDetailMap[(x,z)]);
+                    objectDetailMap.Remove((x,z));
+                }
+
                 var terrainWidth = world.Width;
                 var meshIndexX = Mathf.FloorToInt(x/meshSize);
                 var meshIndexZ = Mathf.FloorToInt(z/meshSize);
@@ -68,15 +122,49 @@ namespace FreeFormGraph.World {
 
         }
 
-        public void Render(IWorld World) {
+        public override void Render(IWorld World) {
             for(int y = 0; y < World.Width; y+=meshSize-1) {
                 for(int x = 0; x < World.Width; x+=meshSize-1) {
                     RenderHeightmap(World, x,x+meshSize-1, y, y+meshSize-1);
                 }
             }
+            AddForests(World);
         }
 
-        void RenderHeightmap(IWorld World, int startX, int endX, int startY, int endY)
+        private void AddForests(IWorld World) {
+            var freq = forestNoiseFrequency;
+            var step = forestStepSize;
+
+            void placeObjectAt(int x, int y, List<GameObject> prefabs, float elevation, string name) {
+                if(objectDetailMap.ContainsKey((x,y))) return;
+                var treeIndex = (x*y) % prefabs.Count;
+                var g = Instantiate(prefabs[treeIndex]);
+                g.transform.position = new Vector3(x,elevation,y);
+                g.transform.Rotate(new Vector3(0, x*y, 0));
+                objectDetailMap[(x,y)] = g;
+            }
+
+            //var maxTreeElevation = Mathf.Lerp(World.MinHeight, World.MaxHeight, treeCutoffPercentageHeight);
+            for(int y = 0; y < World.Height; y+=step) {
+                for(int x = 0; x < World.Width; x+=step) {
+                    if(objectCount > maxObjectCount) return;
+
+                    var elevation = World.GetHeightAt(x,y);
+                    if(elevation > treeCutoffHeight) continue;
+                    //var noiseValue = Mathf.PerlinNoise((float)x/freq, (float)y/freq);
+                    var noiseValue = Mathf.Cos((float)x/freq) + Mathf.Sin((float)y/freq);
+                    if(noiseValue > 0.5f && noiseValue < 0.9f) {
+                        placeObjectAt(x,y,treePrefabs, elevation, $"Tree {objectCount}");
+                    }
+                    else if(noiseValue > 0.9f && noiseValue < 1.6f) {
+                        objectCount++;
+                        placeObjectAt(x,y, rockPrefabs, elevation, $"Rock {objectCount}");
+                    }
+                }
+            }
+        }
+
+        private void RenderHeightmap(IWorld World, int startX, int endX, int startY, int endY)
         {
             Debug.Assert(startX < endX);
             Debug.Assert(startY < endY);

@@ -12,20 +12,47 @@ namespace FreeFormGraph.Agents {
         private readonly IStreetGraph streetGraph;
         private readonly IWorld world;
 
+        /// <summary>
+        /// Distance (in world units) for a waypoint to be snapped to an edge.
+        /// </summary>
         private float SnapFactorEdge { get; set; } = 1.0f;
-        //ideally, Node factor should be higher than edge factor TODO explain
+        /// <summary>
+        /// Distance (in world units) for a waypoint to be snapped to an node.
+        /// </summary>
         private float SnapFactorNode { get; set; } = 1.5f;
+
+        /// <summary>
+        /// Describes how big the "moving mask" is when moving to neighboring
+        /// positions in the world.
+        /// </summary>
         private const int NEIGHBOR_K = 4;
 
         private readonly PriorityQueue<Waypoint, float> q = new();
+        
+        //Is needed to prevent multiple entries in the queue (each waypoint can only be examined once).
         private readonly HashSet<Waypoint> qSet = new();
         private readonly Dictionary<Waypoint, Waypoint> cameFrom = new();
         private readonly Dictionary<Waypoint, float> costSoFar = new();
 
+        /// <summary>
+        /// This is the position where pathfinding was started from.
+        /// Is null if pathfinding was not yet started.
+        /// </summary>
         public Waypoint? StartPosition { get; private set; } = null;
+        /// <summary>
+        /// Current position of pathfinding process. If pathfinding 
+        /// successfully finished, this will be the same as the target. If
+        /// pathfinding fails to find a route, this will be the last position
+        /// evaluated.
+        /// </summary>
         public Waypoint? Current { get; private set; } = null;
+        /// <summary>
+        /// This is the goal to reach via pathfinding.
+        /// Is null if pathfinding was not yet started.
+        /// </summary>
         public Vector3? Target { get; private set; } = null;
 
+        //only for statistics
         private int getNeighborsCalled = 0;
 
         public Pathfinding(IStreetGraph streetGraph, IWorld world) {
@@ -104,7 +131,17 @@ namespace FreeFormGraph.Agents {
             if(perfStats) {
                 sw.Stop();
                 var secs = sw.ElapsedMilliseconds / 1000.0f;
-                Debug.Log($"A* perf: Elapsed (s): {secs}; Nodes checked {nodesChecked}; Throughput (nodes/sec): {nodesChecked/secs}; World edges count: {streetGraph.Edges.ToList().Count}; Queue size: {q.Count}; get neighbors calls: {getNeighborsCalled}; visited count: {qSet.Count}");
+                var heuristicCost = Heuristic(start, target);
+                // current is not null because it enters the loop at least once (start node)
+                var actualCost = costSoFar[Current!];
+                Debug.Log($"A* perf: Elapsed (s): {secs}; " +
+                        $"Nodes checked: {nodesChecked}; " +
+                        $"Throughput (nodes/sec): {nodesChecked / secs}; " +
+                        $"World edges count: {streetGraph.Edges.ToList().Count}; " +
+                        $"Queue size: {q.Count}; " +
+                        $"Get neighbors calls: {getNeighborsCalled}; " +
+                        $"Visited count: {qSet.Count}; " +
+                        $"Cost ratio: {actualCost / heuristicCost}");
             }
 
             if (targetWaypoint != null) {
@@ -239,7 +276,7 @@ namespace FreeFormGraph.Agents {
         public static float SlopeCost(IWorld w, Waypoint a, Waypoint b) {
             var cost = Mathf.Abs(w.GetHeightAt(a.Pos.x, a.Pos.y) - w.GetHeightAt(b.Pos.x, b.Pos.y)) / Vector3.Distance(a.Pos, b.Pos);
             //0.5f = 50 % slope
-            if(cost > 0.12f) return float.PositiveInfinity; //TODO return inf
+            if(cost > 0.12f) return float.PositiveInfinity;
             cost = cost * cost;
             cost *= 30;
             return cost;
