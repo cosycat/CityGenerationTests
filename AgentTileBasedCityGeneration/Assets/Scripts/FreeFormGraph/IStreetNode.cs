@@ -10,6 +10,8 @@ namespace FreeFormGraph {
         /// </summary>
         public Vector3 Position { get; }
         
+        public Vector3 PositionMeters => Position * Constants.METERS_PER_UNIT;
+        
         /// <summary>
         /// The edges connected to this node.
         /// </summary>

@@ -17,9 +17,9 @@ namespace SUMO {
         private const string SUMO_GUI_PATH_HOMEBREW = "/opt/homebrew/bin/sumo-gui";
         public SumoSimulationOptions SimulationOptions { get; } = new();
 
-        private string SumoPath { get; set; }
+        private string SumoPath { get; set; } = null!;
         
-        [CanBeNull] private SumoFileGenerator sumoFileGenerator;
+        private SumoFileGenerator? sumoFileGenerator;
 
         private void Awake() {
             SumoPath = $"{Application.persistentDataPath}/SUMO";

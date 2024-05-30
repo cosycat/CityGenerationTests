@@ -7,6 +7,8 @@ namespace SUMO {
 
     public class SumoSimulationOptions {
         public float SimulationStepLengthSeconds { get; set; } = 0.03f;
+        public int RandomTripCount { get; set; } = 10;
+        public int RandomFlowCount { get; set; } = 100;
     }
     
     internal class SumoFileGenerator {
@@ -71,7 +73,7 @@ namespace SUMO {
             var nodes = Graph.Nodes.ToArray();
             for (var i = 0; i < nodes.Length; i++) {
                 var node = nodes[i];
-                AddNode(nodesDoc, $"n{i}", node.Position.x, node.Position.y, "priority");
+                AddNode(nodesDoc, $"n{i}", node.PositionMeters.x, node.PositionMeters.y, "priority");
             }
             
             nodesDoc.Save(NodesFilePath);
@@ -160,14 +162,32 @@ namespace SUMO {
 
         private void GenerateRoutes() {
             var routesDoc = new XDocument(new XElement("routes"));
-
+            
             AddCarType(routesDoc, "Car", 15.0f, 2.0f, 1.0f, 5.0f, 0.0f);
+
+            for (int i = 0; i < SimulationOptions.RandomTripCount; i++) {
+                var fromEdge = GetRandomEdge();
+                var toEdge = GetRandomEdge();
+                AddTrip(routesDoc, $"trip{i}", fromEdge, toEdge, "Car");
+            }
             
-            AddTrip(routesDoc, "trip0", "e0", "e3", "Car");
+            for (int i = 0; i < SimulationOptions.RandomFlowCount; i++) {
+                var fromEdge = GetRandomEdge();
+                var toEdge = GetRandomEdge();
+                AddFlow(routesDoc, $"flow{i}", fromEdge, toEdge, 0, 10000, 20, "Car");
+            }
+
             
-            AddTrip(routesDoc, "trip1", "e0", "e4", "Car", 10);
+            // AddTrip(routesDoc, "trip0", "e0", "e3", "Car");
+            //
+            // AddTrip(routesDoc, "trip1", "e0", "e4", "Car", 10);
             
             routesDoc.Save(RoutesFilePath);
+        }
+        
+        private string GetRandomEdge(bool withReverse = false) {
+            var edgeIndex = Random.Range(0, Graph.Edges.Count());
+            return $"e{edgeIndex}{(withReverse && Random.value < 0.5 ? "_reverse" : "")}";
         }
         
         private static void AddCarType(XDocument routesDoc, string id, float maxSpeed, float length, float accel, float decel, float sigma) {
