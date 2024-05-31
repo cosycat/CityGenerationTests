@@ -10,14 +10,9 @@ IS_DEBUG = False
 
 should_stop = False
 
+
 ### Connection Methods ###
 
-def send_data_over_socket(data, conn):
-    print(f"Sending data: {data}")
-    if IS_DEBUG:
-        return 
-    conn.sendall(data.encode('utf-8'))
-        
 def start_socket_server():
     if IS_DEBUG:
         print("Starting socket server...")
@@ -26,17 +21,26 @@ def start_socket_server():
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind(('localhost', 9999))
     server_socket.listen(1)
-    
+
     print("Waiting for a connection from Unity...")
     conn, addr = server_socket.accept()
     print("Connected by", addr)
-    
+
     return conn, addr
+
+
+def send_data_over_socket(data, conn):
+    print(f"Sending data: {data}")
+    if IS_DEBUG:
+        return
+    conn.sendall(data.encode('utf-8'))
+
 
 def receive_data_over_socket(conn):
     if IS_DEBUG:
         return
     data = conn.recv(1024)
+    print(f"Received data: {data}")
     if data.decode('utf-8') == "stop":
         should_stop = True
 
@@ -47,64 +51,48 @@ def add_vehicle(vehicle_id, route_id):
     traci.vehicle.add(vehicle_id, route_id)
     traci.vehicle.setSpeedMode(vehicle_id, 0)  # Disable automatic speed regulation
 
+
 def move_vehicle(vehicle_id, x, y):
     traci.vehicle.moveToXY(vehicle_id, "", 0, x, y, angle=0, keepRoute=2)
-    
-        
+
+
 ### Main Loop ###
- 
+
 def run_sumo_simulation():
     # Setup SUMO
     sumoBinary = "sumo"
     sumoCmd = [sumoBinary, "-c", "configuration.sumocfg", "--ignore-route-errors"]
     traci.start(sumoCmd)
 
-#    # Connect to SUMO with TraCI
-#    traci.connect(port=57230)
-    
+    #    # Connect to SUMO with TraCI
+    #    traci.connect(port=57230)
+
     # Setup socket server
     conn, addr = start_socket_server()
-     
-    # vehicle_id = "vehicle_0"
-    # route_id = "1_traffic"  # Ensure this route exists in your SUMO config
-    # add_vehicle(vehicle_id, route_id)
-     
+
     # Simulation loop
     step = 0
-    x = 5
-    y = 2
     while traci.simulation.getMinExpectedNumber() > 0 and not should_stop:
         traci.simulationStep()
-     
-#        x += 1
-#        y += 1
-#        move_vehicle(vehicle_id, x, y)
-
-#        vehicle_ids = traci.vehicle.getIDList()
-#        print(f"Step {step}:")
-#        for vehicle_id in vehicle_ids:
-#            position = traci.vehicle.getPosition(vehicle_id)
-#            print(f"Vehicle {vehicle_id}: Position {position}")
+        print(f"Step {step}:")
 
         positions = []
         for vehicle_id in traci.vehicle.getIDList():
             position = traci.vehicle.getPosition(vehicle_id)
             positions.append((vehicle_id, position))
-        
+
         send_data_over_socket(str(positions), conn)
         receive_data_over_socket(conn)
-     
+
         step += 1
         # time.sleep(1)
-        
-     
+
     # Close TraCI connection
     traci.close()
     conn.close()
 
-    
+
 if __name__ == "__main__":
     cwd = os.getcwd()
     print(cwd)
     run_sumo_simulation()
-

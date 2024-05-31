@@ -53,9 +53,7 @@ namespace SUMO {
             Debug.Log($"Generating SUMO network from graph with {graph.NodeCount} nodes and {graph.EdgeCount} edges in {SumoGeneratedFilesPath}..");
             sumoFileGenerator = SumoFileGenerator.Create(SumoGeneratedFilesPath, graph, SimulationOptions);
             CopyFilesToFolder();
-            if (convertToSumoNetwork || openFolderAfterGeneration || openSumoGUIAfterGeneration) {
-                StartCoroutine(DoBackgroundTasks(convertToSumoNetwork, runSimulationAfterGeneration, openFolderAfterGeneration, openSumoGUIAfterGeneration, onDone));
-            }
+            StartCoroutine(DoBackgroundTasks(convertToSumoNetwork, runSimulationAfterGeneration, openFolderAfterGeneration, openSumoGUIAfterGeneration, onDone));
         }
         
         private void CopyFilesToFolder() {
@@ -68,11 +66,34 @@ namespace SUMO {
                 }
                 System.IO.File.Copy(file, destinationPath);
             }
-            // var destinationPath = $"{SumoGeneratedFilesPath}/traciConnector.py";
-            // if (System.IO.File.Exists(destinationPath)) {
-            //     System.IO.File.Delete(destinationPath);
-            // }
-            // System.IO.File.Copy(SumoPythonSimulationScriptPath, destinationPath);
+            CreateShellScript();
+        }
+
+        private void CreateShellScript() {
+            if (sumoFileGenerator == null) {
+                Debug.LogError("No SumoFileGenerator found. Did you call GenerateNetwork first?");
+                return;
+            }
+            var scriptPath = $"{SumoGeneratedFilesPath}/run_sumo.sh";
+            var script =
+                $"#!/bin/bash\n" +
+                $"\n" +
+                $"# Run this script to generate the SUMO network and run the simulation.\n" +
+                $"# Alternatively, you can copy the following commands and run them in your terminal.\n" +
+                $"# Make sure to have sumo, netconvert and python3 installed.\n" +
+                $"#\n" +
+                $"# run with:" +
+                $"# chmod u+x run_sumo.sh && ./run_sumo.sh\n" +
+                $"\n" +
+                $"# Create a virtual environment and install the required python packages.\n" +
+                $"python3 -m venv .venv\n" +
+                $"source .venv/bin/activate\n" +
+                $"pip install -r requirements.txt\n" +
+                $"# Convert the graph to a SUMO network\n" +
+                $"netconvert --node-files=\"{sumoFileGenerator.NodesFilePath}\" --edge-files=\"{sumoFileGenerator.EdgesFilePath}\" --output-file=\"{sumoFileGenerator.OutputNetFilePath}\"\n" +
+                $"# Run the simulation\n" +
+                $"python3 traciConnector.py\n";
+            System.IO.File.WriteAllText(scriptPath, script);
         }
 
         /// <summary>
@@ -104,6 +125,10 @@ namespace SUMO {
             onDone?.Invoke();
         }
 
+        /// <summary>
+        /// Converts the generated plain xml files to a SUMO network with netconvert.
+        /// </summary>
+        /// <returns> An enumerator for the coroutine. </returns>
         private IEnumerator ConvertToSumoNetwork() {
             if (sumoFileGenerator == null) {
                 Debug.LogError("No SumoFileGenerator found. Did you call GenerateNetwork first?");
@@ -153,6 +178,11 @@ namespace SUMO {
 
         }
 
+        /// <summary>
+        /// Runs the simulation via the python script.
+        /// Does not work. Probably just run the python script manually.
+        /// </summary>
+        /// <returns> An enumerator for the coroutine. </returns>
         private IEnumerator RunSimulation() {
             Debug.LogWarning("Does not work. Probably just run the python script manually.");
             if (sumoFileGenerator == null) {

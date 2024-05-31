@@ -2,20 +2,22 @@
 
 ## Setup
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
+### Installing SUMO
+
+#### Linux
+
+https://sumo.dlr.de/docs/Installing/index.html#linux
+
+#### MacOS
+
+https://sumo.dlr.de/docs/Installing/index.html#macos
 
 ## Run
 
 ```bash
-python3 traciConnector.py
+chmod u+x run_sumo.sh && ./run_sumo.sh
 ```
 
-## Combined
+## Stop
 
-```bash
-python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt && clear && python3 traciConnector.py
-```
+Stop the simulation by pressing `Ctrl + C`.
