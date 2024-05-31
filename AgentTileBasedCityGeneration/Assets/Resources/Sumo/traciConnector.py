@@ -4,11 +4,14 @@ import traci.constants as tc
 import socket
 import os
 
+from SumoInfoUtility import VehicleInfo
+from SumoInfoUtility import SumoSimulationStepInfo
+
 # documentation at https://sumo.dlr.de/pydoc/traci.html
 
 IS_DEBUG = False
 
-time_step_seconds = 1.0/30.0
+time_step_seconds = 1.0 / 30.0
 
 should_stop = False
 
@@ -49,6 +52,25 @@ def receive_data_over_socket(conn):
 
 ### Additional TraCI Methods ###
 
+def get_vehicle_info(id):
+    print(f"Getting info for vehicle {id}")
+    pos = traci.vehicle.getPosition(id)
+    print(f"Position: {pos}")
+    rot = traci.vehicle.getAngle(id)
+    rot = rot + 180
+    print(f"Rotation: {rot}")
+    speed = traci.vehicle.getSpeed(id)
+    print(f"Speed: {speed}")
+    signals = traci.vehicle.getSignals(id)
+    print(f"Signals: {signals}")
+    veh_type = traci.vehicle.getVehicleClass(id)
+    print(f"Vehicle Type: {veh_type}")
+
+    vehicle = VehicleInfo(id, pos, rot, speed, signals, veh_type)
+    print(vehicle)
+    return vehicle
+
+
 def add_vehicle(vehicle_id, route_id):
     traci.vehicle.add(vehicle_id, route_id)
     traci.vehicle.setSpeedMode(vehicle_id, 0)  # Disable automatic speed regulation
@@ -76,20 +98,28 @@ def run_sumo_simulation():
     step = 0
     while traci.simulation.getMinExpectedNumber() > 0 and not should_stop:
         current_time = time.time()
-        
+
         traci.simulationStep()
         print(f"Step {step}:")
 
-        positions = []
-        for vehicle_id in traci.vehicle.getIDList():
-            position = traci.vehicle.getPosition(vehicle_id)
-            positions.append((vehicle_id, position))
+        vehicle_list = list()
 
-        send_data_over_socket(str(positions), conn)
+        id_list = traci.vehicle.getIDList()
+        print(f"Vehicle IDs: {id_list}")
+        for i in range(0,len(id_list)):
+            vehicle_id = id_list[i]
+            vehicle = get_vehicle_info(vehicle_id)
+            vehicle_list.append(vehicle)
+            # print(vehicle)
+
+        simulation_step_info = SumoSimulationStepInfo(step, vehicle_list)
+        simulation_step_info_json = simulation_step_info.convert_to_json_string()
+
+        send_data_over_socket(simulation_step_info_json, conn)
         receive_data_over_socket(conn)
 
         step += 1
-        
+
         sleep_time = time_step_seconds - (time.time() - current_time)
         if sleep_time > 0:
             time.sleep(sleep_time)
