@@ -1,6 +1,8 @@
+#nullable enable
 using System.Linq;
 using System.Xml.Linq;
 using FreeFormGraph;
+using FreeFormGraph.World;
 using UnityEngine;
 
 namespace SUMO {
@@ -20,6 +22,7 @@ namespace SUMO {
         private const string CONFIGURATION_FILE_NAME = "configuration.sumocfg";
 
         private IStreetGraph Graph { get; }
+        private IWorld World { get; }
         private string SumoPath { get; }
         public SumoSimulationOptions SimulationOptions { get; }
 
@@ -30,16 +33,17 @@ namespace SUMO {
         public string OutputNetFilePath => $"{SumoPath}/{OUTPUT_NET_FILE_NAME}";
         public string ConfigurationFilePath => $"{SumoPath}/{CONFIGURATION_FILE_NAME}";
 
-        private SumoFileGenerator(string sumoPath, IStreetGraph graph, SumoSimulationOptions simulationOptions) {
+        private SumoFileGenerator(string sumoPath, IStreetGraph graph, SumoSimulationOptions simulationOptions, IWorld world) {
             Graph = graph;
+            World = world;
             SimulationOptions = simulationOptions;
             SumoPath = sumoPath;
             InitializeDirectory(sumoPath);
             CreateNetworkFiles();
         }
         
-        internal static SumoFileGenerator Create(string sumoPath, IStreetGraph graph, SumoSimulationOptions simulationOptions) {
-            return new SumoFileGenerator(sumoPath, graph, simulationOptions);
+        internal static SumoFileGenerator Create(string sumoPath, IStreetGraph graph, SumoSimulationOptions simulationOptions, IWorld world) {
+            return new SumoFileGenerator(sumoPath, graph, simulationOptions, world);
         }
 
         private static void InitializeDirectory(string sumoPath) {
@@ -73,22 +77,23 @@ namespace SUMO {
             var nodes = Graph.Nodes.ToArray();
             for (var i = 0; i < nodes.Length; i++) {
                 var node = nodes[i];
-                AddNode(nodesDoc, $"n{i}", node.PositionMeters.x, node.PositionMeters.y, "priority");
+                AddNode(nodesDoc, $"n{i}", node.PositionMeters.x, node.PositionMeters.y, World.GetHeightAt(node.Position.x, node.Position.y), "priority");
             }
             
             nodesDoc.Save(NodesFilePath);
         }
 
-        private static void AddNode(XDocument nodesDoc, string nodeId, double x, double y, string type) {
+        private static void AddNode(XDocument nodesDoc, string nodeId, double x, double y, double height, string type) {
             var newNode = new XElement("node",
                 new XAttribute("id", nodeId),
                 new XAttribute("x", x),
                 new XAttribute("y", y),
+                new XAttribute("z", height),
                 new XAttribute("type", type)
             );
 
             Debug.Assert(nodesDoc.Root != null, "nodesDoc.Root != null");
-            nodesDoc.Root.Add(newNode);
+            nodesDoc.Root?.Add(newNode);
         }
 
         private void GenerateEdges() {
@@ -119,7 +124,8 @@ namespace SUMO {
                 new XAttribute("speed", speed)
             );
 
-            edgesDoc.Root!.Add(newEdge);
+            Debug.Assert(edgesDoc.Root != null, "edgesDoc.Root != null");
+            edgesDoc.Root?.Add(newEdge);
         }
 
         private void GenerateConnections()

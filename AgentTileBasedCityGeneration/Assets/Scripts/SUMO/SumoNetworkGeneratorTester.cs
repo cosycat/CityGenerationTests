@@ -1,4 +1,5 @@
 using FreeFormGraph.LineBased;
+using FreeFormGraph.World;
 using UnityEngine;
 
 namespace SUMO {
@@ -17,8 +18,9 @@ namespace SUMO {
 
         private void Start() {
             sumoNetworkManager.GenerateNetwork(LineGraphTestCreator.GenerateHShapedGraph(),
+                FindObjectOfType<WorldGameObject>(),
                 convertToSumoNetwork: false, 
-                runSimulationAfterGeneration: true, 
+                runSimulationAfterGeneration: false, 
                 openFolderAfterGeneration: openFolderAfterGeneration,
                 openSumoGUIAfterGeneration: openSumoGUIAfterGeneration);
         }

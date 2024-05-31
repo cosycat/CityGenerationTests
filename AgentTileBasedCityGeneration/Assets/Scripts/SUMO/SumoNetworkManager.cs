@@ -3,8 +3,7 @@ using System;
 using System.Collections;
 using System.Diagnostics;
 using FreeFormGraph;
-using JetBrains.Annotations;
-using Simulation;
+using FreeFormGraph.World;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
@@ -34,6 +33,10 @@ namespace SUMO {
         public bool IsSimulationRunning { get; private set; } = false;
         private bool SimulationStopRequested { get; set; }
 
+        private string NetconvertCommand => sumoFileGenerator == null ? "netconvert" :
+            $"netconvert --node-files=\"{sumoFileGenerator.NodesFilePath}\" --edge-files=\"{sumoFileGenerator.EdgesFilePath}\" --output-file=\"{sumoFileGenerator.OutputNetFilePath}\" --offset.disable-normalization=\"true\"\n";
+
+
         private void Awake() {
             SumoGeneratedFilesPath = $"{Application.persistentDataPath}/SUMO";
             SumoPythonSimulationScriptPath = $"{Application.dataPath}/{SUMO_PYTHON_SIMULATION_SCRIPT_PATH}";
@@ -44,14 +47,15 @@ namespace SUMO {
         /// Generates a SUMO network from a given graph.
         /// </summary>
         /// <param name="graph"> The graph to generate the network from. </param>
+        /// <param name="world"> The world to generate the network in. </param>
         /// <param name="convertToSumoNetwork"> Whether to convert the generated plain xml files to a SUMO network with netconvert. see https://sumo.dlr.de/docs/Networks/PlainXML.html for more info. </param>
         /// <param name="runSimulationAfterGeneration"> Whether to run the simulation via the python script after the network has been generated. </param>
         /// <param name="openFolderAfterGeneration"> Whether to open the SUMO folder where the files have been generated in, after the network has been generated. </param>
         /// <param name="openSumoGUIAfterGeneration"> Whether to open the SUMO GUI after the network has been generated. </param>
         /// <param name="onDone"> An action to be executed after all tasks have been completed. </param>
-        public void GenerateNetwork(IStreetGraph graph, bool convertToSumoNetwork = true, bool runSimulationAfterGeneration = true, bool openFolderAfterGeneration = false, bool openSumoGUIAfterGeneration = false, Action? onDone = null) {
+        public void GenerateNetwork(IStreetGraph graph, IWorld world, bool convertToSumoNetwork = true, bool runSimulationAfterGeneration = true, bool openFolderAfterGeneration = false, bool openSumoGUIAfterGeneration = false, Action? onDone = null) {
             Debug.Log($"Generating SUMO network from graph with {graph.NodeCount} nodes and {graph.EdgeCount} edges in {SumoGeneratedFilesPath}..");
-            sumoFileGenerator = SumoFileGenerator.Create(SumoGeneratedFilesPath, graph, SimulationOptions);
+            sumoFileGenerator = SumoFileGenerator.Create(SumoGeneratedFilesPath, graph, SimulationOptions, world);
             CopyFilesToFolder();
             StartCoroutine(DoBackgroundTasks(convertToSumoNetwork, runSimulationAfterGeneration, openFolderAfterGeneration, openSumoGUIAfterGeneration, onDone));
         }
@@ -90,7 +94,7 @@ namespace SUMO {
                 $"source .venv/bin/activate\n" +
                 $"pip install -r requirements.txt\n" +
                 $"# Convert the graph to a SUMO network\n" +
-                $"netconvert --node-files=\"{sumoFileGenerator.NodesFilePath}\" --edge-files=\"{sumoFileGenerator.EdgesFilePath}\" --output-file=\"{sumoFileGenerator.OutputNetFilePath}\"\n" +
+                NetconvertCommand +
                 $"# Run the simulation\n" +
                 $"python3 traciConnector.py\n";
             System.IO.File.WriteAllText(scriptPath, script);
