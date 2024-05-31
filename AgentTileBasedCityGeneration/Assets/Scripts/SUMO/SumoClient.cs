@@ -17,38 +17,63 @@ namespace SUMO {
         private NetworkStream stream;
 
         private readonly Regex singleVehicleRegex = new Regex(@"\('(?<name>\w+\d+\.\d+)', \((?<x>\d+\.\d+), (?<y>\d+\.\d+)\)\)");
+        
+        private bool StopRequested { get; set; }
 
         public void StartClient() {
             StartCoroutine(WaitForConnection());
         }
 
         private void Update() {
-            if (socketConnection == null) {
+            if (socketConnection == null)
                 return;
-            }
-
             if (!socketConnection.Connected) {
                 Debug.Log("Socket connection lost.");
                 return;
             }
-
-            if (!stream.DataAvailable) {
-                // Debug.Log("No data available.");
+            if (stream == null) {
+                Debug.Log("Stream is null.");
                 return;
             }
 
+            if (stream.CanRead && stream.DataAvailable) {
+                HandleIncomingData();
+            }
+            
+            if (stream.CanWrite) {
+                HandleOutgoingData();
+            }
+        }
+
+        private void HandleIncomingData() {
             try {
                 var buffer = new byte[1024];
                 var bytesRead = stream.Read(buffer, 0, buffer.Length);
                 var response = Encoding.UTF8.GetString(buffer, 0, bytesRead);
                 Debug.Log("Received: " + response);
-
+                
                 ProcessResponse(response);
                 // TODO Update Unity objects based on the received data
             }
             catch (Exception e) {
-                Debug.Log("Error: " + e);
+                Debug.LogError("Error: " + e);
             }
+        }
+
+        private void HandleOutgoingData() {
+            if (StopRequested) {
+                var stopMessage = Encoding.UTF8.GetBytes("stop");
+                stream.Write(stopMessage, 0, stopMessage.Length);
+                Debug.Log("Sent: stop");
+                StopRequested = false;
+                Cleanup();
+                return;
+            }
+            
+            var message = Encoding.UTF8.GetBytes("testMessage");
+            stream.Write(message, 0, message.Length);
+            Debug.Log("Sent: testMessage");
+            
         }
 
         private void ProcessResponse(string response) {
@@ -86,7 +111,8 @@ namespace SUMO {
 
         private void Cleanup() {
             if (socketConnection == null) return;
-
+            
+            stream.Flush();
             stream.Close();
             socketConnection.Close();
             socketConnection = null;
@@ -105,7 +131,10 @@ namespace SUMO {
         protected virtual void OnVehicleDataReceived(VehicleInfo[] vehicleInfo) {
             VehicleDataReceived?.Invoke(this, new VehicleEventArgs(vehicleInfo));
         }
-        
+
+        public void StopClient() {
+            StopRequested = true;
+        }
     }
     
     public class VehicleEventArgs : EventArgs {

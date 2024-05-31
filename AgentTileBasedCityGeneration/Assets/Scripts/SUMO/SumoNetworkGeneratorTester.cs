@@ -17,9 +17,10 @@ namespace SUMO {
 
         private void Start() {
             sumoNetworkManager.GenerateNetwork(LineGraphTestCreator.GenerateHShapedGraph(),
-                convertToSumoNetwork: true, 
+                convertToSumoNetwork: false, 
                 runSimulationAfterGeneration: true, 
-                openFolderAfterGeneration: openFolderAfterGeneration, openSumoGUIAfterGeneration: openSumoGUIAfterGeneration);
+                openFolderAfterGeneration: openFolderAfterGeneration,
+                openSumoGUIAfterGeneration: openSumoGUIAfterGeneration);
         }
     }
 }

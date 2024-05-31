@@ -27,7 +27,7 @@ namespace SUMO {
             if (GUILayout.Button("Convert to Sumo")) {
                 AgentManager.Instance.RequestStopAgents(() => {
                     networkManager.GenerateNetwork(graph, 
-                        convertToSumoNetwork: true,
+                        convertToSumoNetwork: false,
                         runSimulationAfterGeneration: runSimulationAfterGeneration, 
                         openFolderAfterGeneration: openFolderAfterGeneration, 
                         openSumoGUIAfterGeneration: openSumoGUIAfterGeneration,
@@ -51,6 +51,7 @@ namespace SUMO {
             }
             else {
                 if (GUILayout.Button("Stop Simulation")) {
+                    simulationManager.StopSimulation();
                     networkManager.RequestStopSimulation();
                 }
             }
