@@ -8,6 +8,8 @@ import os
 
 IS_DEBUG = False
 
+time_step_seconds = 1.0/30.0
+
 should_stop = False
 
 
@@ -73,6 +75,8 @@ def run_sumo_simulation():
     # Simulation loop
     step = 0
     while traci.simulation.getMinExpectedNumber() > 0 and not should_stop:
+        current_time = time.time()
+        
         traci.simulationStep()
         print(f"Step {step}:")
 
@@ -85,7 +89,11 @@ def run_sumo_simulation():
         receive_data_over_socket(conn)
 
         step += 1
-        # time.sleep(1)
+        
+        sleep_time = time_step_seconds - (time.time() - current_time)
+        if sleep_time > 0:
+            time.sleep(sleep_time)
+        # time.sleep(1.0/30.0)
 
     # Close TraCI connection
     traci.close()
