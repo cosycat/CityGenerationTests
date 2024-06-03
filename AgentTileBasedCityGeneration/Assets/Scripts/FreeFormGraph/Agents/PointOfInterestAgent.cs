@@ -14,29 +14,11 @@ namespace FreeFormGraph.Agents {
         
         [Tooltip("The parameters for used for the next generated settlement and its settlement developer agent."),
          SerializeField] private SettlementDeveloperAgent.SdaParameters settlementDeveloperAgentParameters = new();
-        [Tooltip("The type of point of interest that will be generated next."),
-         SerializeField] private PointOfInterestType pointOfInterestType = PointOfInterestType.Village;
         
         private IStreetGraph streetGraph;
 
         [SerializeField]
         public POIAgentParameters agentParameters = new();
-        
-        /// <summary>
-        /// Returns the min and max radius for a point of interest of the given type.
-        /// </summary>
-        /// <param name="type"> The type of the point of interest. </param>
-        /// <returns> The min and max radius for the point of interest. </returns>
-        /// <exception cref="ArgumentOutOfRangeException"> Thrown when the type is not a valid PointOfInterestType value. </exception>
-        public static (float min, float max) GetRadiusForPointOfInterestType(PointOfInterestType type) {
-            // TODO this should be moved to a more appropriate place
-            return type switch {
-                PointOfInterestType.Village => (5, 10),
-                PointOfInterestType.Town => (10, 15),
-                PointOfInterestType.City => (15, 20),
-                _ => throw new System.ArgumentOutOfRangeException(nameof(type), type, "Invalid PointOfInterestType value.")
-            };
-        }
 
         public void DoWork(CancellationToken cancellationToken, IWorld world, AgentManager.Context context) {
             if(streetGraph == null) return;
@@ -70,8 +52,7 @@ namespace FreeFormGraph.Agents {
             }
 
             //TODO check validity?
-            var radiusPoi = DetermineRadiusOfPoi(newPoiPos, world);
-            var pointOfInterest = new SpherePointOfInterest(newPoiPos, pointOfInterestType, radiusPoi);
+            var pointOfInterest = new SpherePointOfInterest(newPoiPos, agentParameters.InitialBudgetForPOI);
             world.PointsOfInterest.AddPointOfInterest(pointOfInterest);
             context.Manager.AddNewAgent(new SettlementDeveloperAgent(pointOfInterest, world, settlementDeveloperAgentParameters));
             Debug.Log($"placed poi at {newPoiPos} {randomDir} {poiSeedPosition}");
@@ -258,6 +239,8 @@ namespace FreeFormGraph.Agents {
             /// Multiplier for the height penalty.
             /// </summary>
             [SerializeField] public float POIRadiusHeightPenaltyMultiplier = 3.5f;
+
+            [Min(0)] public int InitialBudgetForPOI = 500;
         }
     }
     

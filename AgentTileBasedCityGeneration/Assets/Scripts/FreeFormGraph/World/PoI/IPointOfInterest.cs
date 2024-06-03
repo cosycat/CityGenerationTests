@@ -5,12 +5,12 @@ namespace FreeFormGraph.World.PoI {
     
     /// <summary>
     /// A point of interest is a specific location in the world.
-    /// It can be of different types, see <see cref="PointOfInterestType"/>.
     /// </summary>
     public interface IPointOfInterest {
         
         public Vector2 Position { get; }
-        public PointOfInterestType Type { get; }
+
+        public float Radius { get; set; }
         
         /// <summary>
         /// Checks if a point is within this point of interest.
@@ -21,14 +21,7 @@ namespace FreeFormGraph.World.PoI {
 
         
         IStreetNode[] FindAllNodes(IWorld world);
-    }
-    
-    /// <summary>
-    /// The type of <see cref="IPointOfInterest"/>.
-    /// </summary>
-    public enum PointOfInterestType {
-        Village,
-        Town,
-        City,
+
+        public float Budget {get;set;}
     }
 }

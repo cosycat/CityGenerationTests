@@ -85,17 +85,47 @@ namespace FreeFormGraph.Agents {
                 // Debug.Log($"PoIDeveloperAgent: New point {newPoint} is outside the point of interest.");
                 return false;
             }
+            if(!IsRoadWithinBudget(world, node.Position, newPoint)) {
+                Debug.Log($"PoIDeveloperAgent: New point {newPoint} is too expensive.");
+                return false;
+            }
             if (node.IsMaxConnectedEdgesReached) {
                 // Debug.Log($"PoIDeveloperAgent: Node {node.Position} has too many connected edges.");
                 return false;
             }
 
-            if (!world.StreetGraph.CreateEdge(node, new Vector3(newPoint.x, newPoint.y), out _, out _, out _, out _, failIfIntersection: true)) {
+            if (!world.StreetGraph.CreateEdge(node, newPoint, out _, out _, out _, out _, failIfIntersection: true)) {
                 Debug.LogWarning($"Could not create a new node for the PoIDeveloperAgent at {newPoint} from {node.Position}.");
                 return false;
             }
+            DecreasePOIBudget(world, node.Position, newPoint);
+            pointOfInterest.Radius = Mathf.Max(
+                pointOfInterest.Radius,
+                Vector3.Distance(pointOfInterest.Position, newPoint) + parameters.GrowRadiusAddition
+            );
 
             return true;
+        }
+
+        private void DecreasePOIBudget(IWorld world, Vector2 start, Vector2 end) {
+            pointOfInterest.Budget -= CostForRoad(world, start, end);
+            Debug.Assert(pointOfInterest.Budget >= 0);
+        }
+
+        private bool IsRoadWithinBudget(IWorld world, Vector2 startPosition, Vector2 endPosition) {
+            return pointOfInterest.Budget >= CostForRoad(world, startPosition, endPosition);
+        }
+
+        private float CostForRoad(IWorld world, Vector2 startPos, Vector2 endPos) {
+            var poiDistanceCost = Vector2.Distance(pointOfInterest.Position, endPos);
+            var roadLength = Vector2.Distance(startPos, endPos);
+            var elevationStart = world.GetHeightAt(startPos.x, startPos.y);
+            var elevationEnd = world.GetHeightAt(startPos.x, startPos.y);
+            var slope = Mathf.Abs(elevationStart - elevationEnd) / roadLength;
+            if(slope > parameters.MaxSlope) {
+                return float.PositiveInfinity;
+            }
+            return poiDistanceCost + roadLength;
         }
 
         private int ConnectRoadNetwork(IWorld world, IStreetNode[] nodes, CancellationToken cancellationToken, Random random) {
@@ -145,10 +175,13 @@ namespace FreeFormGraph.Agents {
                 || (!parameters.ConnectCulDeSacWithNonCulDeSac && (nodeA.Edges.Count() > 1 || nodeB.Edges.Count() > 1))) return false; // Too many nodes are not cul-de-sacs
             // TODO check if nodeA and nodeB are connected already.
             
+            if(!IsRoadWithinBudget(world, nodeA.Position, nodeB.Position)) return false;
+            
             if (!world.StreetGraph.CreateEdge(nodeA, nodeB.Position, out _, out var toNode, out var isToNodeNew, out var isEdgeNew, failIfIntersection: true)) {
                 // Debug.Log("Could not connect the cul-de-sacs.");
                 return false;
             }
+            DecreasePOIBudget(world, nodeA.Position, nodeB.Position);
             Debug.Assert(!isToNodeNew, $"PoIDeveloperAgent: Cul-de-sac connection created a new node at {toNode}.");
             // Debug.Log($"PoIDeveloperAgent: Connected cul-de-sacs {nodeA.Position} and {nodeB.Position}.");
             return isEdgeNew;
@@ -191,6 +224,20 @@ namespace FreeFormGraph.Agents {
             [field: SerializeField] public ConnectionHandling ConnectCulDeSacs { get; set; } = ConnectionHandling.ConnectSlowly;
             [field: SerializeField] public bool ConnectCulDeSacWithNonCulDeSac { get; set; } = true;
             [field: SerializeField] public bool AngleInBothDirections { get; set; } = true;
+            
+            /// <summary>
+            /// Each POI has a radius which is needed to sample nodes from. While the POI grows,
+            /// the radius will so too, but the radius needs to be a bit bigger than the real dimension of the POI.
+            /// If the radius would be exactly as the farthest point (this parameter = 0), growing outwards
+            /// might come to a halt, because the new points lie outside the radius.
+            /// </summary>
+            [field: SerializeField] public float GrowRadiusAddition { get; set; } = 2f;
+
+            /// <summary>
+            /// Maximum slope allowed for building a road. If the slope exceed this value, the cost of the road will
+            /// be inifinity. A value of 0.12f means 12%. Thus a value of 1f means 100% (=45 degrees).
+            /// </summary>
+            [field: SerializeField] public float MaxSlope { get; set; } = 0.2f;
             
 
             public SdaParameters() { }

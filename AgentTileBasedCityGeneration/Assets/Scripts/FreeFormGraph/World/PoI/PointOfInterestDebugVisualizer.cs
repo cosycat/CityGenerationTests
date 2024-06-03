@@ -34,13 +34,8 @@ namespace FreeFormGraph.World.PoI {
             
             foreach (var pointOfInterest in POIs) {
                 if (showBoundaries) {
-                    if (pointOfInterest is SpherePointOfInterest spherePointOfInterest) {
-                        Gizmos.color = Color.green;
-                        Gizmos.DrawWireSphere(spherePointOfInterest.Position, spherePointOfInterest.Radius);
-                    }
-                    else {
-                        Debug.LogWarning("Unknown point of interest type");
-                    }
+                    Gizmos.color = Color.green;
+                    Gizmos.DrawWireSphere(pointOfInterest.Position, pointOfInterest.Radius);
                 }
 
                 if (showLabel) {

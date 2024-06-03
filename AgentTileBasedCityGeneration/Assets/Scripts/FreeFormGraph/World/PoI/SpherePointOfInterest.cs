@@ -1,23 +1,18 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace FreeFormGraph.World.PoI {
     
-    public class SpherePointOfInterest : IPointOfInterest {
+    public class SpherePointOfInterest: IPointOfInterest {
         
         public Vector2 Position { get; }
-        public PointOfInterestType Type { get; }
 
-        public float Radius { get; }
-        
-        public SpherePointOfInterest(Vector2 position, PointOfInterestType type, float radius) {
+
+        public float Budget {get; set;}
+        public float Radius {get; set;} = 2f;
+
+        public SpherePointOfInterest(Vector2 position, float budget) {
             Position = position;
-            Type = type;
-            Radius = radius;
-        }
-        
-        public bool IsPointWithinRange(Vector2 point) {
-            return Vector2.Distance(Position, point) <= Radius;
+            Budget = budget;
         }
 
         public IStreetNode[] FindAllNodes(IWorld world) {
@@ -25,7 +20,12 @@ namespace FreeFormGraph.World.PoI {
         }
 
         public override string ToString() {
-            return $"Sphere POI (Position: {Position}, Type: {Type}, Radius: {Radius})";
+            return $"POI at {Position} with budget left: {Budget}";
+        }
+
+        public bool IsPointWithinRange(Vector2 point)
+        {
+            return Vector2.Distance(Position, point) <= Radius;
         }
     }
 }
