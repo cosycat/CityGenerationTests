@@ -12,21 +12,6 @@ namespace FreeFormGraph.Agents {
         private readonly IStreetGraph streetGraph;
         private readonly IWorld world;
 
-        /// <summary>
-        /// Distance (in world units) for a waypoint to be snapped to an edge.
-        /// </summary>
-        private float SnapFactorEdge { get; set; } = 1.0f;
-        /// <summary>
-        /// Distance (in world units) for a waypoint to be snapped to an node.
-        /// </summary>
-        private float SnapFactorNode { get; set; } = 1.5f;
-
-        /// <summary>
-        /// Describes how big the "moving mask" is when moving to neighboring
-        /// positions in the world.
-        /// </summary>
-        private const int NEIGHBOR_K = 4;
-
         private readonly PriorityQueue<Waypoint, float> q = new();
         
         private readonly Dictionary<Waypoint, Waypoint> cameFrom = new();
@@ -54,20 +39,23 @@ namespace FreeFormGraph.Agents {
         private int getNeighborsCalled = 0;
         private ISet<Waypoint> visited = new HashSet<Waypoint>();
 
-        public Pathfinding(IStreetGraph streetGraph, IWorld world) {
+        private readonly Parameters parameters;
+
+        public Pathfinding(IStreetGraph streetGraph, IWorld world, Parameters parameters) {
             Debug.Assert(streetGraph != null);
             Debug.Assert(world != null);
             this.streetGraph = streetGraph!;
             this.world = world!;
+            this.parameters = parameters;
         }
 
         public List<Waypoint>? AStar(Vector3 start, Vector3 target) {
-            return AStar(start, target, wp => GetNeighbors(wp, SnapFactorNode, SnapFactorEdge, NEIGHBOR_K), () => false);
+            return AStar(start, target, wp => GetNeighbors(wp, parameters.SnapFactorNode, parameters.SnapFactorEdge, parameters.moveMaskK), () => false);
         }
 
         public List<Waypoint>? AStar(Vector3 start, Vector3 target, Func<bool> isCancelled, bool perfStats = true) {
             Debug.Log($"Start pathfinding from {start} to {target}");
-            return AStar(start, target, wp => GetNeighbors(wp, SnapFactorNode, SnapFactorEdge, NEIGHBOR_K), isCancelled, perfStats);
+            return AStar(start, target, wp => GetNeighbors(wp, parameters.SnapFactorNode, parameters.SnapFactorEdge, parameters.moveMaskK), isCancelled, perfStats);
         }
 
         public List<Waypoint>? AStar(Vector3 start, Vector3 target, Func<Waypoint, List<Waypoint>> getNeighbors, Func<bool> isCancelled, bool perfStats = false) {
@@ -112,12 +100,12 @@ namespace FreeFormGraph.Agents {
                     var next = nextWaypoint;
 
 
-                    var newCost = costSoFar[Current] + Cost(Current, next);
+                    var newCost = costSoFar[Current] + Cost(Current, next, parameters);
                     if(float.IsPositiveInfinity(newCost)) continue;
-                    Debug.Assert(Cost(Current, next) >= Heuristic(Current.Pos, next.Pos));
+                    Debug.Assert(Cost(Current, next, parameters) >= Heuristic(Current.Pos, next.Pos, parameters));
                     if(!costSoFar.ContainsKey(next) || newCost < costSoFar[next]) {
                         costSoFar[next] = newCost;
-                        var prio = newCost + Heuristic(target, next.Pos);
+                        var prio = newCost + Heuristic(target, next.Pos, parameters);
                         q.Enqueue(next, prio);
                         cameFrom[next] = Current;
                     }
@@ -128,7 +116,7 @@ namespace FreeFormGraph.Agents {
             if(perfStats) {
                 sw.Stop();
                 var secs = sw.ElapsedMilliseconds / 1000.0f;
-                var heuristicCost = Heuristic(start, target);
+                var heuristicCost = Heuristic(start, target, parameters);
                 // current is not null because it enters the loop at least once (start node)
                 var actualCost = costSoFar[Current!];
                 Debug.Log($"A* perf: Elapsed (s): {secs}; " +
@@ -149,10 +137,10 @@ namespace FreeFormGraph.Agents {
         }
 
         private Waypoint GetWaypoint(Vector3 pos) {
-            if(streetGraph.TryFindClosestNode(pos, out var node, SnapFactorNode)) {
+            if(streetGraph.TryFindClosestNode(pos, out var node, parameters.SnapFactorNode)) {
                 return new Waypoint(node.Position, node);
             }
-            else if(streetGraph.TryFindClosestEdge(pos, out var edge, out var posOnEdge, SnapFactorEdge)) {
+            else if(streetGraph.TryFindClosestEdge(pos, out var edge, out var posOnEdge, parameters.SnapFactorEdge)) {
                 return new Waypoint(posOnEdge, edge: edge);
             }
             return new Waypoint(pos);
@@ -171,12 +159,12 @@ namespace FreeFormGraph.Agents {
             return path;
         }
 
-        public static void BuildPath2(List<Waypoint> waypoints, IStreetGraph streetGraph, IWorld world) {
+        public static void BuildPath2(List<Waypoint> waypoints, IStreetGraph streetGraph, IWorld world, Parameters p) {
             Debug.Assert(waypoints.Count >= 2);
             //TODO assert waypoints unique
 
             //#24
-            var thresholdWpExistingConnection = 2.0f;
+            var thresholdWpExistingConnection = p.thresholdExistingConnection;
 
             var currentWaypointIndex = 0;
             IStreetNode? lastNode;
@@ -196,7 +184,7 @@ namespace FreeFormGraph.Agents {
 
             while(currentWaypointIndex < waypoints.Count) {
                 Debug.Assert(lastNode != null);
-                var pf = new Pathfinding(streetGraph, world);
+                var pf = new Pathfinding(streetGraph, world, new());
                 wp = waypoints[currentWaypointIndex];
                 breakCounter++;
                 if(breakCounter > 10000) {
@@ -237,50 +225,50 @@ namespace FreeFormGraph.Agents {
             }
         }
 
-        private float Cost(Waypoint current, Waypoint next) {
+        private float Cost(Waypoint current, Waypoint next, Parameters p) {
             Debug.Assert(current.Pos != next.Pos, "Current and next waypoint are the same");
             var cost = Vector3.Distance(current.Pos, next.Pos);
             /*if(cost <= 1.01f) {
                 cost += 0.1f; //make short segments more costly to force fewer nodes
             }*/
             
-            var costPenaltyForRoad = 2.9f;
+            var costPenaltyForRoad = p.roadDistanceCostMultiplier1;
             float slopeCost = 0;
             if(next.CameFrom == current) {
                 //we are walking over an existing road. make it cheap
-                costPenaltyForRoad = 1.0f;
+                costPenaltyForRoad = p.roadDistanceCostMultiplier2;
             }
             else if(next.GraphEdge != null || next.GraphNode != null) {
-                costPenaltyForRoad = 1.1f;
+                costPenaltyForRoad = p.roadDistanceCostMultiplier3;
             } 
             cost *= costPenaltyForRoad;
 
-            if(world.GetHeightAt(next.Pos.x, next.Pos.y) > 500) {
+            if(world.GetHeightAt(next.Pos.x, next.Pos.y) > p.maxRoadElevation) {
                 return float.PositiveInfinity;
             }
 
             if(next.CameFrom != current) {
                 //no slope penalty for existing roads
-                slopeCost = SlopeCost(world, current, next);
+                slopeCost = SlopeCost(world, current, next, p);
             }
 
-            var heightPenalty = world.GetHeightAt(next.Pos.y, next.Pos.x) * 0.5f;
+            var heightPenalty = world.GetHeightAt(next.Pos.y, next.Pos.x) * p.heightPenaltyMultiplier;
             var totalCost = cost + slopeCost + heightPenalty;
-            Debug.Assert(Heuristic(current.Pos, next.Pos) <= totalCost);
+            Debug.Assert(Heuristic(current.Pos, next.Pos, p) <= totalCost);
             return totalCost;
         }
 
-        public static float SlopeCost(IWorld w, Waypoint a, Waypoint b) {
+        public static float SlopeCost(IWorld w, Waypoint a, Waypoint b, Parameters p) {
             var cost = Mathf.Abs(w.GetHeightAt(a.Pos.x, a.Pos.y) - w.GetHeightAt(b.Pos.x, b.Pos.y)) / Vector3.Distance(a.Pos, b.Pos);
             //0.5f = 50 % slope
-            if(cost > 0.12f) return float.PositiveInfinity;
+            if(cost > p.slopeCostMaxGrade) return float.PositiveInfinity;
             cost = cost * cost;
-            cost *= 30;
+            cost *= p.slopeCostMultiplier;
             return cost;
         }
 
-        private float Heuristic(Vector3 target, Vector3 current) {
-            return Vector3.Distance(target, current);
+        private float Heuristic(Vector3 target, Vector3 current, Parameters p) {
+            return Vector3.Distance(target, current) * p.heuristicMultiplier;
         }
 
         public List<Waypoint> GetNeighbors(Waypoint n, float snapFactorNode, float snapFactorEdge, int k) {
@@ -415,6 +403,90 @@ namespace FreeFormGraph.Agents {
                 length += Vector3.Distance(waypoints[i].Pos, waypoints[i+1].Pos);
             }
             return length;
+        }
+
+        [Serializable]
+        public class Parameters {
+            /// <summary>
+            /// Describes how big the "moving mask" is when moving to neighboring
+            /// positions in the world. Setting this parameter to 0 will prevent pathfinding
+            /// from moving freely in the world; thus this can be used to do pathfinding
+            /// through only the existing network.
+            /// </summary>
+            public int moveMaskK = 4;
+
+            /// <summary>
+            /// Describes the maximum elevation where a road can be placed. If a road is
+            /// placed above this value, the cost will be set to infinity.
+            /// </summary>
+            public float maxRoadElevation = 50f;
+
+            /// <summary>
+            /// Higher roads can be penalised more by setting this parameter to > 0.
+            /// </summary>
+            public float heightPenaltyMultiplier = 0.5f;
+
+            /// <summary>
+            /// Heuristic is severly underestimating the actual cost. This parameter
+            /// can be used to raise the heuristic artificially and thus speeding up the pathfiding.
+            /// Note that if this is overestimating(i.e. it is not admissible) the cost, 
+            /// a non-optimal path may be found.
+            /// Setting this to 0 will cause the pathfinding to behave like Dijkstra.
+            /// </summary>
+            public float heuristicMultiplier = 1f;
+
+
+            /// <summary>
+            /// Cost of new road segment (distance) will be multiplied by this value.
+            /// Will be used when placing a new road segment, which is not touching existing roads(either edge or node).
+            /// </summary>
+            public float roadDistanceCostMultiplier1 = 2.9f;
+            /// <summary>
+            /// Cost of road segment (distance) will be multiplied by this value.
+            /// Will be used when moving over existing road. In this case, no new road segment is build, rather the
+            /// pathfinding is simply moving over existing edges. Making this value lower than <see cref="roadDistanceCostMultiplier1"/>
+            /// will motivate the pathfinding to reuse existing roads instead of building new ones.
+            /// </summary>
+            public float roadDistanceCostMultiplier2 = 1.0f;
+            /// <summary>
+            /// Cost of new road segment (distance) will be multiplied by this value.
+            /// This value will be used when the new road segment does touch an existing road. Making this lower than 
+            /// <see cref="roadDistanceCostMultiplier1"/> will motivate the pathfinding to build towards existing roads and
+            /// make a connection to them.
+            /// </summary>
+            public float roadDistanceCostMultiplier3 = 1.1f;
+
+            /// <summary>
+            /// Distance (in world units) for a waypoint to be snapped to an edge.
+            /// </summary>
+            public float SnapFactorEdge = 1.0f;
+            /// <summary>
+            /// Distance (in world units) for a waypoint to be snapped to an node.
+            /// </summary>
+            public float SnapFactorNode = 1.5f;
+
+            /// <summary>
+            /// Maximum slope allowed for building a road. If the slope exceed this value, the cost of the road will
+            /// be inifinity. A value of 0.12f means 12%. Thus a value of 1f means 100% (=45 degrees).
+            /// </summary>
+            public float slopeCostMaxGrade = 0.12f;
+            
+            /// <summary>
+            /// Cost of slope will be multiplied by this value.
+            /// </summary>
+            public float slopeCostMultiplier = 30f;
+
+            /// <summary>
+            /// Related to issue #24. Sometimes during the path building step, the algorithm wouldn't
+            /// realise that two waypoint are reachable via a road, yielding weird looking intersections. 
+            /// One way to solve is by changing the cost function parameters, the other way is to check during 
+            /// the building step if these waypoints are reachable with the help of A* (but only moving on the roads).
+            /// If the existing road connection is <see cref="thresholdExistingConnection"/> times longer than the
+            /// road which would be built, the existing road is ignored. Otherwise the existing road is used, meaning
+            /// the new road will not be built between these two waypoints.
+            /// </summary>
+            
+            public float thresholdExistingConnection = 2f;
         }
 
         public class Waypoint {

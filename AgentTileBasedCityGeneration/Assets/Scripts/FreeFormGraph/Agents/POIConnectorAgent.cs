@@ -29,6 +29,9 @@ namespace FreeFormGraph.Agents {
 
         private Vector3 currentTarget = new();
 
+        [SerializeField]
+        public Pathfinding.Parameters parameters = new();
+
 
         public void DoWork(CancellationToken cancellationToken, IWorld world, AgentManager.Context context) {
             var worldPOIs = world.PointsOfInterest.PointsOfInterest;
@@ -46,12 +49,12 @@ namespace FreeFormGraph.Agents {
 
             Func<bool> isCancelled = () => cancellationToken.IsCancellationRequested;
             lock(pathFindingLock) {
-                pathfinding = new Pathfinding(world.StreetGraph, world);
+                pathfinding = new Pathfinding(world.StreetGraph, world, parameters);
             }
             var path = pathfinding.AStar(unconnectedPoi.Position, closestPoi.Position, isCancelled);
 
             if(path != null) {
-                Pathfinding.BuildPath2(path, world.StreetGraph, world);
+                Pathfinding.BuildPath2(path, world.StreetGraph, world, parameters);
                 connectedPOIs.Add(unconnectedPoi);
             } else if(!isCancelled()) {
                 //isCancelled == false => AStar couldn't find a path, there is no need to test it again next time
