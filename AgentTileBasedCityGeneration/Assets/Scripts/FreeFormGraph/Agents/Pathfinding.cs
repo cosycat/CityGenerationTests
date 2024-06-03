@@ -29,8 +29,6 @@ namespace FreeFormGraph.Agents {
 
         private readonly PriorityQueue<Waypoint, float> q = new();
         
-        //Is needed to prevent multiple entries in the queue (each waypoint can only be examined once).
-        private readonly HashSet<Waypoint> qSet = new();
         private readonly Dictionary<Waypoint, Waypoint> cameFrom = new();
         private readonly Dictionary<Waypoint, float> costSoFar = new();
 
@@ -54,6 +52,7 @@ namespace FreeFormGraph.Agents {
 
         //only for statistics
         private int getNeighborsCalled = 0;
+        private ISet<Waypoint> visited = new HashSet<Waypoint>();
 
         public Pathfinding(IStreetGraph streetGraph, IWorld world) {
             Debug.Assert(streetGraph != null);
@@ -79,10 +78,10 @@ namespace FreeFormGraph.Agents {
             costSoFar.Add(startWaypoint, 0);
             cameFrom.Add(startWaypoint, startWaypoint);
             q.Enqueue(startWaypoint, 0.0f);
-            qSet.Add(startWaypoint);
             
             var sw = new System.Diagnostics.Stopwatch();
             if(perfStats) sw.Start();
+
 
             var nodesChecked = 0;
             while(q.Count != 0) {
@@ -94,9 +93,9 @@ namespace FreeFormGraph.Agents {
                     targetWaypoint = Current;
                     break;
                 }
-                if(costSoFar.ContainsKey(Current) && float.IsPositiveInfinity(costSoFar[Current])) {
-                    continue;
-                }
+                if(visited.Contains(Current)) continue;
+                visited.Add(Current);
+                if(costSoFar.ContainsKey(Current) && float.IsPositiveInfinity(costSoFar[Current])) continue;
                 
                 foreach(var i in getNeighbors(Current)) {
                     var nextWaypoint = i;
@@ -112,7 +111,6 @@ namespace FreeFormGraph.Agents {
 
                     var next = nextWaypoint;
 
-                    if(qSet.Contains(next)) continue; //now that we move the position around, it's possible that we would enqueue the same target again
 
                     var newCost = costSoFar[Current] + Cost(Current, next);
                     if(float.IsPositiveInfinity(newCost)) continue;
@@ -121,7 +119,6 @@ namespace FreeFormGraph.Agents {
                         costSoFar[next] = newCost;
                         var prio = newCost + Heuristic(target, next.Pos);
                         q.Enqueue(next, prio);
-                        qSet.Add(next);
                         cameFrom[next] = Current;
                     }
                 }
@@ -140,7 +137,7 @@ namespace FreeFormGraph.Agents {
                         $"World edges count: {streetGraph.Edges.ToList().Count}; " +
                         $"Queue size: {q.Count}; " +
                         $"Get neighbors calls: {getNeighborsCalled}; " +
-                        $"Visited count: {qSet.Count}; " +
+                        $"Visited count: {visited.Count}; " +
                         $"Cost ratio: {actualCost / heuristicCost}");
             }
 
