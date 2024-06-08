@@ -53,18 +53,12 @@ def receive_data_over_socket(conn):
 ### Additional TraCI Methods ###
 
 def get_vehicle_info(id):
-    print(f"Getting info for vehicle {id}")
     pos = traci.vehicle.getPosition(id)
-    print(f"Position: {pos}")
     rot = traci.vehicle.getAngle(id)
     rot = rot + 180
-    print(f"Rotation: {rot}")
     speed = traci.vehicle.getSpeed(id)
-    print(f"Speed: {speed}")
     signals = traci.vehicle.getSignals(id)
-    print(f"Signals: {signals}")
     veh_type = traci.vehicle.getVehicleClass(id)
-    print(f"Vehicle Type: {veh_type}")
 
     vehicle = VehicleInfo(id, pos, rot, speed, signals, veh_type)
     print(vehicle)

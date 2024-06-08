@@ -1,10 +1,12 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
 using FreeFormGraph;
 using UnityEngine;
+
 
 namespace SUMO {
     
@@ -79,6 +81,15 @@ namespace SUMO {
         private void ProcessResponse(string response) {
 
             Debug.Log(response);
+            try {
+                var simulationStepInfo = JsonUtility.FromJson<SimulationStepInfo>(response);
+                var vehicleInfo = simulationStepInfo.vehicleList;
+                OnVehicleDataReceived(vehicleInfo.ToArray());
+            }
+            catch (Exception e) {
+                Debug.LogError("Error: " + e);
+                Debug.Log("Could not parse JSON:\n" + response);
+            }
             
             // // Parse with regex:
             // var matches = singleVehicleRegex.Matches(response);
@@ -146,27 +157,24 @@ namespace SUMO {
         }
     }
     
-    public struct VehicleInfo {
-        private readonly string id;
-        private readonly float positionX;
-        private readonly float positionY;
-        private readonly float rotation;
-
-        public readonly string ID => id;
-
-        public readonly float X => positionX;
-        public readonly float Y => positionY;
-        public readonly float Rotation => rotation;
-
-        public VehicleInfo(string id, float x, float y, float rotation) {
-            this.id = id;
-            this.positionX = x;
-            this.positionY = y;
-            this.rotation = rotation;
-        }
+    public class SimulationStepInfo {
+        // public readonly float step;
+        public List<VehicleInfo> vehicleList { get; set; }
         
-        public VehicleInfo VehicleInfoFromJson(string json) {
-            return JsonUtility.FromJson<VehicleInfo>(json);
-        }
+        // public SimulationStepInfo(List<VehicleInfo> vehicleList) {
+        //     this.vehicleList = vehicleList;
+        // }
+    }
+    
+    public class VehicleInfo {
+
+        public string id { get; set; }
+        public float x { get; set; }
+        public float y { get; set; }
+        public float rotation { get; set; }
+        
+        // public VehicleInfo VehicleInfoFromJson(string json) {
+        //     return JsonUtility.FromJson<VehicleInfo>(json);
+        // }
     }
 }
