@@ -41,7 +41,6 @@ namespace FreeFormGraph.Agents {
         public void DoWork(CancellationToken cancellationToken, IWorld world, AgentManager.Context context) {
             if(streetGraph == null) return;
 
-            var random = context.Random;
             if (world.PointsOfInterest.PointsOfInterest.Count < agentParameters.DesiredNumberOfPoints)  {
                 CreatePOI(world, streetGraph, context);
             }
