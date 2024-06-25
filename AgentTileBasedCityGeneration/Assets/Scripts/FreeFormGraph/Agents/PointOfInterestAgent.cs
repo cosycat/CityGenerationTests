@@ -48,24 +48,24 @@ namespace FreeFormGraph.Agents {
 
         private void CreatePOI(IWorld world, IStreetGraph streetGraph, AgentManager.Context context) {
             var random = context.Random;
-            var poiSeedPosition = new Vector2(world.Width/2, world.Height/2);
+            var poiSeedPosition = new Vector2Int(world.Width/2, world.Height/2);
             var worldPoiCount = world.PointsOfInterest.PointsOfInterest.Count;
             if(worldPoiCount > 0) {
-                poiSeedPosition = world.PointsOfInterest.PointsOfInterest[random.Next(worldPoiCount)].Position;
+                poiSeedPosition = Vector2Int.RoundToInt(world.PointsOfInterest.PointsOfInterest[random.Next(worldPoiCount)].Position);
             }
 
             var minDistanceToRoad = agentParameters.MinDistanceToRoad;
             var radius = agentParameters.RadiusGeneration; // Shouldn't this be dependent on the world size?
-            var randomDir = new Vector2(random.Next(-radius, radius), random.Next(-radius, radius));
+            var randomDir = Vector2Int.RoundToInt(new Vector2((float)random.NextDouble(), (float)random.NextDouble()).normalized * ((float)random.NextDouble()-0.5f)*2f*radius);
             var newPoiPos = poiSeedPosition + randomDir;
 
             if(newPoiPos.x < 0 || newPoiPos.x >= world.Width || newPoiPos.y < 0 || newPoiPos.y >= world.Height) return;
 
             newPoiPos = MinimizeCostOfPOI(world, newPoiPos);
 
-            if(streetGraph.TryFindClosestNode(newPoiPos, out _, minDistanceToRoad)) {
+            if(streetGraph.TryFindClosestNode((Vector3Int)newPoiPos, out _, minDistanceToRoad)) {
                 return;
-            } else if(streetGraph.TryFindClosestEdge(newPoiPos, out _, out _, minDistanceToRoad)) {
+            } else if(streetGraph.TryFindClosestEdge((Vector3Int)newPoiPos, out _, out _, minDistanceToRoad)) {
                 return;
             }
 
@@ -74,6 +74,7 @@ namespace FreeFormGraph.Agents {
             var pointOfInterest = new SpherePointOfInterest(newPoiPos, pointOfInterestType, radiusPoi);
             world.PointsOfInterest.AddPointOfInterest(pointOfInterest);
             context.Manager.AddNewAgent(new SettlementDeveloperAgent(pointOfInterest, world, settlementDeveloperAgentParameters));
+            Debug.Log($"placed poi at {newPoiPos} {randomDir} {poiSeedPosition}");
         }
 
         /// <summary>
@@ -83,8 +84,8 @@ namespace FreeFormGraph.Agents {
         /// <param name="pos">Initial point to move</param>
         /// <param name="world"></param>
         /// <returns>New point in local minima</returns>
-        private Vector3 MinimizeCostOfPOI(IWorld world, Vector2 pos) {
-            var visited = new HashSet<Vector3>();
+        private Vector2Int MinimizeCostOfPOI(IWorld world, Vector2Int pos) {
+            var visited = new HashSet<Vector2Int>();
             var current = pos;
 
             while(!visited.Contains(current)) {
@@ -95,14 +96,14 @@ namespace FreeFormGraph.Agents {
             return current;
         }
 
-        private float Cost(IWorld world, Vector2 currentPos, Vector3 targetPosition) {
+        private float Cost(IWorld world, Vector2Int currentPos, Vector2Int targetPosition) {
             var heightDiff = world.GetHeightAt(targetPosition.x, targetPosition.y) - world.GetHeightAt(currentPos.x, currentPos.y);
-            var gradient = heightDiff / Vector3.Distance(currentPos, targetPosition);
+            var gradient = heightDiff / Vector2.Distance(currentPos, targetPosition);
 
             var distanceClosest = 0.0f;
             if(world.PointsOfInterest.PointsOfInterest.Count >= 2) {
                 distanceClosest = world.PointsOfInterest.PointsOfInterest
-                    .Min(POI => Vector3.Distance(targetPosition, POI.Position));
+                    .Min(POI => Vector2.Distance(targetPosition, POI.Position));
             }
             var distanceCost = agentParameters.DistanceCostFactor * 1.0f/(distanceClosest+1);
 
@@ -118,8 +119,8 @@ namespace FreeFormGraph.Agents {
         /// <param name="v">Initial position</param>
         /// <param name="world"></param>
         /// <returns>New position or v if local minima is reached</returns>
-        private Vector2 SelectCheapestDirection(Vector2 v, IWorld world) {
-            var currentTargetPos = Vector2.zero;
+        private Vector2Int SelectCheapestDirection(Vector2Int v, IWorld world) {
+            var currentTargetPos = Vector2Int.zero;
             var currentCost = float.MaxValue;
 
             int lookDistance = 1;
@@ -127,7 +128,7 @@ namespace FreeFormGraph.Agents {
                 for(int dx = -lookDistance; dx <= lookDistance; dx++) {
                     if(dy == 0 && dx == 0) continue;
 
-                    var testPosition = v + new Vector2(dx,dy);
+                    var testPosition = v + new Vector2Int(dx,dy);
                     if(testPosition.y < 0 || testPosition.y >= world.Height || testPosition.x < 0 || testPosition.x >= world.Width) continue;
 
                     var newCost = Cost(world, v, testPosition);
@@ -138,7 +139,6 @@ namespace FreeFormGraph.Agents {
                     }
                 }
             }
-            
             if(currentCost == float.MaxValue) return v;
             return currentTargetPos;
         }
@@ -151,21 +151,21 @@ namespace FreeFormGraph.Agents {
         /// <param name="v">POI position</param>
         /// <param name="world"></param>
         /// <returns>Radius of POI in world units</returns>
-        private float DetermineRadiusOfPoi(Vector2 v, IWorld world) {
+        private float DetermineRadiusOfPoi(Vector2Int v, IWorld world) {
             var startingHeight = world.GetHeightAt(v.x, v.y);
             var penalty = 0.0f;
             var threshold = agentParameters.POIRadiusFlatnessThreshold;
 
             var directions = new Vector2[] {
-                new Vector2(0, 1), //up
-                new Vector2(0, -1), //down
-                new Vector2(1, 0), //left
-                new Vector2(-1, 0), //right
+                new Vector2Int(0, 1), //up
+                new Vector2Int(0, -1), //down
+                new Vector2Int(1, 0), //left
+                new Vector2Int(-1, 0), //right
 
-                new Vector2(1, 1), //top right
-                new Vector2(-1, -1), //bottom left
-                new Vector2(1, -1), //top left
-                new Vector2(-1, 1), //bottom right
+                new Vector2Int(1, 1), //top right
+                new Vector2Int(-1, -1), //bottom left
+                new Vector2Int(1, -1), //top left
+                new Vector2Int(-1, 1), //bottom right
             };
 
             //looks the same as above but 
@@ -178,7 +178,7 @@ namespace FreeFormGraph.Agents {
                 penalty = 0;
                 for(int i = 0; i < directions.Count(); i++) {
                     var testPos = v + directions[i];
-                    if(world.IsOutOfBounds(testPos)) continue;
+                    if(world.IsOutOfBounds(testPos)) return radius;
                     var heightAtDir = directionHeights[i];
                     var heightAtTestPos = world.GetHeightAt(testPos.x, testPos.y);
 
