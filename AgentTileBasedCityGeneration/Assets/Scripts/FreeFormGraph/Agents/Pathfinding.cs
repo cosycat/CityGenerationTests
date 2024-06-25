@@ -496,6 +496,8 @@ namespace FreeFormGraph.Agents {
             public IStreetEdge? GraphEdge {get; set;}
             public Waypoint? CameFrom {get; set;}
 
+            public Waypoint(IStreetNode node): this(node.Position, node, null) {}
+
             public Waypoint(Vector3 p, IStreetNode? node = null, IStreetEdge? edge = null) {
                 Pos = p;
                 GraphNode = node;

@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -15,6 +16,9 @@ namespace FreeFormGraph.World.PoI {
         public void RemovePointOfInterest(IPointOfInterest pointOfInterest);
         public IPointOfInterest FindClosestPointOfInterest(Vector2 point);
         public bool IsPointWithinAPointOfInterest(Vector2 point, out List<IPointOfInterest> pointsOfInterest);
+        
+        public bool GetPointOfInterestFromNode(IStreetNode node, out IPointOfInterest? pointOfInterest);
+        public void AddNodeRelationToPointOfInterest(IStreetNode node, IPointOfInterest pointOfInterest);
         
         public event EventHandler<PointOfInterestEventArgs> PointOfInterestAddedEvent;
         public event EventHandler<PointOfInterestEventArgs> PointOfInterestRemovedEvent;

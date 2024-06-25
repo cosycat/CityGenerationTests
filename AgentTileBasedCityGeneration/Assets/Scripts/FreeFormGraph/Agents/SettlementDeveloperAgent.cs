@@ -29,8 +29,10 @@ namespace FreeFormGraph.Agents {
             if (world.StreetGraph.TryFindClosestNode(pointOfInterest.Position, out var closestNode,
                     parameters.MinStreetLength))
                 return closestNode;
-            if (world.StreetGraph.CreateUnconnectedNode(pointOfInterest.Position, out var createdNode))
+            if (world.StreetGraph.CreateUnconnectedNode(pointOfInterest.Position, out var createdNode)) {
+                world.PointsOfInterest.AddNodeRelationToPointOfInterest(createdNode, pointOfInterest);
                 return createdNode; 
+            }
             throw new Exception("Could not find or create a node for the point of interest.");
         }
 
@@ -94,11 +96,12 @@ namespace FreeFormGraph.Agents {
                 return false;
             }
 
-            if (!world.StreetGraph.CreateEdge(node, newPoint, out _, out _, out _, out _, failIfIntersection: true)) {
+            if (!world.StreetGraph.CreateEdge(node, newPoint, out _, out var newNode, out _, out _, failIfIntersection: true)) {
                 Debug.LogWarning($"Could not create a new node for the PoIDeveloperAgent at {newPoint} from {node.Position}.");
                 return false;
             }
             DecreasePOIBudget(world, node.Position, newPoint);
+            world.PointsOfInterest.AddNodeRelationToPointOfInterest(node, pointOfInterest);
             pointOfInterest.Radius = Mathf.Max(
                 pointOfInterest.Radius,
                 Vector3.Distance(pointOfInterest.Position, newPoint) + parameters.GrowRadiusAddition

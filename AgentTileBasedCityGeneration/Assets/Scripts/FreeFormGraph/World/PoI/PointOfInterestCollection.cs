@@ -7,6 +7,7 @@ namespace FreeFormGraph.World.PoI {
     public class PointOfInterestCollection : IPointOfInterestCollection {
         public List<IPointOfInterest> PointsOfInterest { get; } = new();
 
+        public IDictionary<IStreetNode, IPointOfInterest> NodePOIMapping = new Dictionary<IStreetNode, IPointOfInterest>();
 
         public void AddPointOfInterest(IPointOfInterest pointOfInterest) {
             PointsOfInterest.Add(pointOfInterest);
@@ -53,6 +54,19 @@ namespace FreeFormGraph.World.PoI {
 
         protected virtual void OnPointOfInterestRemoved(IPointOfInterest poi) {
             PointOfInterestRemovedEvent?.Invoke(this, new PointOfInterestEventArgs(poi));
+        }
+
+        public bool GetPointOfInterestFromNode(IStreetNode node, out IPointOfInterest? pointOfInterest)
+        {
+            pointOfInterest = null;
+            if(!NodePOIMapping.ContainsKey(node)) return false;
+            pointOfInterest = NodePOIMapping[node];
+            return true;
+        }
+
+        public void AddNodeRelationToPointOfInterest(IStreetNode node, IPointOfInterest pointOfInterest)
+        {
+            NodePOIMapping[node] = pointOfInterest;
         }
     }
 }
