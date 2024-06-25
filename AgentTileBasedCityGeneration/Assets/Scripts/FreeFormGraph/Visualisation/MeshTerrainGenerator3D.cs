@@ -160,6 +160,7 @@ namespace FreeFormGraph.Visualisation {
                 var g = Instantiate(prefabs[treeIndex]);
                 g.transform.position = new Vector3(x,elevation,y);
                 g.transform.Rotate(new Vector3(0, x*y, 0));
+                g.transform.SetParent(this.transform);
                 objectDetailMap[(x,y)] = g;
             }
 
