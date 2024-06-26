@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using FreeFormGraph.World;
@@ -11,8 +12,10 @@ namespace FreeFormGraph.Agents {
     
     public class SettlementDeveloperAgent : IAgent {
         
-        public AgentVariableInt WorkFrequency { get; } = new(1, 1, 100);
-        
+        public AgentVariableInt WorkFrequency { get; } = new("Work Frequency", 1, 1, 100);
+
+        public List<IAgentVariable> AgentVariables => parameters.AllVariables;
+
         private readonly SdaParameters parameters;
 
         private readonly IPointOfInterest pointOfInterest;
@@ -181,17 +184,21 @@ namespace FreeFormGraph.Agents {
 
         [Serializable]
         public class SdaParameters {
-            [field: SerializeField] public AgentVariableFloat MinStreetLength { get; set; } = new(2f, 0.5f, 20f);
-            [field: SerializeField] public AgentVariableFloat MaxStreetLength { get; set; } = new(5f, 1, 50f);
-            [field: SerializeField] public AgentVariableFloat MinNodeEdgeDistance { get; set; } = new(0.7f, 0.1f, 10f);
-            [field: SerializeField] public AgentVariableFloat AngleOffset { get; set; } = new(Mathf.Deg2Rad * 90f, -(Mathf.Deg2Rad * 180f), Mathf.Deg2Rad * 180f);
-            [field: SerializeField] public AgentVariableFloat AngleRandomMax { get; set; } = new(Mathf.Deg2Rad * 0f, -(Mathf.Deg2Rad * 180f), Mathf.Deg2Rad * 180f);
-            [field: SerializeField] public AgentVariableFloat MaxConnectionDistance { get; set; } = new(3.5f, 0.5f, 20f);
-            [field: SerializeField] public AgentVariableBool SnapToGrid { get; set; } = new(false);
-            [field: SerializeField] public AgentVariableEnum<ConnectionHandling> ConnectCulDeSacs { get; set; } = new(ConnectionHandling.ConnectSlowly);
-            [field: SerializeField] public AgentVariableBool ConnectCulDeSacWithNonCulDeSac { get; set; } = new(true);
-            [field: SerializeField] public AgentVariableBool AngleInBothDirections { get; set; } = new(true);
+            [field: SerializeField] public AgentVariableFloat MinStreetLength { get; set; } = new("Min Street Length", 2f, 0.5f, 20f);
+            [field: SerializeField] public AgentVariableFloat MaxStreetLength { get; set; } = new("Max Street Length", 5f, 1, 50f);
+            [field: SerializeField] public AgentVariableFloat MinNodeEdgeDistance { get; set; } = new("Min Distance Node Edge", 0.7f, 0.1f, 10f);
+            [field: SerializeField] public AgentVariableFloat AngleOffset { get; set; } = new("Angle Offset", Mathf.Deg2Rad * 90f, -(Mathf.Deg2Rad * 180f), Mathf.Deg2Rad * 180f);
+            [field: SerializeField] public AgentVariableFloat AngleRandomMax { get; set; } = new("Ange Randomness", Mathf.Deg2Rad * 0f, 0, Mathf.Deg2Rad * 180f);
+            [field: SerializeField] public AgentVariableFloat MaxConnectionDistance { get; set; } = new("Max Connection Distance", 3.5f, 0.5f, 20f);
+            [field: SerializeField] public AgentVariableBool SnapToGrid { get; set; } = new("Snap to Grid", false);
+            [field: SerializeField] public AgentVariableEnum<ConnectionHandling> ConnectCulDeSacs { get; set; } = new("Cul de Sacs Connection Version", ConnectionHandling.ConnectSlowly);
+            [field: SerializeField] public AgentVariableBool ConnectCulDeSacWithNonCulDeSac { get; set; } = new("Connect Cul de Sacs with non-Cul de sacs", true);
+            [field: SerializeField] public AgentVariableBool AngleInBothDirections { get; set; } = new("Angle in Both Directions", true);
             
+            public List<IAgentVariable> AllVariables => new() {
+                MinStreetLength, MaxStreetLength, MinNodeEdgeDistance, AngleOffset, AngleRandomMax, MaxConnectionDistance, SnapToGrid, ConnectCulDeSacs, ConnectCulDeSacWithNonCulDeSac, AngleInBothDirections
+            };
+
 
             public SdaParameters() { }
 

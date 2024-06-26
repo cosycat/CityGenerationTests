@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading;
 using FreeFormGraph.World;
 
@@ -9,7 +10,9 @@ namespace FreeFormGraph.Agents {
         /// Values smaller 1 are considered 1.
         /// </summary>
         AgentVariableInt WorkFrequency { get; }
-
+        
+        List<IAgentVariable> AgentVariables { get; }
+        
         /// <summary>
         /// A work package for an agent, that is run on a thread in the background.
         /// 

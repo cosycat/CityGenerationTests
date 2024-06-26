@@ -1,23 +1,33 @@
+#nullable enable
 using System;
+using JetBrains.Annotations;
 using UnityEngine;
 
 namespace FreeFormGraph.Agents {
+
+    public interface IAgentVariable {
+        public string Name { get; }
+        public string? Description { get; }
+    }
     
     [Serializable]
-    public abstract class AgentVariable<T> {
+    public abstract class AgentVariable<T> : IAgentVariable {
         
         [field: SerializeField] public virtual T Value { get; set; }
 
-        protected AgentVariable(T value) {
+        protected AgentVariable(string name, T value, string? description = null) {
             Value = value;
+            Description = description;
+            Name = name;
         }
         
         public static implicit operator T(AgentVariable<T> av) => av.Value;
 
-        
+        public string Name { get; }
+        public string? Description { get; }
     }
     
-    public abstract class AgentVariableRange<T> : AgentVariable<T> where T : System.IComparable<T> {
+    public abstract class AgentVariableRange<T> : AgentVariable<T> where T : IComparable<T> {
         
         public override T Value {
             get => base.Value;
@@ -32,10 +42,10 @@ namespace FreeFormGraph.Agents {
             }
         }
         
-        public T Min { get; private set; }
-        public T Max { get; private set; }
+        public T Min { get; }
+        public T Max { get; }
 
-        protected AgentVariableRange(T value, T min, T max) : base(value) {
+        protected AgentVariableRange(string name, T value, T min, T max, string? description = null) : base(name, value, description) {
             Min = min;
             Max = max;
         }
@@ -44,35 +54,25 @@ namespace FreeFormGraph.Agents {
     
     public class AgentVariableInt : AgentVariableRange<int> {
         
-        public AgentVariableInt(int value, int min, int max) : base(value, min, max) {
-            
-        }
-        
-        // public static implicit operator int(AgentVariableInt d) => d.Value;
+        public AgentVariableInt(string name, int value, int min, int max, string? description = null) : base(name, value, min, max, description) { }
         
     }
     
     public class AgentVariableFloat : AgentVariableRange<float> {
         
-        public AgentVariableFloat(float value, float min, float max) : base(value, min, max) {
-            
-        }
+        public AgentVariableFloat(string name, float value, float min, float max, string? description = null) : base(name, value, min, max, description) { }
         
     }
     
     public class AgentVariableBool : AgentVariable<bool> {
         
-        public AgentVariableBool(bool value) : base(value) {
-            
-        }
+        public AgentVariableBool(string name, bool value, string? description = null) : base(name, value, description) { }
         
     }
     
     public class AgentVariableEnum<T> : AgentVariable<T> where T : Enum {
         
-        public AgentVariableEnum(T value) : base(value) {
-            
-        }
+        public AgentVariableEnum(string name, T value, string? description = null) : base(name, value, description) { }
         
     }
 

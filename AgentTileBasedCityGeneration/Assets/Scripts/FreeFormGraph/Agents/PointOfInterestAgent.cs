@@ -10,8 +10,10 @@ namespace FreeFormGraph.Agents {
 
     public class PointOfInterestAgent : MonoBehaviour, IAgent {
         
-        public AgentVariableInt WorkFrequency { get; set; } = new(100, 1, 1000);
+        public AgentVariableInt WorkFrequency { get; set; } = new("Work Frequency", 100, 1, 1000);
         
+        public List<IAgentVariable> AgentVariables => new() { WorkFrequency }; // TODO: add parameters
+
         [Tooltip("The parameters for used for the next generated settlement and its settlement developer agent."),
          SerializeField] private SettlementDeveloperAgent.SdaParameters settlementDeveloperAgentParameters = new();
         [Tooltip("The type of point of interest that will be generated next."),

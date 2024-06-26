@@ -26,6 +26,7 @@ namespace FreeFormGraph.Agents {
         private static AgentManager Instance { get; set; } = null!;
 
         private readonly List<(IAgent agent, int framesSinceWorked)> agents = new();
+        private readonly List<IAgent> newlyAddedAgents = new();
 
         private readonly object stopRequestLock = new();
 
@@ -78,7 +79,23 @@ namespace FreeFormGraph.Agents {
 
         private void Update() {
             HandleCompletedTask();
+            HandleNewlyAddedAgents();
+
             return;
+
+            void HandleNewlyAddedAgents() {
+                if (!Monitor.TryEnter(stopRequestLock)) return;
+                try {
+                    foreach (var newlyAddedAgent in newlyAddedAgents) {
+                        AgentCreated?.Invoke(newlyAddedAgent);
+                    }
+                    newlyAddedAgents.Clear();
+                }
+                finally {
+                    Monitor.Exit(stopRequestLock);
+                }
+                
+            }
 
             void HandleCompletedTask() {
                 if (!Monitor.TryEnter(completedTaskLock)) return;
@@ -204,12 +221,15 @@ namespace FreeFormGraph.Agents {
             foreach (var agent in FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).OfType<IAgent>()) {
                 agents.Add((agent, agent.WorkFrequency));
                 Debug.Log($"Added agent {agent.GetType().Name} with frequency {agent.WorkFrequency}");
+                newlyAddedAgents.Add(agent);
             }
         }
         
         public void AddNewAgent(IAgent agent) {
             lock (stopRequestLock) {
                 agents.Add((agent, agent.WorkFrequency)); // set to frame rate to make sure it is run in the next frame
+                Debug.Log($"Added agent {agent.GetType().Name} with frequency {agent.WorkFrequency}");
+                newlyAddedAgents.Add(agent);
                 if (agents.Count == 1) HandleNextAgent(); // If there was no agent before, start now.
             }
         }
@@ -242,5 +262,12 @@ namespace FreeFormGraph.Agents {
                 Manager = manager;
             }
         }
+
+        /// <summary>
+        /// Event that is called when a new agent is created and added to the manager.
+        /// Might be called with a delay.
+        /// Will always be called from the main thread in an Update loop.
+        /// </summary>
+        public event Action<IAgent>? AgentCreated;
     }
 }
