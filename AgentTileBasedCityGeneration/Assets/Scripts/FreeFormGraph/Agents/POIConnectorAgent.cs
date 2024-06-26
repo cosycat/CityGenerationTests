@@ -12,7 +12,7 @@ namespace FreeFormGraph.Agents {
 
     public class POIConnectorAgent: MonoBehaviour, IAgent {
 
-        public int WorkFrequency { get; set; } = 100;
+        public AgentVariableInt WorkFrequency { get; } = new(100, 1, 1000);
         
         private readonly object pathFindingLock = new();
         private Pathfinding? pathfinding;

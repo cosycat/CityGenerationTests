@@ -11,7 +11,7 @@ namespace FreeFormGraph.Agents {
     
     public class SettlementDeveloperAgent : IAgent {
         
-        public int WorkFrequency { get; set; } = 1;
+        public AgentVariableInt WorkFrequency { get; } = new(1, 1, 100);
         
         private readonly SdaParameters parameters;
 
@@ -101,7 +101,7 @@ namespace FreeFormGraph.Agents {
         private int ConnectRoadNetwork(IWorld world, IStreetNode[] nodes, CancellationToken cancellationToken, Random random) {
             
             if (nodes.Length < 2) return 0;
-            switch (parameters.ConnectCulDeSacs) {
+            switch (parameters.ConnectCulDeSacs.Value) {
                 case SdaParameters.ConnectionHandling.ConnectNone:
                     return 0;
                 
@@ -181,16 +181,16 @@ namespace FreeFormGraph.Agents {
 
         [Serializable]
         public class SdaParameters {
-            [field: SerializeField] public float MinStreetLength { get; set; } = 2f;
-            [field: SerializeField] public float MaxStreetLength { get; set; } = 5f;
-            [field: SerializeField] public float MinNodeEdgeDistance { get; set; } = 0.7f;
-            [field: SerializeField] public float AngleOffset { get; set; } = Mathf.Deg2Rad * 90f;
-            [field: SerializeField] public float AngleRandomMax { get; set; } = Mathf.Deg2Rad * 0f;
-            [field: SerializeField] public float MaxConnectionDistance { get; set; } = 3.5f;
-            [field: SerializeField] public bool SnapToGrid { get; set; } = false;
-            [field: SerializeField] public ConnectionHandling ConnectCulDeSacs { get; set; } = ConnectionHandling.ConnectSlowly;
-            [field: SerializeField] public bool ConnectCulDeSacWithNonCulDeSac { get; set; } = true;
-            [field: SerializeField] public bool AngleInBothDirections { get; set; } = true;
+            [field: SerializeField] public AgentVariableFloat MinStreetLength { get; set; } = new(2f, 0.5f, 20f);
+            [field: SerializeField] public AgentVariableFloat MaxStreetLength { get; set; } = new(5f, 1, 50f);
+            [field: SerializeField] public AgentVariableFloat MinNodeEdgeDistance { get; set; } = new(0.7f, 0.1f, 10f);
+            [field: SerializeField] public AgentVariableFloat AngleOffset { get; set; } = new(Mathf.Deg2Rad * 90f, -(Mathf.Deg2Rad * 180f), Mathf.Deg2Rad * 180f);
+            [field: SerializeField] public AgentVariableFloat AngleRandomMax { get; set; } = new(Mathf.Deg2Rad * 0f, -(Mathf.Deg2Rad * 180f), Mathf.Deg2Rad * 180f);
+            [field: SerializeField] public AgentVariableFloat MaxConnectionDistance { get; set; } = new(3.5f, 0.5f, 20f);
+            [field: SerializeField] public AgentVariableBool SnapToGrid { get; set; } = new(false);
+            [field: SerializeField] public AgentVariableEnum<ConnectionHandling> ConnectCulDeSacs { get; set; } = new(ConnectionHandling.ConnectSlowly);
+            [field: SerializeField] public AgentVariableBool ConnectCulDeSacWithNonCulDeSac { get; set; } = new(true);
+            [field: SerializeField] public AgentVariableBool AngleInBothDirections { get; set; } = new(true);
             
 
             public SdaParameters() { }
@@ -199,29 +199,29 @@ namespace FreeFormGraph.Agents {
                 if (other == null) {
                     return;
                 }
-                MinStreetLength = other.MinStreetLength;
-                MaxStreetLength = other.MaxStreetLength;
-                MinNodeEdgeDistance = other.MinNodeEdgeDistance;
-                AngleOffset = other.AngleOffset;
-                AngleRandomMax = other.AngleRandomMax;
-                MaxConnectionDistance = other.MaxConnectionDistance;
-                SnapToGrid = other.SnapToGrid;
-                ConnectCulDeSacs = other.ConnectCulDeSacs;
-                ConnectCulDeSacWithNonCulDeSac = other.ConnectCulDeSacWithNonCulDeSac;
-                AngleInBothDirections = other.AngleInBothDirections;
+                MinStreetLength.Value = other.MinStreetLength;
+                MaxStreetLength.Value = other.MaxStreetLength;
+                MinNodeEdgeDistance.Value = other.MinNodeEdgeDistance;
+                AngleOffset.Value = other.AngleOffset;
+                AngleRandomMax.Value = other.AngleRandomMax;
+                MaxConnectionDistance.Value = other.MaxConnectionDistance;
+                SnapToGrid.Value = other.SnapToGrid;
+                ConnectCulDeSacs.Value = other.ConnectCulDeSacs;
+                ConnectCulDeSacWithNonCulDeSac.Value = other.ConnectCulDeSacWithNonCulDeSac;
+                AngleInBothDirections.Value = other.AngleInBothDirections;
             }
 
             public SdaParameters(float minStreetLength, float maxStreetLength, float minNodeEdgeDistance, float angleOffset, float angleRandomMax, float maxConnectionDistance, bool snapToGrid, ConnectionHandling connectCulDeSacs, bool connectCulDeSacWithNonCulDeSac, bool angleInBothDirections) {
-                MinStreetLength = minStreetLength;
-                MaxStreetLength = maxStreetLength;
-                MinNodeEdgeDistance = minNodeEdgeDistance;
-                AngleOffset = angleOffset;
-                AngleRandomMax = angleRandomMax;
-                MaxConnectionDistance = maxConnectionDistance;
-                SnapToGrid = snapToGrid;
-                ConnectCulDeSacs = connectCulDeSacs;
-                ConnectCulDeSacWithNonCulDeSac = connectCulDeSacWithNonCulDeSac;
-                AngleInBothDirections = angleInBothDirections;
+                MinStreetLength.Value = minStreetLength;
+                MaxStreetLength.Value = maxStreetLength;
+                MinNodeEdgeDistance.Value = minNodeEdgeDistance;
+                AngleOffset.Value = angleOffset;
+                AngleRandomMax.Value = angleRandomMax;
+                MaxConnectionDistance.Value = maxConnectionDistance;
+                SnapToGrid.Value = snapToGrid;
+                ConnectCulDeSacs.Value = connectCulDeSacs;
+                ConnectCulDeSacWithNonCulDeSac.Value = connectCulDeSacWithNonCulDeSac;
+                AngleInBothDirections.Value = angleInBothDirections;
             }
 
             public enum ConnectionHandling {
@@ -230,7 +230,6 @@ namespace FreeFormGraph.Agents {
                 ConnectAll
             }
         }
-
         
     }
     
