@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using FreeFormGraph.Agents;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -8,20 +9,42 @@ namespace UI {
     public class AgentUIManager : MonoBehaviour {
         
         private UIDocument uiDocument;
-        private TreeView agentsList;
+        private TreeView agentsTreeView;
         
-        private List<IAgent> agents = new();
+        private readonly List<IAgent> agents = new();
         
         private void Awake() {
             // this needs to be in Awake, because AgentManager is initialized in Start, so we might miss the event for the initial agents
             FindObjectOfType<AgentManager>().AgentCreated += OnAgentCreated;
             uiDocument = GetComponent<UIDocument>();
-            agentsList = uiDocument.rootVisualElement.Q<TreeView>("agents-list");
-            Debug.Log($"Found agents list: {agentsList}");
+            // agentsTreeView = uiDocument.rootVisualElement.Q<TreeView>("agents-list");
+            Debug.Log($"Found agents list: {agentsTreeView}");
         }
 
         private void Start() {
-            agentsList.makeItem = () => {
+            var background = uiDocument.rootVisualElement.Q<VisualElement>("background");
+            background.Add(new Label("Hello World!"));
+            
+            agentsTreeView = new TreeView();
+            background.Add(agentsTreeView);
+            agentsTreeView.style.flexGrow = 1;
+            agentsTreeView.style.flexShrink = 1;
+            agentsTreeView.style.flexBasis = 0;
+            agentsTreeView.style.flexDirection = FlexDirection.Column;
+            
+            agentsTreeView.style.width = new StyleLength(100);
+            agentsTreeView.style.height = new StyleLength(100);
+            
+            agentsTreeView.style.fontSize = 12;
+        }
+
+        private void OnAgentCreated(IAgent agent) {
+            Debug.Log($"Creating UI for new {agent.GetType()} agent.");
+            agents.Add(agent);
+            
+            agentsTreeView.SetRootItems(treeRoots);
+
+            agentsTreeView.makeItem = () => {
                 var agentEntry = new VisualElement();
 
                 // create title
@@ -33,7 +56,7 @@ namespace UI {
                 return agentEntry;
             };
 
-            agentsList.bindItem = (element, index) => {
+            agentsTreeView.bindItem = (element, index) => {
                 var agent = agents[index];
                 var agentTitle = element.Q<Label>();
                 agentTitle.text = agent.GetType().Name;
@@ -43,11 +66,6 @@ namespace UI {
                     element.Add(variableElement);
                 }
             };
-        }
-
-        private void OnAgentCreated(IAgent agent) {
-            Debug.Log($"Creating UI for new {agent.GetType()} agent.");
-            agents.Add(agent);
             // create agent entry
             // agentsList.Add(agentEntry);
 
@@ -62,6 +80,26 @@ namespace UI {
             //         floatSliderAgentMenuItem.Initialize(agentVariableFloat, agentVariableFloat.Name);
             //     }
             // }
+        }
+
+        // https://docs.unity3d.com/Manual/UIE-ListView-TreeView.html
+        protected IList<TreeViewItemData<IAgent>> treeRoots {
+            get {
+                var id = 0;
+                var roots = new List<TreeViewItemData<IAgent>>(agents.Count);
+                foreach (var agent in agents) {
+                    roots.Add(new TreeViewItemData<IAgent>(id++, agent));
+                    // var planetsInGroup = new List<TreeViewItemData<IPlanetOrGroup>>(group.planets.Count);
+                    // foreach (var planet in group.planets)
+                    // {
+                    //     planetsInGroup.Add(new TreeViewItemData<IPlanetOrGroup>(id++, planet));
+                    // }
+                    //
+                    // roots.Add(new TreeViewItemData<IPlanetOrGroup>(id++, group, planetsInGroup));
+                }
+
+                return roots;
+            }
         }
         
     }
