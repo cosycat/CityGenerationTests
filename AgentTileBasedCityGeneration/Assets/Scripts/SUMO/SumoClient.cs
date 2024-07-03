@@ -47,18 +47,54 @@ namespace SUMO {
             }
         }
 
+        private string answer = "";
+
         private void HandleIncomingData() {
             try {
                 var buffer = new byte[1024];
                 var bytesRead = stream.Read(buffer, 0, buffer.Length);
                 var response = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                Debug.Log("Received: " + response);
+                // Debug.Log("Received: " + response);
+                answer += response;
                 
-                ProcessResponse(response);
-                // TODO Update Unity objects based on the received data
+                // ProcessResponse(response);
             }
             catch (Exception e) {
                 Debug.LogError("Error: " + e);
+            }
+            if (answer.Length == 0) return;
+            Debug.Assert(answer[0] == '{');
+            
+            var shouldContinueChecking = true;
+            while (shouldContinueChecking) {
+                CheckForCompleteJson(out var isOnlyIncomplete);
+                shouldContinueChecking = !isOnlyIncomplete;
+            }
+            return;
+
+            void CheckForCompleteJson(out bool isOnlyIncomplete) {
+                var bracketCount = 0;
+                for (var i = 0; i < answer.Length; i++) {
+                    var c = answer[i];
+                    if (c == '{') {
+                        bracketCount++;
+                    }
+                    else if (c == '}') {
+                        bracketCount--;
+                    }
+
+                    if (bracketCount == 0) { // Found a complete JSON object. Process it.
+                        var response = answer[..(i + 1)];
+                        answer = answer[(i + 1)..].TrimStart(' ', '\n', '\r', '\t');
+                        // Debug.Log($"Gathered response: {response}");
+                        // Debug.Log($"Remaining answer: {answer}");
+                        Debug.Assert(answer.Length == 0 || answer[0] == '{', "Remaining answer does not start with '{' character.");
+                        ProcessResponse(response);
+                        isOnlyIncomplete = false; // Continue checking for more JSON objects.
+                        return;
+                    }
+                }
+                isOnlyIncomplete = true;
             }
         }
 
@@ -74,22 +110,26 @@ namespace SUMO {
             
             var message = Encoding.UTF8.GetBytes("testMessage");
             stream.Write(message, 0, message.Length);
-            Debug.Log("Sent: testMessage");
+            // Debug.Log("Sent: testMessage");
             
         }
 
         private void ProcessResponse(string response) {
-
-            Debug.Log(response);
+            Debug.Assert(response[0] == '{', "Response does not start with '{' character.");
+            Debug.Assert(response[^1] == '}', "Response does not end with '}' character.");
+            // Debug.Log(response);
             try {
                 var simulationStepInfo = JsonUtility.FromJson<SimulationStepInfo>(response);
+                // Debug.Log($"simulationStepInfo: {simulationStepInfo}");
+                Debug.Assert(simulationStepInfo != null, "Could not parse JSON.");
+                Debug.Assert(simulationStepInfo.vehicleList != null, "Could not parse JSON vehicle list.");
                 var vehicleInfo = simulationStepInfo.vehicleList;
                 OnVehicleDataReceived(vehicleInfo.ToArray());
             }
             catch (Exception e) {
                 Debug.LogError("Error: " + e);
-                Debug.Log("Could not parse JSON:\n" + response);
             }
+            
             
             // // Parse with regex:
             // var matches = singleVehicleRegex.Matches(response);
