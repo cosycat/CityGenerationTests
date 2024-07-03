@@ -43,9 +43,11 @@ namespace Simulation {
             if (!CheckSimulationValidity()) return;
             
             Debug.Log($"Received {e.VehicleInfo.Length} vehicle data.");
+            var idsStillActive = new HashSet<string>();
             foreach (var vehicleInfo in e.VehicleInfo) {
                 var position2D = new Vector2(vehicleInfo.positionX / Constants.METERS_PER_UNIT, vehicleInfo.positionY / Constants.METERS_PER_UNIT);
                 var id = vehicleInfo.id;
+                idsStillActive.Add(id);
                 var worldHeight = world!.GetHeightAt(position2D.x, position2D.y);
                 if (!vehicles.TryGetValue(id, out var vehicle)) {
                     vehicle = Instantiate(vehiclePrefab, new Vector3(position2D.x, worldHeight, position2D.y), Quaternion.identity);
@@ -55,9 +57,15 @@ namespace Simulation {
                 }
                 vehicle.transform.position = new Vector3(position2D.x, worldHeight, position2D.y);
                 vehicle.transform.rotation = Quaternion.Euler(0, vehicleInfo.rotation + 180, 0);
-                
-                
             }
+            
+            foreach (var id in vehicles.Keys) {
+                if (!idsStillActive.Contains(id)) {
+                    Destroy(vehicles[id].gameObject, 0.2f);
+                    vehicles.Remove(id);
+                }
+            }
+            
         }
 
         private bool CheckSimulationValidity() {
