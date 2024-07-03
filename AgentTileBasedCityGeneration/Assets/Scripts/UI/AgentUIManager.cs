@@ -3,10 +3,18 @@ using System.Collections.Generic;
 using System.Linq;
 using FreeFormGraph.Agents;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UIElements;
 
 namespace UI {
+    
+    [Serializable]
+    public class UISettings {
+        public int fontSize = 12;
+    }
     public class AgentUIManager : MonoBehaviour {
+        
+        [SerializeField] private UISettings uiSettings = new();
         
         private UIDocument uiDocument;
         private TreeView agentsTreeView;
@@ -32,10 +40,51 @@ namespace UI {
             agentsTreeView.style.flexBasis = 0;
             agentsTreeView.style.flexDirection = FlexDirection.Column;
             
-            agentsTreeView.style.width = new StyleLength(100);
-            agentsTreeView.style.height = new StyleLength(100);
+            agentsTreeView.style.width = new StyleLength(500);
+            agentsTreeView.style.height = new StyleLength(400);
             
-            agentsTreeView.style.fontSize = 12;
+            agentsTreeView.style.fontSize = uiSettings.fontSize;
+            
+            
+            agentsTreeView.makeItem = () => {
+                Debug.Log("agentsTreeView.makeItem");
+                var agentEntry = new VisualElement();
+                
+                return agentEntry;
+            };
+
+            agentsTreeView.bindItem = (agentEntry, index) => {
+                Debug.Log($"agentsTreeView.bindItem {index}");
+                agentEntry.Clear();
+                var agent = agents[index];
+                // var agentTitle = element.Q<Label>();
+                // agentTitle.text = agent.GetType().Name;
+                
+                // create title
+                var agentTitle = new Label {
+                    text = agent.GetType().Name,
+                    style = {
+                        unityFontStyleAndWeight = FontStyle.Bold,
+                        fontSize = uiSettings.fontSize
+                    }
+                };
+                agentEntry.Add(agentTitle);
+                
+                // create menu items for each agent variable
+                foreach (var agentVariable in agent.AgentVariables) {
+                    var variableElement = AgentMenuItemFactory.Initialize(agentVariable, agentVariable.Name, uiSettings);
+                    agentEntry.Add(variableElement);
+                }
+                
+                // var agentTitle = element.Q<Label>();
+                // agentTitle.text = agent.GetType().Name;
+                
+            };
+            
+            agentsTreeView.unbindItem = (agentEntry, index) => {
+                Debug.Log($"agentsTreeView.unbindItem {index}");
+                agentEntry.Clear();
+            };
         }
 
         private void OnAgentCreated(IAgent agent) {
@@ -44,28 +93,6 @@ namespace UI {
             
             agentsTreeView.SetRootItems(treeRoots);
 
-            agentsTreeView.makeItem = () => {
-                var agentEntry = new VisualElement();
-
-                // create title
-                var agentTitle = new Label();
-                agentEntry.Add(agentTitle);
-
-                // create menu items for each agent variable
-                
-                return agentEntry;
-            };
-
-            agentsTreeView.bindItem = (element, index) => {
-                var agent = agents[index];
-                var agentTitle = element.Q<Label>();
-                agentTitle.text = agent.GetType().Name;
-                
-                foreach (var agentVariable in agent.AgentVariables) {
-                    var variableElement = AgentMenuItemFactory.Initialize(agentVariable, agentVariable.Name);
-                    element.Add(variableElement);
-                }
-            };
             // create agent entry
             // agentsList.Add(agentEntry);
 
