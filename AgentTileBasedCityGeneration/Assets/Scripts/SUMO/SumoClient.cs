@@ -157,22 +157,40 @@ namespace SUMO {
         }
     }
     
+    [Serializable]
     public class SimulationStepInfo {
         // public readonly float step;
-        public List<VehicleInfo> vehicleList { get; set; }
+
+        public int step;
+        public List<VehicleInfo> vehicleList;
         
-        // public SimulationStepInfo(List<VehicleInfo> vehicleList) {
+        // public SimulationStepInfo(List<VehicleInfo> vehicleList, int step) {
         //     this.vehicleList = vehicleList;
+        //     this.step = step;
         // }
     }
     
+    [Serializable]
     public class VehicleInfo {
 
-        public string id { get; set; }
-        public float x { get; set; }
-        public float y { get; set; }
-        public float rotation { get; set; }
-        
+        public string id;
+        public float positionX;
+        public float positionY;
+        public float rotation;
+        public int signals;
+        public float speed;
+        public string vehicleType;
+
+        // public VehicleInfo(string id, float positionX, float positionY, float rotation, int signals, float speed, string vehicleType) {
+        //     this.id = id;
+        //     this.positionX = positionX;
+        //     this.positionY = positionY;
+        //     this.rotation = rotation;
+        //     this.signals = signals;
+        //     this.speed = speed;
+        //     this.vehicleType = vehicleType;
+        // }
+
         // public VehicleInfo VehicleInfoFromJson(string json) {
         //     return JsonUtility.FromJson<VehicleInfo>(json);
         // }
