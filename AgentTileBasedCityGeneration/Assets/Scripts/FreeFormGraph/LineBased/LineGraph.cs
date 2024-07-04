@@ -86,7 +86,10 @@ namespace FreeFormGraph.LineBased {
                     }
                 }
                 
-                return CreateEdge(from, toNode, out newEdge, out isEdgeNew);
+                var result = CreateEdge(from, toNode, out newEdge, out isEdgeNew);
+                //edge building might still fail due to bad angles for example. Newly created nodes have then to be removed again otherwise they are dangling
+                if(!result && isToNodeNew) RemoveNode(toNode);
+                return result;
             }
         
         public override bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge, out bool isEdgeNew) {
@@ -148,7 +151,11 @@ namespace FreeFormGraph.LineBased {
         }
 
         public override bool RemoveNode(IStreetNode node) {
-            throw new NotImplementedException();
+            if(node.ConnectedEdgesCount == 0) {
+                RemoveNode((LineNode)node);
+                return true;
+            }
+            else throw new NotImplementedException("Node not allowed to rmeove because it still has edges");
         }
 
         public override bool CreateUnconnectedNode(Vector3 position, out IStreetNode newNode) {
