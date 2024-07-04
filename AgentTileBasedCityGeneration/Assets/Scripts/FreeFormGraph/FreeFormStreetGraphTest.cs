@@ -15,8 +15,6 @@ namespace FreeFormGraph {
         [CanBeNull] private IStreetNode dragStartNode;
         
         [SerializeField] private bool drawGrid = true;
-        [SerializeField] private bool drawCurveBoxes;
-        [SerializeField] private bool drawIntersectionLines = true;
         [SerializeField] private bool drawLabelsEdges = false;
         [SerializeField] private bool drawLabelsNodes = false;
         [SerializeField] private bool drawMouseLabel = true;
@@ -78,12 +76,6 @@ namespace FreeFormGraph {
             GUILayout.Label($"Number of edges: {streetGraph.EdgeCount}");
             if (GUILayout.Button($"Draw grid: ({drawGrid})")) {
                 drawGrid = !drawGrid;
-            }
-            if (GUILayout.Button($"Bezier B-Boxes: ({drawCurveBoxes})")) {
-                drawCurveBoxes = !drawCurveBoxes;
-            }
-            if (GUILayout.Button($"Intersection Lines: ({drawIntersectionLines})")) {
-                drawIntersectionLines = !drawIntersectionLines;
             }
             if (GUILayout.Button($"Graph color: Recalculate colors")) {
                 GraphColoring();
