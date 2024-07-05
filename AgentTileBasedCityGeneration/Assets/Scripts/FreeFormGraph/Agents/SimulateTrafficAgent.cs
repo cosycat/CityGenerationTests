@@ -34,17 +34,16 @@ namespace FreeFormGraph.Agents {
                 var startNode = nodes.ElementAt(startIndex);
                 var endNode = nodes.ElementAt(endIndex);
 
-                var pathfinding = new Pathfinding(world.StreetGraph, world, new Pathfinding.Parameters());
-                var waypoints = pathfinding.AStarStreetOnly(
+                var waypoints = Pathfinding.AStarStreetOnly(
+                    world,
                     new Pathfinding.Waypoint(startNode),
                     new Pathfinding.Waypoint(endNode),
                     () => false);
 
                 if(waypoints == null) {
-                    Debug.Log($"(SIM) no path found for {startNode} {endNode}");
+                    Debug.LogWarning($"(SIM) no path found for {startNode} {endNode}! This is an error (we always want a connected graph) unless pathfinding was interrupted by user.");
                     continue;
                 }
-                Debug.Log($"(SIM) path found! lenght: {waypoints.Count}");
                 var passedPOISet = new HashSet<IPointOfInterest>();
                 foreach(var wp in waypoints) {
                     Debug.Assert(wp.GraphNode != null);

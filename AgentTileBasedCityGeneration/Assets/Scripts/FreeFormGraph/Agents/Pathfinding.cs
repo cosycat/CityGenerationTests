@@ -200,7 +200,7 @@ namespace FreeFormGraph.Agents {
                 //pathfinding does not handle intersections well. It's possible that the chosen path
                 //generates new roads which connects two points which are already connected (the new path would be shorter tho).
                 //#24
-                var roadConnection = pf.AStarStreetOnly(lastWp, wp, () => false);
+                var roadConnection = AStarStreetOnly(world, lastWp, wp, () => false);
                 if(roadConnection != null && GetPathLength(roadConnection) / Vector3.Distance(lastWp.Pos, wp.Pos) < thresholdWpExistingConnection) {
                     currentWaypointIndex++;
                     lastWp = wp;
@@ -372,7 +372,11 @@ namespace FreeFormGraph.Agents {
             return GCD(q, r);
         }
 
-        public List<Waypoint>? AStarStreetOnly(Waypoint start, Waypoint target, Func<bool> isCancelled) {
+        public static List<Waypoint>? AStarStreetOnly(IWorld world,
+                Waypoint start, 
+                Waypoint target, 
+                Func<bool> isCancelled) {
+            var pathfinding = new Pathfinding(world.StreetGraph, world, Parameters.GetRoadPathSearchParameters());
             var startPos = start.Pos;
             var endPos = target.Pos;
             //a bit hacky, pathfinding on roads only makes only sense between nodes -> move position on edge to closest node :)
@@ -392,7 +396,7 @@ namespace FreeFormGraph.Agents {
             }
 
             //TODO refactor AStar to pass waypoint
-            return AStar(startPos, endPos, wp => GetNeighbors(wp, 0, 0, 0), isCancelled);
+            return pathfinding.AStar(startPos, endPos, wp => pathfinding.GetNeighbors(wp, 0, 0, 0), isCancelled);
         }
 
         public static float GetPathLength(List<Waypoint> waypoints) {
@@ -487,6 +491,13 @@ namespace FreeFormGraph.Agents {
             /// </summary>
             
             public float thresholdExistingConnection = 2f;
+
+            public static Parameters GetRoadPathSearchParameters() {
+                var p = new Parameters();
+                p.maxRoadElevation = float.MaxValue;
+                p.slopeCostMaxGrade = float.MaxValue;
+                return p;
+            }
         }
 
         public class Waypoint {
