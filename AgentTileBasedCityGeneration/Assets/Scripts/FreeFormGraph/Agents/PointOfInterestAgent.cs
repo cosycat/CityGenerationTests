@@ -12,9 +12,6 @@ namespace FreeFormGraph.Agents {
         
         public int WorkFrequency { get; set; } = 100;
         
-        [Tooltip("The parameters for used for the next generated settlement and its settlement developer agent."),
-         SerializeField] private SettlementDeveloperAgent.SdaParameters settlementDeveloperAgentParameters = new();
-        
         private IStreetGraph streetGraph;
 
         [SerializeField]
@@ -54,8 +51,6 @@ namespace FreeFormGraph.Agents {
             //TODO check validity?
             var pointOfInterest = new SpherePointOfInterest(newPoiPos, agentParameters.InitialBudgetForPOI);
             world.PointsOfInterest.AddPointOfInterest(pointOfInterest);
-            context.Manager.AddNewAgent(new SettlementDeveloperAgent(pointOfInterest, world, settlementDeveloperAgentParameters));
-            Debug.Log($"placed poi at {newPoiPos} {randomDir} {poiSeedPosition}");
         }
 
         /// <summary>

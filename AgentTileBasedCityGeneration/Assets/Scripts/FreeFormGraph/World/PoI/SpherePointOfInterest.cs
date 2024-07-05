@@ -8,7 +8,7 @@ namespace FreeFormGraph.World.PoI {
 
 
         public float Budget {get; set;}
-        public float Radius {get; set;} = 2f;
+        public float Radius {get; set;} = 20f;
 
         public SpherePointOfInterest(Vector2 position, float budget) {
             Position = position;
