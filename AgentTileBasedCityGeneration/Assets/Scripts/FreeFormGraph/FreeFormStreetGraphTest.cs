@@ -99,7 +99,7 @@ namespace FreeFormGraph {
         private void GraphColoring() {
             //BFS
             //I know there are probably better algorithms for this...
-            var colors = new List<Color>(){Color.red, Color.blue, Color.yellow, Color.green, Color.cyan, Color.magenta};
+            var colors = new List<Color>(){Color.red, Color.blue, Color.yellow, Color.green, Color.cyan, Color.magenta, Color.grey, Color.black};
             var queue = new Queue<IStreetNode>();
             var visited = new HashSet<IStreetNode>();
             queue.Enqueue(streetGraph.Nodes.ToList()[0]);
