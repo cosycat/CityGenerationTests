@@ -17,11 +17,11 @@ namespace FreeFormGraph.Agents {
         private readonly List<SdaParameters> parameters;
         private int currentParameterSetIndex = 0;
 
-        private readonly IPointOfInterest pointOfInterest;
+        private readonly BudgetPointOfInterest pointOfInterest;
         
         private int age = 0;
 
-        public SettlementDeveloperAgent(IPointOfInterest pointOfInterest, IWorld world, List<SdaParameters> parameters) {
+        public SettlementDeveloperAgent(BudgetPointOfInterest pointOfInterest, IWorld world, List<SdaParameters> parameters) {
             Debug.Assert(pointOfInterest != null);
             this.pointOfInterest = pointOfInterest!;
             this.parameters = parameters ?? new() {new()};
@@ -42,8 +42,8 @@ namespace FreeFormGraph.Agents {
         }
 
         public void DoWork(CancellationToken cancellationToken, IWorld world, AgentManager.Context context) {
-            var nodes = pointOfInterest.FindAllNodes(world);
-            if (nodes.Length == 0) {
+            var nodes = world.PointsOfInterest.GetNodesFromPointOfIntereset(pointOfInterest);
+            if (nodes.Count == 0) {
                 Debug.LogWarning("PoIDeveloperAgent: No nodes found for the point of interest. Creating a new one at the center. PS: This should not happen because this agent is always placed after building a road.");
                 var newNode = CreateStartNode(world, GetCurrentParamaterSet());
                 nodes = new[] {newNode};
@@ -74,7 +74,7 @@ namespace FreeFormGraph.Agents {
             return parameters[currentParameterSetIndex];
         }
 
-        private bool GrowRoadNetwork(IWorld world, IStreetNode[] nodes, Random random, SdaParameters parameters) {
+        private bool GrowRoadNetwork(IWorld world, IReadOnlyList<IStreetNode> nodes, Random random, SdaParameters parameters) {
             var node = GetRandomNode(nodes, random);
             // Debug.Assert(node != null, $"PoIDeveloperAgent: Node is null.");
             // var averageInPosition = GetAverageInPosition(node); // TODO take a random incoming edge as direction
@@ -95,10 +95,6 @@ namespace FreeFormGraph.Agents {
                 //Debug.Log($"PoIDeveloperAgent: Node {node.Position} has too many connected edges.");
                 return false;
             }
-            if (!pointOfInterest.IsPointWithinRange(newPoint)) {
-                //Debug.Log($"PoIDeveloperAgent: New point {newPoint} is outside the point of interest.");
-                return false;
-            }
             if(!IsRoadWithinBudget(world, node.Position, newPoint, parameters)) {
                 //Debug.Log($"PoIDeveloperAgent: New point {newPoint} is too expensive.");
                 return false;
@@ -116,11 +112,7 @@ namespace FreeFormGraph.Agents {
                 return false;
             }
             DecreasePOIBudget(world, node.Position, newPoint, parameters);
-            world.PointsOfInterest.AddNodeRelationToPointOfInterest(node, pointOfInterest);
-            pointOfInterest.Radius = Mathf.Max(
-                pointOfInterest.Radius,
-                Vector3.Distance(pointOfInterest.Position, newPoint) + parameters.GrowRadiusAddition
-            );
+            world.PointsOfInterest.AddNodeRelationToPointOfInterest(newNode, pointOfInterest);
 
             return true;
         }
@@ -158,12 +150,12 @@ namespace FreeFormGraph.Agents {
         }
 
         private int ConnectRoadNetwork(IWorld world, 
-                IStreetNode[] nodes, 
+                IReadOnlyList<IStreetNode> nodes, 
                 CancellationToken cancellationToken, 
                 Random random,
                 SdaParameters parameters) {
             
-            if (nodes.Length < 2) return 0;
+            if (nodes.Count < 2) return 0;
             switch (parameters.ConnectCulDeSacs) {
                 case SdaParameters.ConnectionHandling.ConnectNone:
                     return 0;
@@ -173,7 +165,7 @@ namespace FreeFormGraph.Agents {
                     var nodeB = GetRandomNode(nodes, random);
                     while (nodeA == nodeB) {
                         nodeB = GetRandomNode(nodes, random);
-                        if (nodes.Length < 2) { // sanity check and in case some parallel code modifies the nodes list (which it shouldn't)
+                        if (nodes.Count < 2) { // sanity check and in case some parallel code modifies the nodes list (which it shouldn't)
                             Debug.LogError("PoIDeveloperAgent: Not enough nodes to connect. Nodes modified during connection.");
                             return 0;
                         }
@@ -241,9 +233,9 @@ namespace FreeFormGraph.Agents {
             return average / node.ConnectedEdgesCount;
         }
 
-        private static IStreetNode GetRandomNode(IStreetNode[] nodes, Random random) {
-            Debug.Assert(nodes.Length > 0, "PoIDeveloperAgent: No nodes to choose from.");
-            return nodes[random.Next(0, nodes.Length)];
+        private static IStreetNode GetRandomNode(IReadOnlyList<IStreetNode> nodes, Random random) {
+            Debug.Assert(nodes.Count > 0, "PoIDeveloperAgent: No nodes to choose from.");
+            return nodes[random.Next(0, nodes.Count)];
         }
 
         [Serializable]

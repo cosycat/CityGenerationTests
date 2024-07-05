@@ -40,7 +40,7 @@ namespace FreeFormGraph.Agents {
             if(connectedPOIs.Count == 0 && worldPOIs.Count >= 1) {
                 //initial condition: first POI in world does not need to be connected
                 connectedPOIs.Add(worldPOIs[0]);
-                context.Manager.AddNewAgent(new SettlementDeveloperAgent(worldPOIs[0], world, sdaParameters));
+                context.Manager.AddNewAgent(new SettlementDeveloperAgent((BudgetPointOfInterest)worldPOIs[0], world, sdaParameters));
                 return;
             }
 
@@ -59,7 +59,9 @@ namespace FreeFormGraph.Agents {
             if(path != null) {
                 Pathfinding.BuildPath2(path, world.StreetGraph, world, parameters);
                 connectedPOIs.Add(unconnectedPoi);
-                context.Manager.AddNewAgent(new SettlementDeveloperAgent(unconnectedPoi, world, sdaParameters));
+                context.Manager.AddNewAgent(new SettlementDeveloperAgent((BudgetPointOfInterest)unconnectedPoi, world, sdaParameters));
+                Debug.Assert(world.StreetGraph.TryFindClosestNode(unconnectedPoi.Position, out var node));
+                world.PointsOfInterest.AddNodeRelationToPointOfInterest(node, unconnectedPoi);
             } else if(!isCancelled()) {
                 //isCancelled == false => AStar couldn't find a path, there is no need to test it again next time
                 //isCancelled == true => AStar couldn't finish and thus returned null (but could find a path still)

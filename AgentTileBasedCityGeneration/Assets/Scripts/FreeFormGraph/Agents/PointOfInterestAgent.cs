@@ -49,7 +49,7 @@ namespace FreeFormGraph.Agents {
             }
 
             //TODO check validity?
-            var pointOfInterest = new SpherePointOfInterest(newPoiPos, agentParameters.InitialBudgetForPOI);
+            var pointOfInterest = new BudgetPointOfInterest(newPoiPos, agentParameters.InitialBudgetForPOI);
             world.PointsOfInterest.AddPointOfInterest(pointOfInterest);
         }
 

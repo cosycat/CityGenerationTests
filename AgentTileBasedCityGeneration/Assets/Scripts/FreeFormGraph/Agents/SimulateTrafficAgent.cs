@@ -50,9 +50,9 @@ namespace FreeFormGraph.Agents {
                     Debug.Assert(wp.GraphNode != null);
                     Debug.Log(wp);
                     if(world.PointsOfInterest.GetPointOfInterestFromNode(wp.GraphNode, out var poi) && !passedPOISet.Contains(poi)) {
-                        if(poi is SpherePointOfInterest) { //eww...
-                            poi.Budget += budgetIncreasePerPass;
-                            passedPOISet.Add(poi);
+                        if(poi is BudgetPointOfInterest budgetPoi) { //eww...
+                            budgetPoi.Budget += budgetIncreasePerPass;
+                            passedPOISet.Add(budgetPoi);
                         }
                     }
                 }

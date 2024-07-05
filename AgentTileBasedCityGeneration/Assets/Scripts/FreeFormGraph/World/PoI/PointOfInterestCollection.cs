@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using JetBrains.Annotations;
 using UnityEngine;
 
@@ -8,6 +9,7 @@ namespace FreeFormGraph.World.PoI {
         public List<IPointOfInterest> PointsOfInterest { get; } = new();
 
         public IDictionary<IStreetNode, IPointOfInterest> NodePOIMapping = new Dictionary<IStreetNode, IPointOfInterest>();
+        public IDictionary<IPointOfInterest, List<IStreetNode>> POINodeMapping = new Dictionary<IPointOfInterest, List<IStreetNode>>();
 
         public void AddPointOfInterest(IPointOfInterest pointOfInterest) {
             PointsOfInterest.Add(pointOfInterest);
@@ -34,17 +36,6 @@ namespace FreeFormGraph.World.PoI {
             return closestPoint;
         }
 
-        public bool IsPointWithinAPointOfInterest(Vector2 point, out List<IPointOfInterest> pointsOfInterest) {
-            pointsOfInterest = new List<IPointOfInterest>();
-            foreach (var pointOfInterest in PointsOfInterest) {
-                if (pointOfInterest.IsPointWithinRange(point)) {
-                    pointsOfInterest.Add(pointOfInterest);
-                }
-            }
-
-            return pointsOfInterest.Count > 0;
-        }
-
         public event EventHandler<PointOfInterestEventArgs> PointOfInterestAddedEvent;
         public event EventHandler<PointOfInterestEventArgs> PointOfInterestRemovedEvent;
 
@@ -64,9 +55,23 @@ namespace FreeFormGraph.World.PoI {
             return true;
         }
 
+        public IReadOnlyList<IStreetNode> GetNodesFromPointOfIntereset(IPointOfInterest pointOfInterest) {
+            return POINodeMapping.ContainsKey(pointOfInterest) ? POINodeMapping[pointOfInterest] : new();
+        }
+
         public void AddNodeRelationToPointOfInterest(IStreetNode node, IPointOfInterest pointOfInterest)
         {
             NodePOIMapping[node] = pointOfInterest;
+
+            List<IStreetNode> nodes;
+            if(!POINodeMapping.ContainsKey(pointOfInterest)) {
+                nodes = new();
+                POINodeMapping[pointOfInterest] = nodes;
+            } else {
+                nodes = POINodeMapping[pointOfInterest];
+            }
+            Debug.Assert(!nodes.Contains(node));
+            nodes.Add(node);
         }
     }
 }
