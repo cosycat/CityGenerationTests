@@ -134,6 +134,7 @@ namespace FreeFormGraph.Agents {
         }
 
         private void HandleNextAgent(float timeToWaitSeconds = 0) {
+            AssertStreetGraphConnectivity(world);
             // check if we are ready to start the next agent
             if (IsAgentRunning) return;
             if (agents.Count == 0) {
@@ -170,7 +171,7 @@ namespace FreeFormGraph.Agents {
             // initialize the task, but let it wait if the previous frame was too fast
             var task = new Task(() => {
                 if (timeToWaitSeconds > 0) {
-                    Debug.Log($"Waiting {timeToWaitSeconds} seconds.");
+                    //Debug.Log($"Waiting {timeToWaitSeconds} seconds.");
                     Thread.Sleep((int)(timeToWaitSeconds * 1000));
                 }
 
@@ -231,6 +232,29 @@ namespace FreeFormGraph.Agents {
                 onStoppedMethod = null;
                 HandleNextAgent();
             }
+        }
+
+        private static void AssertStreetGraphConnectivity(IWorld world) {
+            var nodes = world.StreetGraph.Nodes;
+            if(nodes.Count() == 0) return;
+            var queue = new Queue<IStreetNode>();
+            var queueSet = new HashSet<IStreetNode>();
+
+
+            queue.Enqueue(nodes.First());
+            queueSet.Add(nodes.First());
+            while(queue.Count != 0) {
+                var current = queue.Dequeue();
+                var neighbors = current.GetNeighbors();
+
+                foreach(var neighbor in neighbors) {
+                    if(!queueSet.Contains(neighbor)) {
+                        queue.Enqueue(neighbor);
+                        queueSet.Add(neighbor);
+                    }
+                }
+            }
+            Debug.Assert(queueSet.Count() == nodes.Count());
         }
 
         public class Context {

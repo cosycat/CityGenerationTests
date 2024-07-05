@@ -218,16 +218,13 @@ namespace FreeFormGraph.Agents {
                 Debug.Log("PoIDeveloperAgent: Node has no connected edges.");
                 return node.Position + new Vector3(1, 0, 0);
             } // TODO Random direction
-            var randomEdge = node.Edges.ToArray()[random.Next(0, node.Edges.Count())];
-            var otherNode = randomEdge.NodeA == node ? randomEdge.NodeB : randomEdge.NodeA;
-            return otherNode.Position;
+            return node.GetNeighbors()[random.Next(0, node.ConnectedEdgesCount)].Position;
         }
 
         private static Vector3 GetAverageInPosition(IStreetNode node) {
             if (node.ConnectedEdgesCount == 0) return new Vector3(1, 0, 0); // TODO Random direction
             var average = new Vector3(0, 0, 0);
-            foreach (var edge in node.Edges) {
-                var otherNode = edge.NodeA == node ? edge.NodeB : edge.NodeA;
+            foreach (var otherNode in node.GetNeighbors()) {
                 average += otherNode.Position;
             }
             return average / node.ConnectedEdgesCount;
