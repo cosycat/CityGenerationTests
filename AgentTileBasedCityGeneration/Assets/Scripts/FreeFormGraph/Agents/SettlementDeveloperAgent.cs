@@ -79,6 +79,7 @@ namespace FreeFormGraph.Agents {
             // Debug.Assert(node != null, $"PoIDeveloperAgent: Node is null.");
             // var averageInPosition = GetAverageInPosition(node); // TODO take a random incoming edge as direction
             var averageInPosition = GetRandomConnectedNodePosition(node, random);
+            Debug.Assert(node.Position != averageInPosition);
             var direction = node.Position - averageInPosition;
             var inStreetAngle = Mathf.Atan2(direction.y, direction.x);
             var angleRandom = (float)random.NextDouble() * 2f * parameters.AngleRandomMax - parameters.AngleRandomMax; //UnityEngine.Random.Range(-angleRandomMax, angleRandomMax);
@@ -144,6 +145,7 @@ namespace FreeFormGraph.Agents {
                 Vector2 startPos, 
                 Vector2 endPos, 
                 SdaParameters parameters) {
+            Debug.Assert(startPos != endPos);
             var poiDistanceCost = Vector2.Distance(pointOfInterest.Position, endPos);
             var roadLength = Vector2.Distance(startPos, endPos);
             var elevationStart = world.GetHeightAt(startPos.x, startPos.y);
@@ -187,7 +189,7 @@ namespace FreeFormGraph.Agents {
                             if (cancellationToken.IsCancellationRequested) {
                                 return connections;
                             }
-                            if (ConnectCulDeSacs(nodeA, nodeB, world, parameters)) {
+                            if (nodeA != nodeB && ConnectCulDeSacs(nodeA, nodeB, world, parameters)) {
                                 connections++;
                             }
                         }
@@ -201,6 +203,7 @@ namespace FreeFormGraph.Agents {
         }
 
         private bool ConnectCulDeSacs(IStreetNode nodeA, IStreetNode nodeB, IWorld world, SdaParameters parameters) {
+            Debug.Assert(nodeA != nodeB);
             if (Vector3.Distance(nodeA.Position, nodeB.Position) > parameters.MaxConnectionDistance) return false;
             if ((parameters.ConnectCulDeSacWithNonCulDeSac && nodeA.Edges.Count() > 1 && nodeB.Edges.Count() > 1) 
                 || (!parameters.ConnectCulDeSacWithNonCulDeSac && (nodeA.Edges.Count() > 1 || nodeB.Edges.Count() > 1))) return false; // Too many nodes are not cul-de-sacs
