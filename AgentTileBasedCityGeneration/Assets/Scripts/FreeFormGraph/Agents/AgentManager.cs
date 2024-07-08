@@ -6,12 +6,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using FreeFormGraph.World;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Random = System.Random;
 
 namespace FreeFormGraph.Agents {
     public class AgentManager : MonoBehaviour {
 
-        [SerializeField] private bool useSeed = true;
+        [SerializeField] private bool useRandomSeed = true;
         [SerializeField] private int seed = 1337;
         
         /// <summary>
@@ -55,8 +56,9 @@ namespace FreeFormGraph.Agents {
                 return;
             }
             Instance = this;
-
-            context = new Context(useSeed ? new Random(seed) : new Random(), this);
+            seed = useRandomSeed ? new Random().Next() : seed;
+            context = new Context(new Random(seed), this);
+            Debug.Log($"AgentManager initialized with seed {seed}");
         }
 
         private void Start() {

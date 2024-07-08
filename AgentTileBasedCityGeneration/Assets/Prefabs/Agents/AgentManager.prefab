@@ -44,3 +44,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9a665dc038d544208c152e37a20d1a1b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  useRandomSeed: 1
+  seed: 1337
+  <TargetFramesPerSecond>k__BackingField: 60
