@@ -42,7 +42,7 @@ namespace Simulation {
         private void SumoClientOnVehicleDataReceived(object sender, VehicleEventArgs e) {
             if (!CheckSimulationValidity()) return;
             
-            Debug.Log($"Received {e.VehicleInfo.Length} vehicle data.");
+            // Debug.Log($"Received {e.VehicleInfo.Length} vehicle data.");
             var idsStillActive = new HashSet<string>();
             foreach (var vehicleInfo in e.VehicleInfo) {
                 var position2D = new Vector2(vehicleInfo.positionX / Constants.METERS_PER_UNIT, vehicleInfo.positionY / Constants.METERS_PER_UNIT);

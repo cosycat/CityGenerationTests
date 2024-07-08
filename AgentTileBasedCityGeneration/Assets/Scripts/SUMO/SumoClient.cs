@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -15,8 +16,8 @@ namespace SUMO {
     /// </summary>
     public class SumoClient : MonoBehaviour {
         
-        private TcpClient socketConnection;
-        private NetworkStream stream;
+        private TcpClient? socketConnection;
+        private NetworkStream stream = null!; // always initialized when socketConnection is not null
 
         private readonly Regex singleVehicleRegex = new Regex(@"\('(?<name>\w+\d+\.\d+)', \((?<x>\d+\.\d+), (?<y>\d+\.\d+)\)\)");
         
@@ -29,20 +30,17 @@ namespace SUMO {
         private void Update() {
             if (socketConnection == null)
                 return;
+            Debug.Assert(stream != null, "Stream is null when socket connection is not null.");
+
             if (!socketConnection.Connected) {
                 Debug.Log("Socket connection lost.");
                 return;
             }
-            if (stream == null) {
-                Debug.Log("Stream is null.");
-                return;
-            }
 
-            if (stream.CanRead && stream.DataAvailable) {
+            if (stream is { CanRead: true, DataAvailable: true }) {
                 HandleIncomingData();
             }
-            
-            if (stream.CanWrite) {
+            if (stream is { CanWrite: true }) {
                 HandleOutgoingData();
             }
         }
@@ -53,48 +51,66 @@ namespace SUMO {
             try {
                 var buffer = new byte[1024];
                 var bytesRead = stream.Read(buffer, 0, buffer.Length);
-                var response = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                // Debug.Log("Received: " + response);
-                answer += response;
-                
-                // ProcessResponse(response);
+                var newAnswer = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                answer += newAnswer;
             }
             catch (Exception e) {
                 Debug.LogError("Error: " + e);
             }
             if (answer.Length == 0) return;
-            Debug.Assert(answer[0] == '{');
             
-            var shouldContinueChecking = true;
-            while (shouldContinueChecking) {
-                CheckForCompleteJson(out var isOnlyIncomplete);
-                shouldContinueChecking = !isOnlyIncomplete;
+            var completeJson = CheckForCompleteJson(out var lastCompleteResponse);
+            if (!completeJson) return; // we need to wait for more data to arrive
+            
+            var skippedFrames = 0;
+            while (answer.Length > 0 && CheckForCompleteJson(out var response)) {
+                // if we have multiple complete JSON objects, it means we are at least one frame behind,
+                // so we skip to the last one where we already received all the data
+                skippedFrames++;
+                lastCompleteResponse = response;
             }
+
+            if (skippedFrames > 0) {
+                switch (skippedFrames) {
+                    case > 1:
+                        Debug.LogWarning($"Skipped {skippedFrames} frames!");
+                        break;
+                    case 1:
+                        Debug.Log($"Skipped {skippedFrames} frames.");
+                        break;
+                }
+            }
+
+            ProcessResponse(lastCompleteResponse);
+            
             return;
 
-            void CheckForCompleteJson(out bool isOnlyIncomplete) {
+            bool CheckForCompleteJson(out string response) {
+                Debug.Assert(answer[0] == '{', $"Answer does not start with '{{' character: {answer}");
                 var bracketCount = 0;
                 for (var i = 0; i < answer.Length; i++) {
-                    var c = answer[i];
-                    if (c == '{') {
-                        bracketCount++;
-                    }
-                    else if (c == '}') {
-                        bracketCount--;
+                    switch (answer[i]) {
+                        case '{':
+                            bracketCount++;
+                            break;
+                        case '}':
+                            bracketCount--;
+                            break;
                     }
 
-                    if (bracketCount == 0) { // Found a complete JSON object. Process it.
-                        var response = answer[..(i + 1)];
+                    if (bracketCount == 0) {
+                        // Found a complete JSON object. Process it.
+                        response = answer[..(i + 1)];
+                        // Skip answer to the next character after the JSON object
                         answer = answer[(i + 1)..].TrimStart(' ', '\n', '\r', '\t');
+                        Debug.Assert(answer.Length == 0 || answer[0] == '{', "Remaining answer does not start with '{' character.");
                         // Debug.Log($"Gathered response: {response}");
                         // Debug.Log($"Remaining answer: {answer}");
-                        Debug.Assert(answer.Length == 0 || answer[0] == '{', "Remaining answer does not start with '{' character.");
-                        ProcessResponse(response);
-                        isOnlyIncomplete = false; // Continue checking for more JSON objects.
-                        return;
+                        return true;
                     }
                 }
-                isOnlyIncomplete = true;
+                response = "";
+                return false;
             }
         }
 
@@ -129,21 +145,6 @@ namespace SUMO {
             catch (Exception e) {
                 Debug.LogError("Error: " + e);
             }
-            
-            
-            // // Parse with regex:
-            // var matches = singleVehicleRegex.Matches(response);
-            // var vehicleInfo = new VehicleInfo[matches.Count];
-            // for (var i = 0; i < matches.Count; i++) {
-            //     var match = matches[i];
-            //     var vehicleID = match.Groups["name"].Value;
-            //     var x = float.Parse(match.Groups["x"].Value) / Constants.METERS_PER_UNIT;
-            //     var y = float.Parse(match.Groups["y"].Value) / Constants.METERS_PER_UNIT;
-            //     // Debug.Log($"Vehicle {vehicleID} at ({x}, {y})");
-            //     vehicleInfo[i] = new VehicleInfo(vehicleID, x, y);
-            // }
-            //
-            // OnVehicleDataReceived(vehicleInfo);
         }
 
         private IEnumerator WaitForConnection() {
@@ -155,8 +156,11 @@ namespace SUMO {
                     Debug.Log("Connected to Python server.");
                     break;
                 }
+                catch (SocketException e) {
+                    // Debug.Log("Socket error: " + e);
+                }
                 catch (Exception e) {
-                    Debug.Log("Socket error: " + e);
+                    Debug.Log("other error on connection: " + e);
                 }
             }
         }

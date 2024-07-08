@@ -35,7 +35,7 @@ def start_socket_server():
 
 
 def send_data_over_socket(data, conn):
-    print(f"Sending data: {data}")
+    print("Sending data:")
     if IS_DEBUG:
         return
     conn.sendall(data.encode('utf-8'))
@@ -61,7 +61,7 @@ def get_vehicle_info(id):
     veh_type = traci.vehicle.getVehicleClass(id)
 
     vehicle = VehicleInfo(id, pos, rot, speed, signals, veh_type)
-    print(vehicle)
+    # print(vehicle)
     return vehicle
 
 
@@ -88,18 +88,33 @@ def run_sumo_simulation():
     # Setup socket server
     conn, addr = start_socket_server()
 
-    # Simulation loop
+    # Prepare Simulation loop
     step = 0
+    start_time = time.time()
+    next_frame_time = start_time
+    # Main Simulation Loop
     while traci.simulation.getMinExpectedNumber() > 0 and not should_stop:
         current_time = time.time()
+        
+        # check if it is time to advance the simulation
+        if current_time < next_frame_time:
+            continue
 
+        next_frame_time += time_step_seconds
+        
+        # advance the simulation by one step
         traci.simulationStep()
+        step += 1
         print(f"Step {step}:")
+
+        if current_time > next_frame_time:
+            print(f"WARNING: Simulation is running too slow! Skipping frame {step}...")
+            continue
 
         vehicle_list = list()
 
         id_list = traci.vehicle.getIDList()
-        print(f"Vehicle IDs: {id_list}")
+        # print(f"Vehicle IDs: {id_list}")
         for i in range(0,len(id_list)):
             vehicle_id = id_list[i]
             vehicle = get_vehicle_info(vehicle_id)
@@ -112,12 +127,12 @@ def run_sumo_simulation():
         send_data_over_socket(simulation_step_info_json, conn)
         receive_data_over_socket(conn)
 
-        step += 1
-
-        sleep_time = time_step_seconds - (time.time() - current_time)
-        if sleep_time > 0:
-            time.sleep(sleep_time)
+        # sleep_time = time_step_seconds - (time.time() - current_time)
+        # if sleep_time > 0:
+        #     print(f"Sleeping for {sleep_time} seconds...")
+        #     time.sleep(sleep_time)
         # time.sleep(1.0/30.0)
+
 
     # Close TraCI connection
     traci.close()
