@@ -11,7 +11,7 @@ from SumoInfoUtility import SumoSimulationStepInfo
 
 IS_DEBUG = False
 
-time_step_seconds = 1.0 / 30.0
+time_step_seconds = 0.03
 
 should_stop = False
 
