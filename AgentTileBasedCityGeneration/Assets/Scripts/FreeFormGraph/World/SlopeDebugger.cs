@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using FreeFormGraph.Agents;
+using System.Threading;
 
 namespace FreeFormGraph.World {
     public class SlopeDebugger: MonoBehaviour {
@@ -68,7 +69,7 @@ namespace FreeFormGraph.World {
                 foreach(var seg in segments) {
                     var (a,b) = seg;
                     pureSlope += Mathf.Abs(world.GetHeightAt(a.x, a.y) - world.GetHeightAt(b.x, b.y)) / Vector2.Distance(a, b);
-                    slopeCost += Pathfinding.SlopeCost(world, new Pathfinding.Waypoint(a), new Pathfinding.Waypoint(b));
+                    slopeCost += Pathfinding.SlopeCost(world, new Pathfinding.Waypoint(a), new Pathfinding.Waypoint(b), new());
                 }
                 GUILayout.Label($"Total slope cost: {slopeCost}, pure slope: {pureSlope}");
                 if (GUILayout.Button($"Clear slope segments")) {

@@ -67,11 +67,26 @@ namespace FreeFormGraph.Visualisation {
         //For each corresponding entry in meshes, this list saves the size of the mesh in vertex count.
         private readonly List<(int xSize, int zSize)> meshIndexSizes = new();
 
+        private (int meshIndexX, int meshIndexZ) calculateMeshIndex(int x, int z) {
+            var outX = 0;
+            var outZ = 0;
+
+            for(int i = 0; x > (i+meshSize-1); i+=meshSize-1) { outX++; }
+            for(int i = 0; z > (i+meshSize-1); i+=meshSize-1) { outZ++; }
+            return (outX, outZ);
+        }
+
+        //private int calcIndexInMesh(int pos, int dimSize)
+
         public override void SetHeightAt(IWorld world, IList<(float height, int x, int z)> heights) {
             
             var changedMeshes = new Dictionary<int, Vector3[]>();
             
             foreach((var height, var x, var z) in heights) {
+                Debug.Assert(x >= 0);
+                Debug.Assert(z >= 0);
+                Debug.Assert(x < world.Width);
+                Debug.Assert(z < world.Height);
                 
                 if(objectDetailMap.ContainsKey((x,z))) {
                     Destroy(objectDetailMap[(x,z)]);
@@ -79,15 +94,16 @@ namespace FreeFormGraph.Visualisation {
                 }
 
                 var terrainWidth = world.Width;
-                var meshIndexX = Mathf.FloorToInt(x/meshSize);
-                var meshIndexZ = Mathf.FloorToInt(z/meshSize);
+                (var meshIndexX, var meshIndexZ) = calculateMeshIndex(x, z);
                 var numMeshesXDir = Mathf.CeilToInt((float)terrainWidth/(float)meshSize);
                 var meshIndex = meshIndexX + meshIndexZ * numMeshesXDir;
+                (var meshSizeX, var meshSizeZ) = meshIndexSizes[meshIndex];
 
-                var indexXInsideMesh = x % meshSize + meshIndexX;
-                var indexzInsideMesh = z % meshSize + meshIndexZ;
+                var indexXInsideMesh = ((x % meshSize) + meshIndexX) % meshSize;
+                var indexzInsideMesh = ((z % meshSize) + meshIndexZ) % meshSize;
 
-                var indexInMesh = indexXInsideMesh + indexzInsideMesh * meshSize;
+                var indexInMesh = indexXInsideMesh + indexzInsideMesh * meshSizeX;
+                Debug.Assert(indexInMesh <= meshSizeX*meshSizeZ-1, $"{indexInMesh} {x} {z} {meshIndexX} {meshIndexZ} {meshSizeX} {meshSizeZ}");
 
                 var changeMeshes = new List<(int meshIndex, int vertexIndex)>();
                 changeMeshes.Add((meshIndex, indexInMesh));
@@ -95,15 +111,18 @@ namespace FreeFormGraph.Visualisation {
                 //if point in world lies on a mesh boundary, multiple edges have to be updated
                 //in the worst case 4 meshes!
                 //top edge
-                if(indexzInsideMesh == meshSize - 1){
+                if(indexzInsideMesh == meshSizeZ - 1 && z < world.Height-1){
                     changeMeshes.Add((meshIndex + numMeshesXDir, indexXInsideMesh));
                 }
                 //right edge
-                if(indexXInsideMesh == meshSize - 1){
-                    changeMeshes.Add((meshIndex + 1, indexzInsideMesh * meshSize));
+                if(indexXInsideMesh == meshSizeX - 1 && x < world.Width-1){
+                    changeMeshes.Add((meshIndex + 1, indexzInsideMesh * meshIndexSizes[meshIndex+1].xSize));
                 }
                 //top right corner
-                if(indexXInsideMesh == meshSize - 1 && indexzInsideMesh == meshSize -1) {
+                if(indexXInsideMesh == meshSizeX - 1 
+                    && indexzInsideMesh == meshSizeZ -1
+                    && x < world.Width-1
+                    && z < world.Height-1) {
                     changeMeshes.Add((meshIndex + numMeshesXDir + 1, 0));
                 }
 
@@ -123,7 +142,7 @@ namespace FreeFormGraph.Visualisation {
         }
 
         public override void Render(IWorld World) {
-            for(int y = 0; y < World.Width; y+=meshSize-1) {
+            for(int y = 0; y < World.Height; y+=meshSize-1) {
                 for(int x = 0; x < World.Width; x+=meshSize-1) {
                     RenderHeightmap(World, x,x+meshSize-1, y, y+meshSize-1);
                 }
@@ -176,8 +195,8 @@ namespace FreeFormGraph.Visualisation {
             var maxHeight = World.MaxHeight;
 
             var mesh = new Mesh();
-            var vertices = new Vector3[(width+1) * (height+1)];
-            var colors = new Color[(width+1) * (height+1)];
+            var vertices = new Vector3[(width) * (height)];
+            var colors = new Color[(width) * (height)];
             var triangles = new int[(width) * (height) * 6];
             var triangleIndex = 0;
             
