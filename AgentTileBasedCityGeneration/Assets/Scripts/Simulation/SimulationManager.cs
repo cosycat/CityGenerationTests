@@ -59,7 +59,8 @@ namespace Simulation {
                 vehicle.transform.rotation = Quaternion.Euler(0, vehicleInfo.rotation + 180, 0);
             }
             
-            foreach (var id in vehicles.Keys) {
+            var keys = new List<string>(vehicles.Keys);
+            foreach (var id in keys) {
                 if (!idsStillActive.Contains(id)) {
                     Destroy(vehicles[id].gameObject, 0.2f);
                     vehicles.Remove(id);
