@@ -141,7 +141,7 @@ namespace FreeFormGraph.Agents {
             var poiDistanceCost = Vector2.Distance(pointOfInterest.Position, endPos);
             var roadLength = Vector2.Distance(startPos, endPos);
             var elevationStart = world.GetHeightAt(startPos.x, startPos.y);
-            var elevationEnd = world.GetHeightAt(startPos.x, startPos.y);
+            var elevationEnd = world.GetHeightAt(endPos.x, endPos.y);
             var slope = Mathf.Abs(elevationStart - elevationEnd) / roadLength;
             if(slope > parameters.MaxSlope) {
                 return float.PositiveInfinity;
