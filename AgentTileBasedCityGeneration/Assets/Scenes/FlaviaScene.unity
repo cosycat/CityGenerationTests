@@ -958,8 +958,8 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2413731996329675132, guid: e77a622ae003447748ba18d541cd5e3d, type: 3}
-      propertyPath: useSeed
-      value: 0
+      propertyPath: <TargetFramesPerSecond>k__BackingField
+      value: 120
       objectReference: {fileID: 0}
     - target: {fileID: 6324588498074828355, guid: e77a622ae003447748ba18d541cd5e3d, type: 3}
       propertyPath: m_Name

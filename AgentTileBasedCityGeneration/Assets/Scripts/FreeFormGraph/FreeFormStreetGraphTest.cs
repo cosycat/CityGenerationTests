@@ -21,6 +21,7 @@ namespace FreeFormGraph {
         [SerializeField] private bool drawLabelsNodes = false;
         [SerializeField] private bool drawMouseLabel = true;
         [SerializeField] private float mouseNodeDistanceThreshold = 0.3f;
+        [SerializeField] private bool allowMouseCreation = false;
 
         private readonly Dictionary<IStreetEdge, Color> edgeColors = new();
 
@@ -39,7 +40,7 @@ namespace FreeFormGraph {
         }
 
         private void Update() {
-            CheckMouseCreation();
+            if (allowMouseCreation) CheckMouseCreation();
         }
 
         private void CheckMouseCreation() {
