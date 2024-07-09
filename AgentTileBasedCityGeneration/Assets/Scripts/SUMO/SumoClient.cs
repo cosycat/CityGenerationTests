@@ -10,11 +10,20 @@ using UnityEngine;
 
 
 namespace SUMO {
+
+    
     
     /// <summary>
     /// Connects to a Python server running a SUMO simulation and receives data.
     /// </summary>
     public class SumoClient : MonoBehaviour {
+        
+        private static class Signals {
+            public static readonly byte[] EndSimulation = Encoding.UTF8.GetBytes("end_simulation\n");
+            public static readonly byte[] Continue = Encoding.UTF8.GetBytes("continue\n");
+        }
+        
+        public bool IsConnected => socketConnection != null && socketConnection.Connected;
         
         private TcpClient? socketConnection;
         private NetworkStream stream = null!; // always initialized when socketConnection is not null
@@ -60,7 +69,10 @@ namespace SUMO {
             if (answer.Length == 0) return;
             
             var completeJson = CheckForCompleteJson(out var lastCompleteResponse);
-            if (!completeJson) return; // we need to wait for more data to arrive
+            if (!completeJson) {
+                // Debug.Log($"Incomplete JSON object received:\n{answer}");
+                return; // we need to wait for more data to arrive
+            }
             
             var skippedFrames = 0;
             while (answer.Length > 0 && CheckForCompleteJson(out var response)) {
@@ -69,6 +81,8 @@ namespace SUMO {
                 skippedFrames++;
                 lastCompleteResponse = response;
             }
+
+            // Debug.Log($"lastCompleteResponse:\n{lastCompleteResponse}");
 
             if (skippedFrames > 0) {
                 switch (skippedFrames) {
@@ -116,18 +130,18 @@ namespace SUMO {
 
         private void HandleOutgoingData() {
             if (StopRequested) {
-                var stopMessage = Encoding.UTF8.GetBytes("stop");
-                stream.Write(stopMessage, 0, stopMessage.Length);
-                Debug.Log("Sent: stop");
                 StopRequested = false;
-                Cleanup();
+                Cleanup(true);
                 return;
             }
             
-            var message = Encoding.UTF8.GetBytes("testMessage");
-            stream.Write(message, 0, message.Length);
-            // Debug.Log("Sent: testMessage");
-            
+            // if we send nothing else, make sure the server receives a continue signal, to keep the simulation running
+            // SendSignal(Signals.Continue);
+        }
+        
+        private void SendSignal(byte[] signal) {
+            stream.Write(signal, 0, signal.Length);
+            Debug.Log($"Sent signal: {Encoding.UTF8.GetString(signal)}");
         }
 
         private void ProcessResponse(string response) {
@@ -165,8 +179,12 @@ namespace SUMO {
             }
         }
 
-        private void Cleanup() {
+        private void Cleanup(bool sendStop) {
             if (socketConnection == null) return;
+            
+            if (sendStop) {
+                SendSignal(Signals.EndSimulation);
+            }
             
             stream.Flush();
             stream.Close();
@@ -175,11 +193,11 @@ namespace SUMO {
         }
 
         private void OnDestroy() {
-            Cleanup();
+            Cleanup(true);
         }
 
         private void OnApplicationQuit() {
-            Cleanup();
+            Cleanup(true);
         }
         
         public event EventHandler<VehicleEventArgs> VehicleDataReceived;

@@ -10,11 +10,29 @@ from SumoInfoUtility import SumoSimulationStepInfo
 # documentation at https://sumo.dlr.de/pydoc/traci.html
 
 IS_DEBUG = False
+JSON_DIRECTLY = False
+SKIP_IF_SLOW = True
 
 time_step_seconds = 0.03
 
 should_stop = False
 
+### Signals ###
+
+# a list of signals and their corresponding methods as lambda functions
+signalsList = {
+    "end_simulation": lambda: end_simulation(),
+    "continue" : lambda: continue_simulation(),
+}
+
+def end_simulation():
+    print("Ending simulation...")
+    global should_stop
+    should_stop = True
+
+def continue_simulation():
+    print("Continuing simulation...")
+    pass
 
 ### Connection Methods ###
 
@@ -33,9 +51,8 @@ def start_socket_server():
 
     return conn, addr
 
-
 def send_data_over_socket(data, conn):
-    print("Sending data:")
+    print(f"Sending data...\n")
     if IS_DEBUG:
         return
     conn.sendall(data.encode('utf-8'))
@@ -46,8 +63,18 @@ def receive_data_over_socket(conn):
         return
     data = conn.recv(1024)
     print(f"Received data: {data}")
-    if data.decode('utf-8') == "stop":
-        should_stop = True
+    # split data at newline character
+    dataArray = data.split(b'\n')
+    for signal, method in signalsList.items():
+        if signal.encode('utf-8') in dataArray:
+            method()
+            break
+        # if data.decode('utf-8') == signal:
+        #     method()
+        #     break
+    print("other signal received...")
+    # if data.decode('utf-8') == end_simulation_signal:
+    #     should_stop = True
 
 
 ### Additional TraCI Methods ###
