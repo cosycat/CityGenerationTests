@@ -4,15 +4,9 @@ using System.Xml.Linq;
 using FreeFormGraph;
 using FreeFormGraph.World;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace SUMO {
-
-    public class SumoSimulationOptions {
-        public float SimulationStepLengthSeconds { get; set; } = 0.03f;
-        public int RandomTripCount { get; set; } = 10;
-        public int RandomFlowCount { get; set; } = 10;
-    }
-    
     internal class SumoFileGenerator {
         private const string EDGES_FILE_NAME = "edges.edg.xml";
         private const string NODES_FILE_NAME = "nodes.nod.xml";
