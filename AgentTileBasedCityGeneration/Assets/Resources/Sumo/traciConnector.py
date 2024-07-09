@@ -91,6 +91,30 @@ def get_vehicle_info(id):
     # print(vehicle)
     return vehicle
 
+def get_vehicle_json_directly(id):
+    string = "{"
+    string += f"\"id\": \"{id}\","
+    string += f"\"positionX\": {traci.vehicle.getPosition(id)[0]},"
+    string += f"\"positionY\": {traci.vehicle.getPosition(id)[1]},"
+    string += f"\"rotation\": {traci.vehicle.getAngle(id) + 180},"
+    string += f"\"signals\": {traci.vehicle.getSignals(id)},"
+    string += f"\"speed\": {traci.vehicle.getSpeed(id)},"
+    string += f"\"vehicleType\": \"{traci.vehicle.getVehicleClass(id)}\""
+    string += "}"
+
+    return string
+
+def get_vehicle_info_subscription(id, subscription_results):
+    pos = (subscription_results[tc.VAR_POSITION][0], subscription_results[tc.VAR_POSITION][1])
+    rot = subscription_results[tc.VAR_ANGLE]
+    rot = rot + 180
+    speed = subscription_results[tc.VAR_SPEED]
+    signals = subscription_results[tc.VAR_SIGNALS]
+    veh_type = subscription_results[tc.VAR_TYPE]
+
+    vehicle = VehicleInfo(id, pos, rot, speed, signals, veh_type)
+    return vehicle
+
 
 def add_vehicle(vehicle_id, route_id):
     traci.vehicle.add(vehicle_id, route_id)
@@ -122,7 +146,7 @@ def run_sumo_simulation():
     # Main Simulation Loop
     while traci.simulation.getMinExpectedNumber() > 0 and not should_stop:
         current_time = time.time()
-        
+
         # check if it is time to advance the simulation
         if current_time < next_frame_time:
             continue
@@ -130,29 +154,67 @@ def run_sumo_simulation():
         next_frame_time += time_step_seconds
         
         # advance the simulation by one step
-        traci.simulationStep()
+        traci.simulationStep() # TODO skip with parameter t here instead.
         step += 1
         print(f"Step {step}:")
+        print(f"Time: {current_time - start_time}")
+        print(f"Time to next frame: {next_frame_time - current_time}")
+        print(f"Simulation time: {traci.simulation.getTime()}")
+        # print(f"result:\n{resultStep}")
 
+        # subscribe to all newly added vehicles
+        for vehicle_id in traci.simulation.getDepartedIDList():
+            traci.vehicle.subscribe(vehicle_id, (tc.VAR_POSITION, tc.VAR_ANGLE, tc.VAR_SPEED, tc.VAR_SIGNALS, tc.VAR_TYPE))
+
+        # check if the simulation is running too slow
         if current_time > next_frame_time:
-            print(f"WARNING: Simulation is running too slow! Skipping frame {step}...")
-            continue
+            if SKIP_IF_SLOW:
+                print(f"WARNING: Simulation is running too slow! Skipping frame {step}...")
+                continue
+            else:
+                print(f"WARNING: Simulation is running too slow!")
+                pass
 
-        vehicle_list = list()
 
         id_list = traci.vehicle.getIDList()
-        # print(f"Vehicle IDs: {id_list}")
-        for i in range(0,len(id_list)):
-            vehicle_id = id_list[i]
-            vehicle = get_vehicle_info(vehicle_id)
-            vehicle_list.append(vehicle)
-            # print(vehicle)
+        print(f"Vehicles: {len(id_list)}")
+        # for i in range(0,len(id_list)):
+        #     vehicle_id = id_list[i]
+        #     print(traci.vehicle.getSubscriptionResults(vehicle_id))
 
-        simulation_step_info = SumoSimulationStepInfo(step, vehicle_list)
-        simulation_step_info_json = simulation_step_info.convert_to_json_string()
+        if JSON_DIRECTLY:
+            vehicle_string = "["
+            for i in range(0,len(id_list)):
+                vehicle_id = id_list[i]
+                vehicle_string += get_vehicle_json_directly(vehicle_id)
+                if i < len(id_list) - 1:
+                    vehicle_string += ","
+            vehicle_string += "]"
 
-        send_data_over_socket(simulation_step_info_json, conn)
-        receive_data_over_socket(conn)
+            data_string = f"{{\"step\": {step}, \"vehicleList\": {vehicle_string}}}"
+
+            send_data_over_socket(data_string, conn)
+
+        else :
+            vehicle_list = list()
+            for i in range(0,len(id_list)):
+                vehicle_id = id_list[i]
+                subscription_result = traci.vehicle.getSubscriptionResults(vehicle_id)
+                if subscription_result is None or len(subscription_result) == 0:
+                    print(f"WARNING: No subscription result for vehicle {vehicle_id}: {subscription_result}")
+                    continue
+                vehicle = get_vehicle_info_subscription(id, subscription_result)
+                vehicle_list.append(vehicle)
+                # print(vehicle)
+
+            simulation_step_info = SumoSimulationStepInfo(step, vehicle_list)
+            print(simulation_step_info)
+            print(vehicle_list)
+            simulation_step_info_json = simulation_step_info.convert_to_json_string()
+
+            send_data_over_socket(simulation_step_info_json, conn)
+        
+        # receive_data_over_socket(conn)
 
         # sleep_time = time_step_seconds - (time.time() - current_time)
         # if sleep_time > 0:
