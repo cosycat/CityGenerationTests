@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using FreeFormGraph.World;
 
 namespace FreeFormGraph {
     public abstract class StreetGraphGameObject : MonoBehaviour, IStreetGraph {
@@ -13,6 +14,12 @@ namespace FreeFormGraph {
         public virtual int EdgeCount => Edges.Count();
         public abstract float SnapToExistingNodeThreshold { get; set; }
         public abstract float SnapToExistingEdgeThreshold { get; set; }
+        
+        void Start() {
+            Init(FindObjectOfType<WorldGameObject>());
+        }
+        
+        public virtual void Init(IWorld world) {}
         
         public virtual bool CreateEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode,
             out bool isToNodeNew, out bool isEdgeNew, bool failIfIntersection = false) {

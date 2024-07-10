@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using FreeFormGraph.World;
 
 namespace FreeFormGraph {
     public interface IStreetGraph {
@@ -34,6 +35,8 @@ namespace FreeFormGraph {
         /// The threshold for snapping the to position to a new Node of an existing edge when adding a new edge.
         /// </summary>
         public float SnapToExistingEdgeThreshold { get; set; }
+
+        public void Init(IWorld world) {}
 
         /// <summary>
         /// Adds a new edge to the street graph.
