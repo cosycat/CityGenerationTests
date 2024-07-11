@@ -113,8 +113,8 @@ namespace FreeFormGraph.Agents {
                 var flagSize = 2;
                 Gizmos.color = Color.green;
                 //casting to force unwrap nullable...
-                Gizmos.DrawLine(currentStartPosition, currentStartPosition + Vector3.up * postHeight);
-                Gizmos.DrawCube(currentStartPosition + Vector3.up * (postHeight - (flagSize / 2f)) + Vector3.right * (flagSize / 2.0f), new Vector3(flagSize, flagSize, 0));
+                Gizmos.DrawLine(currentStartPosition, (Vector3)currentStartPosition + Vector3.up * postHeight);
+                Gizmos.DrawCube((Vector3)currentStartPosition + Vector3.up * (postHeight - (flagSize / 2f)) + Vector3.right * (flagSize / 2.0f), new Vector3(flagSize, flagSize, 0));
                 Gizmos.color = Color.red;
                 Gizmos.DrawLine(currentTarget, currentStartPosition);
                 Gizmos.DrawLine(currentTarget, currentTarget + Vector3.up * postHeight);
