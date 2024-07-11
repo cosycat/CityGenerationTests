@@ -81,6 +81,8 @@ namespace FreeFormGraph {
 
         bool RemoveNode(IStreetNode node);
 
+        bool RemoveEdge(IStreetEdge edge);
+
         /// <summary>
         /// Finds the closest node to the given position, if it is within the given threshold.
         /// </summary>

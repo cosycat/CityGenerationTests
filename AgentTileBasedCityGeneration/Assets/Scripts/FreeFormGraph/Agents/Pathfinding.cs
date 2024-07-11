@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using FreeFormGraph.World;
 using UnityEngine;
 using Utils;
+using UnityEngine.Profiling;
+using DebugUtils;
 
 namespace FreeFormGraph.Agents {
 
@@ -159,12 +161,18 @@ namespace FreeFormGraph.Agents {
             return path;
         }
 
-        public static void BuildPath2(List<Waypoint> waypoints, IStreetGraph streetGraph, IWorld world, Parameters p) {
+        public static bool BuildPath2(List<Waypoint> waypoints, IStreetGraph streetGraph, IWorld world, Parameters p) {
             Debug.Assert(waypoints.Count >= 2);
             //TODO assert waypoints unique
 
             //#24
             var thresholdWpExistingConnection = p.thresholdExistingConnection;
+
+            var numNodesBefore = streetGraph.NodeCount;
+            var numEdgesBefore = streetGraph.EdgeCount;
+            var removeNodes = new List<IStreetNode>();
+            var removeEdges = new List<IStreetEdge>();
+            var removeRoad = false;
 
             var currentWaypointIndex = 0;
             IStreetNode? lastNode;
@@ -174,8 +182,10 @@ namespace FreeFormGraph.Agents {
                 lastNode = wp.GraphNode;
             } else if(wp.GraphEdge != null) {
                 streetGraph.InsertNodeOnEdge(wp.GraphEdge, wp.Pos, out lastNode, out _, out _);
+                GraphDebugUtils.AssertStreetGraphConnectivity(world);
             } else {
                 streetGraph.CreateUnconnectedNode(waypoints[currentWaypointIndex].Pos, out lastNode);
+                removeNodes.Add(lastNode);
             }
             currentWaypointIndex++;
             var lastWp = waypoints[0];
@@ -186,11 +196,11 @@ namespace FreeFormGraph.Agents {
                 Debug.Assert(lastNode != null);
                 var pf = new Pathfinding(streetGraph, world, new());
                 wp = waypoints[currentWaypointIndex];
+                Debug.Assert(lastWp != wp);
                 breakCounter++;
                 if(breakCounter > 10000) {
-                    Debug.Log("ESCAPE!");
-                    Debug.Assert(false);
-                    return;
+                    Debug.Assert(false, $"Trying to build path with length: {waypoints.Count}, looping for too long...");
+                    return false;
                 }
                 if(wp.GraphEdge != null || wp.GraphNode != null) {
                     //ensure only one state at a time
@@ -208,12 +218,21 @@ namespace FreeFormGraph.Agents {
 
                     if(wp.GraphEdge != null) {
                         streetGraph.InsertNodeOnEdge(wp.GraphEdge, wp.Pos, out lastNode, out _, out _);
+                        removeNodes.Add(lastNode);
                     } else {
                         lastNode = wp.GraphNode;
                     }
                 } else {
                     Debug.Assert(lastNode != null, "Last node is null");
-                    streetGraph.CreateEdge(lastNode!, wp.Pos, out _, out lastNode, out _, out _);
+                    var edgeCreated = streetGraph.CreateEdge(lastNode!, wp.Pos, out var newEdge, out lastNode, out var isToNodeNew, out var isEdgeNew);
+                    //edge creation might fail because the road angle is to small or there are too many connections to a node already...
+                    //the easiest way to handle these issues is to just remove the road altogether.
+                    if(isToNodeNew) removeNodes.Add(lastNode);
+                    if(isEdgeNew) removeEdges.Add(newEdge);
+                    if(!edgeCreated) {
+                        removeRoad = true;
+                        break;
+                    } 
 
                     if(Vector3.Distance(lastNode.Position, wp.Pos) > 0.001f) {
                         //found an intersection, keep next waypoint
@@ -223,6 +242,21 @@ namespace FreeFormGraph.Agents {
                     }
                 }
             }
+
+            if(removeRoad) {
+                foreach(var e in removeEdges) {
+                    streetGraph.RemoveEdge(e);
+                }
+                Debug.Assert(streetGraph.EdgeCount == numEdgesBefore);
+                foreach(var n in removeNodes) {
+                    streetGraph.RemoveNode(n);
+                }
+                Debug.Assert(streetGraph.NodeCount == numNodesBefore);
+                return false;
+            }
+        
+            GraphDebugUtils.AssertStreetGraphConnectivity(world);
+            return true;
         }
 
         private float Cost(Waypoint current, Waypoint next, Parameters p) {
@@ -376,6 +410,7 @@ namespace FreeFormGraph.Agents {
                 Waypoint start, 
                 Waypoint target, 
                 Func<bool> isCancelled) {
+            Debug.Assert(start.Pos != target.Pos);
             var pathfinding = new Pathfinding(world.StreetGraph, world, Parameters.GetRoadPathSearchParameters());
             var startPos = start.Pos;
             var endPos = target.Pos;

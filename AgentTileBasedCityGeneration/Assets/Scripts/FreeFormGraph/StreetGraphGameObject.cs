@@ -43,12 +43,14 @@ namespace FreeFormGraph {
 
         public abstract bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge, out bool isEdgeNew);
         public abstract bool RemoveNode(IStreetNode node);
+        public abstract bool RemoveEdge(IStreetEdge edge);
+
         public virtual bool TryFindClosestNode(IEnumerable<IStreetNode> nodes, Vector3 position, out IStreetNode foundNode, float threshold = Single.MaxValue) {
             IStreetNode? optionalFoundNode = null;
             var minDistance = threshold;
             foreach (var node in nodes) {
                 var distance = Vector3.Distance(node.Position, position);
-                if (distance < minDistance) {
+                if (distance <= minDistance) { //"<=" is important for when threshold = 0!
                     minDistance = distance;
                     optionalFoundNode = node;
                 }

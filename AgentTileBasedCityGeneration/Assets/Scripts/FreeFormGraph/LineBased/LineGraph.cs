@@ -157,7 +157,9 @@ namespace FreeFormGraph.LineBased {
 
         public override bool RemoveNode(IStreetNode node) {
             if(node.ConnectedEdgesCount == 0) {
-                RemoveNode((LineNode)node);
+                nodes.Remove((LineNode)node);
+                nodeDatastructure.Remove((LineNode)node);
+                OnNodeRemoved((LineNode)node);
                 return true;
             }
             else throw new NotImplementedException("Node not allowed to rmeove because it still has edges");
@@ -234,6 +236,19 @@ namespace FreeFormGraph.LineBased {
             node = n;
         }
         
+        public override bool TryFindClosestNode(IEnumerable<IStreetNode> nodes, Vector3 position, out IStreetNode foundNode, float threshold = Single.MaxValue) {
+            if(nodeDatastructure == null) {
+                //logically it should not happen (init() should always be called before working with graph) but sometimes order of execution is not always quite right...
+                foundNode = null!;
+                return false;
+            }
+            foundNode = nodeDatastructure.FindNearest(position.x, position.y);
+            var f1 = foundNode;
+            if(foundNode == null) return false; //no nodes yet
+            if(Vector2.Distance(foundNode.Position,position) > threshold) foundNode = null!;
+            return foundNode != null;
+        }
+
         public override IStreetEdge[] FindAllEdgesWithinRange(Vector2 position, float radius) {
             if(radius == 0) return new List<IStreetEdge>().ToArray();
             var closeEdges = new List<IStreetEdge>();
@@ -254,26 +269,26 @@ namespace FreeFormGraph.LineBased {
             return closeEdges.ToArray();
         }
 
+        public override bool RemoveEdge(IStreetEdge edge)
+        {
+            if(edge is LineEdge lineEdge) {
+                ((LineNode)lineEdge.NodeA).RemoveEdge(lineEdge);
+                ((LineNode)lineEdge.NodeB).RemoveEdge(lineEdge);
+                OnEdgeRemoved(lineEdge);
+                return edges.Remove(lineEdge);
+            }
+            return false;
+        }
+
         private void AddEdge(LineEdge edge) {
             edges.Add(edge);
             OnEdgeAdded(edge);
-        }
-
-        private void RemoveEdge(LineEdge edge) {
-            edges.Remove(edge);
-            OnEdgeRemoved(edge);
         }
         
         private void AddNode(LineNode n) {
             nodes.Add(n);
             nodeDatastructure.Insert(n);
             OnNodeAdded(n);
-        }
-        
-        private void RemoveNode(LineNode n) {
-            nodes.Remove(n);
-            nodeDatastructure.Remove(n);
-            OnNodeRemoved(n);
         }
     }
 
