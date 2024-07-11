@@ -13,6 +13,8 @@ namespace FreeFormGraph.Agents {
 
         [SerializeField] private bool useSeed = true;
         [SerializeField] private int seed = 1337;
+
+        [SerializeField] private bool workOnMainThread = false;
         
         /// <summary>
         /// The target frames per second the agents should run at.
@@ -134,7 +136,6 @@ namespace FreeFormGraph.Agents {
         }
 
         private void HandleNextAgent(float timeToWaitSeconds = 0) {
-            AssertStreetGraphConnectivity(world);
             // check if we are ready to start the next agent
             if (IsAgentRunning) return;
             if (agents.Count == 0) {
@@ -198,7 +199,8 @@ namespace FreeFormGraph.Agents {
                 }
             });
             
-            task.Start();
+            if(workOnMainThread) task.Start(TaskScheduler.FromCurrentSynchronizationContext());
+            else task.Start();
         }
 
         private void GenerateAgents() {
