@@ -7,6 +7,7 @@ using FreeFormGraph.World;
 using FreeFormGraph.World.PoI;
 using UnityEngine;
 using Random = System.Random;
+using DebugUtils;
 
 namespace FreeFormGraph.Agents {
     
@@ -111,6 +112,7 @@ namespace FreeFormGraph.Agents {
                 //Debug.LogWarning($"Could not create a new node for the PoIDeveloperAgent at {newPoint} from {node.Position} {newNode.Position} edge: ({newEdge == null}).");
                 return false;
             }
+            GraphDebugUtils.AssertStreetGraphConnectivity(world);
             DecreasePOIBudget(world, node.Position, newPoint, parameters);
             world.PointsOfInterest.AddNodeRelationToPointOfInterest(newNode, pointOfInterest);
 
@@ -207,6 +209,7 @@ namespace FreeFormGraph.Agents {
                 // Debug.Log("Could not connect the cul-de-sacs.");
                 return false;
             }
+            GraphDebugUtils.AssertStreetGraphConnectivity(world);
             DecreasePOIBudget(world, nodeA.Position, nodeB.Position, parameters);
             Debug.Assert(!isToNodeNew, $"PoIDeveloperAgent: Cul-de-sac connection created a new node at {toNode}.");
             // Debug.Log($"PoIDeveloperAgent: Connected cul-de-sacs {nodeA.Position} and {nodeB.Position}.");

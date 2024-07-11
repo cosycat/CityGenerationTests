@@ -234,29 +234,6 @@ namespace FreeFormGraph.Agents {
             }
         }
 
-        private static void AssertStreetGraphConnectivity(IWorld world) {
-            var nodes = world.StreetGraph.Nodes;
-            if(nodes.Count() == 0) return;
-            var queue = new Queue<IStreetNode>();
-            var queueSet = new HashSet<IStreetNode>();
-
-
-            queue.Enqueue(nodes.First());
-            queueSet.Add(nodes.First());
-            while(queue.Count != 0) {
-                var current = queue.Dequeue();
-                var neighbors = current.GetNeighbors();
-
-                foreach(var neighbor in neighbors) {
-                    if(!queueSet.Contains(neighbor)) {
-                        queue.Enqueue(neighbor);
-                        queueSet.Add(neighbor);
-                    }
-                }
-            }
-            Debug.Assert(queueSet.Count() == nodes.Count());
-        }
-
         public class Context {
             public Random Random { get; }
             public AgentManager Manager { get; }
