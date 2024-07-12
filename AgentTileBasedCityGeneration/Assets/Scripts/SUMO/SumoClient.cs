@@ -10,8 +10,6 @@ using UnityEngine;
 
 
 namespace SUMO {
-
-    
     
     /// <summary>
     /// Connects to a Python server running a SUMO simulation and receives data.
@@ -55,10 +53,11 @@ namespace SUMO {
         }
 
         private string answer = "";
+        private int previousAnswerLengthBytes = 1024*4;
 
         private void HandleIncomingData() {
             try {
-                var buffer = new byte[1024];
+                var buffer = new byte[previousAnswerLengthBytes];
                 var bytesRead = stream.Read(buffer, 0, buffer.Length);
                 var newAnswer = Encoding.UTF8.GetString(buffer, 0, bytesRead);
                 answer += newAnswer;
@@ -81,8 +80,10 @@ namespace SUMO {
                 skippedFrames++;
                 lastCompleteResponse = response;
             }
-
             // Debug.Log($"lastCompleteResponse:\n{lastCompleteResponse}");
+
+            previousAnswerLengthBytes = System.Text.Encoding.UTF8.GetByteCount(lastCompleteResponse);
+            Debug.Log($"Previous answer length: {previousAnswerLengthBytes} bytes.");
 
             if (skippedFrames > 0) {
                 switch (skippedFrames) {

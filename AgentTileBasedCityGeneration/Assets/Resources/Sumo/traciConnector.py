@@ -13,6 +13,10 @@ IS_DEBUG = False
 JSON_DIRECTLY = False
 SKIP_IF_SLOW = True
 
+TCP_IP = 'localhost'
+TCP_PORT = 9999
+BUFFER_SIZE = 64
+
 time_step_seconds = 0.03
 
 should_stop = False
@@ -42,7 +46,7 @@ def start_socket_server():
         return None, None
     # Setup socket server
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind(('localhost', 9999))
+    server_socket.bind((TCP_IP, TCP_PORT))
     server_socket.listen(1)
 
     print("Waiting for a connection from Unity...")
@@ -53,6 +57,7 @@ def start_socket_server():
 
 def send_data_over_socket(data, conn):
     print(f"Sending data...\n")
+    # print(data)
     if IS_DEBUG:
         return
     conn.sendall(data.encode('utf-8'))
@@ -61,7 +66,7 @@ def send_data_over_socket(data, conn):
 def receive_data_over_socket(conn):
     if IS_DEBUG:
         return
-    data = conn.recv(1024)
+    data = conn.recv(BUFFER_SIZE)
     print(f"Received data: {data}")
     # split data at newline character
     dataArray = data.split(b'\n')

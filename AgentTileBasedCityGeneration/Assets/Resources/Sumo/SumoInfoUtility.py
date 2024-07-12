@@ -13,7 +13,7 @@ class SumoSimulationStepInfo:
         self.vehicleList = _vehicle_list
 
     def convert_to_json_string(self):
-        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
+        return json.dumps(self, default=lambda o: o.__dict__,  separators=(',', ':'))
     
     def __str__(self):
         string = f"Step: {self.step}\n"
