@@ -236,7 +236,7 @@ namespace FreeFormGraph.LineBased {
             node = n;
         }
         
-        public override bool TryFindClosestNode(IEnumerable<IStreetNode> nodes, Vector3 position, out IStreetNode foundNode, float threshold = Single.MaxValue) {
+        public override bool TryFindClosestNode(Vector3 position, out IStreetNode foundNode, float threshold = float.MaxValue) {
             if(nodeDatastructure == null) {
                 //logically it should not happen (init() should always be called before working with graph) but sometimes order of execution is not always quite right...
                 foundNode = null!;

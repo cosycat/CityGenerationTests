@@ -59,7 +59,7 @@ namespace FreeFormGraph {
             return optionalFoundNode != null;
         }
 
-        public bool TryFindClosestNode(Vector3 position, out IStreetNode foundNode, float threshold = float.MaxValue) =>
+        public virtual bool TryFindClosestNode(Vector3 position, out IStreetNode foundNode, float threshold = float.MaxValue) =>
             TryFindClosestNode(Nodes, position, out foundNode, threshold);
 
         public virtual bool TryFindClosestEdge(IEnumerable<IStreetEdge> edges, Vector3 position, out IStreetEdge foundEdge, out Vector3 positionOnEdge,

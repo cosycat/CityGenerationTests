@@ -277,23 +277,26 @@ namespace FreeFormGraph.Agents {
             } 
             cost *= costPenaltyForRoad;
 
-            if(world.GetHeightAt(next.Pos.x, next.Pos.y) > p.maxRoadElevation) {
+            var heightStart = world.GetHeightAt(current.Pos.x, current.Pos.y);
+            var heightEnd = world.GetHeightAt(next.Pos.x, next.Pos.y);
+
+            if(heightEnd > p.maxRoadElevation) {
                 return float.PositiveInfinity;
             }
 
             if(next.CameFrom != current) {
                 //no slope penalty for existing roads
-                slopeCost = SlopeCost(world, current, next, p);
+                slopeCost = SlopeCost(world, current, next, p, heightStart, heightEnd);
             }
 
-            var heightPenalty = world.GetHeightAt(next.Pos.y, next.Pos.x) * p.heightPenaltyMultiplier;
+            var heightPenalty = heightEnd * p.heightPenaltyMultiplier;
             var totalCost = cost + slopeCost + heightPenalty;
             Debug.Assert(Heuristic(current.Pos, next.Pos, p) <= totalCost);
             return totalCost;
         }
 
-        public static float SlopeCost(IWorld w, Waypoint a, Waypoint b, Parameters p) {
-            var cost = Mathf.Abs(w.GetHeightAt(a.Pos.x, a.Pos.y) - w.GetHeightAt(b.Pos.x, b.Pos.y)) / Vector2.Distance(a.Pos, b.Pos);
+        public static float SlopeCost(IWorld w, Waypoint a, Waypoint b, Parameters p, float heightStart, float heightEnd) {
+            var cost = Mathf.Abs(heightStart - heightEnd) / Vector2.Distance(a.Pos, b.Pos);
             //0.5f = 50 % slope
             if(cost > p.slopeCostMaxGrade) return float.PositiveInfinity;
             cost = cost * cost;
