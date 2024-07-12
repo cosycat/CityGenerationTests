@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using FreeFormGraph.World;
 
 namespace FreeFormGraph {
     public abstract class StreetGraphGameObject : MonoBehaviour, IStreetGraph {
@@ -13,6 +14,12 @@ namespace FreeFormGraph {
         public virtual int EdgeCount => Edges.Count();
         public abstract float SnapToExistingNodeThreshold { get; set; }
         public abstract float SnapToExistingEdgeThreshold { get; set; }
+        
+        void Start() {
+            Init(FindObjectOfType<WorldGameObject>());
+        }
+        
+        public virtual void Init(IWorld world) {}
         
         public virtual bool CreateEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode,
             out bool isToNodeNew, out bool isEdgeNew, bool failIfIntersection = false) {
@@ -36,12 +43,14 @@ namespace FreeFormGraph {
 
         public abstract bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge, out bool isEdgeNew);
         public abstract bool RemoveNode(IStreetNode node);
+        public abstract bool RemoveEdge(IStreetEdge edge);
+
         public virtual bool TryFindClosestNode(IEnumerable<IStreetNode> nodes, Vector3 position, out IStreetNode foundNode, float threshold = Single.MaxValue) {
             IStreetNode? optionalFoundNode = null;
             var minDistance = threshold;
             foreach (var node in nodes) {
                 var distance = Vector3.Distance(node.Position, position);
-                if (distance < minDistance) {
+                if (distance <= minDistance) { //"<=" is important for when threshold = 0!
                     minDistance = distance;
                     optionalFoundNode = node;
                 }
@@ -50,7 +59,7 @@ namespace FreeFormGraph {
             return optionalFoundNode != null;
         }
 
-        public bool TryFindClosestNode(Vector3 position, out IStreetNode foundNode, float threshold = float.MaxValue) =>
+        public virtual bool TryFindClosestNode(Vector3 position, out IStreetNode foundNode, float threshold = float.MaxValue) =>
             TryFindClosestNode(Nodes, position, out foundNode, threshold);
 
         public virtual bool TryFindClosestEdge(IEnumerable<IStreetEdge> edges, Vector3 position, out IStreetEdge foundEdge, out Vector3 positionOnEdge,

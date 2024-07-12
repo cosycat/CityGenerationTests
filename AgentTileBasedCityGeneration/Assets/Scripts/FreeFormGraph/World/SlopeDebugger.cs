@@ -68,8 +68,10 @@ namespace FreeFormGraph.World {
                 var pureSlope = 0.0f;
                 foreach(var seg in segments) {
                     var (a,b) = seg;
-                    pureSlope += Mathf.Abs(world.GetHeightAt(a.x, a.y) - world.GetHeightAt(b.x, b.y)) / Vector2.Distance(a, b);
-                    slopeCost += Pathfinding.SlopeCost(world, new Pathfinding.Waypoint(a), new Pathfinding.Waypoint(b), new());
+                    var heightStart = world.GetHeightAt(a.x, a.y);
+                    var heightEnd = world.GetHeightAt(b.x, b.y);
+                    pureSlope += Mathf.Abs(heightStart - heightEnd) / Vector2.Distance(a, b);
+                    slopeCost += Pathfinding.SlopeCost(world, new Pathfinding.Waypoint(a), new Pathfinding.Waypoint(b), new(), heightStart, heightEnd);
                 }
                 GUILayout.Label($"Total slope cost: {slopeCost}, pure slope: {pureSlope}");
                 if (GUILayout.Button($"Clear slope segments")) {

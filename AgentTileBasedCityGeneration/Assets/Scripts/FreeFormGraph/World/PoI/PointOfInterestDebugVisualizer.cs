@@ -34,17 +34,14 @@ namespace FreeFormGraph.World.PoI {
             
             foreach (var pointOfInterest in POIs) {
                 if (showBoundaries) {
-                    if (pointOfInterest is SpherePointOfInterest spherePointOfInterest) {
-                        Gizmos.color = Color.green;
-                        Gizmos.DrawWireSphere(spherePointOfInterest.Position, spherePointOfInterest.Radius);
-                    }
-                    else {
-                        Debug.LogWarning("Unknown point of interest type");
-                    }
+                    pointOfInterest.DebugVisualize(world);
                 }
 
                 if (showLabel) {
                     Handles.Label(pointOfInterest.Position, $"{pointOfInterest}");
+                    Handles.Label(new Vector3(pointOfInterest.Position.x, 
+                        world.GetHeightAt(pointOfInterest.Position.x, pointOfInterest.Position.y)+10f,
+                        pointOfInterest.Position.y), $"{pointOfInterest}");
                 }
             }
         }

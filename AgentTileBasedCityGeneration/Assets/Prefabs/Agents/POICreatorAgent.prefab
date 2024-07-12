@@ -44,24 +44,53 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f77d02d306af4e558c55b402eafc4d59, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  settlementDeveloperAgentParameters:
-    <MinStreetLength>k__BackingField: 1
+  sdaParameters:
+  - time: 49
+    <MinStreetLength>k__BackingField: 3
+    <MaxStreetLength>k__BackingField: 7
+    <MinNodeEdgeDistance>k__BackingField: 0.7
+    <AngleOffset>k__BackingField: 0.3
+    <AngleRandomMax>k__BackingField: 0.56
+    <MaxConnectionDistance>k__BackingField: 3.5
+    <SnapToGrid>k__BackingField: 0
+    <ConnectCulDeSacs>k__BackingField: 0
+    <ConnectCulDeSacWithNonCulDeSac>k__BackingField: 1
+    <AngleInBothDirections>k__BackingField: 1
+    <GrowRadiusAddition>k__BackingField: 9
+    <MaxSlope>k__BackingField: 0.1
+  - time: 5
+    <MinStreetLength>k__BackingField: 2
+    <MaxStreetLength>k__BackingField: 5
+    <MinNodeEdgeDistance>k__BackingField: 0.7
+    <AngleOffset>k__BackingField: 0
+    <AngleRandomMax>k__BackingField: 0
+    <MaxConnectionDistance>k__BackingField: 3.5
+    <SnapToGrid>k__BackingField: 0
+    <ConnectCulDeSacs>k__BackingField: 0
+    <ConnectCulDeSacWithNonCulDeSac>k__BackingField: 1
+    <AngleInBothDirections>k__BackingField: 1
+    <GrowRadiusAddition>k__BackingField: 2
+    <MaxSlope>k__BackingField: 0.1
+  - time: -1
+    <MinStreetLength>k__BackingField: 2
     <MaxStreetLength>k__BackingField: 5
     <MinNodeEdgeDistance>k__BackingField: 0.7
     <AngleOffset>k__BackingField: 1.5707964
     <AngleRandomMax>k__BackingField: 0
     <MaxConnectionDistance>k__BackingField: 3.5
     <SnapToGrid>k__BackingField: 0
-    <ConnectCulDeSacs>k__BackingField: 1
+    <ConnectCulDeSacs>k__BackingField: 2
     <ConnectCulDeSacWithNonCulDeSac>k__BackingField: 1
-  pointOfInterestType: 0
+    <AngleInBothDirections>k__BackingField: 1
+    <GrowRadiusAddition>k__BackingField: 2
+    <MaxSlope>k__BackingField: 0.2
   agentParameters:
     DesiredNumberOfPoints: 35
     DistanceCostFactor: 35
     MinDistanceToRoad: 20
     RadiusGeneration: 100
     POIRadiusFlatnessThreshold: 20
-    POIRadiusMinimumSlopeForPenalty: 0.06
+    POIRadiusMinimumSlopeForPenalty: 0.07
     POIRadiusSlopePenaltyPower: 2
     POIRadiusHeightPenalty:
       serializedVersion: 2
@@ -97,3 +126,4 @@ MonoBehaviour:
       m_PostInfinity: 2
       m_RotationOrder: 4
     POIRadiusHeightPenaltyMultiplier: 3
+    InitialBudgetForPOI: 500

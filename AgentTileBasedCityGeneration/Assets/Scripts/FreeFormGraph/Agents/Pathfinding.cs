@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using FreeFormGraph.World;
 using UnityEngine;
 using Utils;
+using UnityEngine.Profiling;
+using DebugUtils;
 
 namespace FreeFormGraph.Agents {
 
@@ -33,7 +35,7 @@ namespace FreeFormGraph.Agents {
         /// This is the goal to reach via pathfinding.
         /// Is null if pathfinding was not yet started.
         /// </summary>
-        public Vector3? Target { get; private set; } = null;
+        public Vector2? Target { get; private set; } = null;
 
         //only for statistics
         private int getNeighborsCalled = 0;
@@ -49,16 +51,16 @@ namespace FreeFormGraph.Agents {
             this.parameters = parameters;
         }
 
-        public List<Waypoint>? AStar(Vector3 start, Vector3 target) {
+        public List<Waypoint>? AStar(Vector2 start, Vector2 target) {
             return AStar(start, target, wp => GetNeighbors(wp, parameters.SnapFactorNode, parameters.SnapFactorEdge, parameters.moveMaskK), () => false);
         }
 
-        public List<Waypoint>? AStar(Vector3 start, Vector3 target, Func<bool> isCancelled, bool perfStats = true) {
+        public List<Waypoint>? AStar(Vector2 start, Vector2 target, Func<bool> isCancelled, bool perfStats = true) {
             Debug.Log($"Start pathfinding from {start} to {target}");
             return AStar(start, target, wp => GetNeighbors(wp, parameters.SnapFactorNode, parameters.SnapFactorEdge, parameters.moveMaskK), isCancelled, perfStats);
         }
 
-        public List<Waypoint>? AStar(Vector3 start, Vector3 target, Func<Waypoint, List<Waypoint>> getNeighbors, Func<bool> isCancelled, bool perfStats = false) {
+        public List<Waypoint>? AStar(Vector2 start, Vector2 target, Func<Waypoint, List<Waypoint>> getNeighbors, Func<bool> isCancelled, bool perfStats = false) {
             this.Target = target;
             var startWaypoint = GetWaypoint(start); //Start position might be on edge or node already
             StartPosition = startWaypoint;
@@ -136,7 +138,7 @@ namespace FreeFormGraph.Agents {
             }
         }
 
-        private Waypoint GetWaypoint(Vector3 pos) {
+        private Waypoint GetWaypoint(Vector2 pos) {
             if(streetGraph.TryFindClosestNode(pos, out var node, parameters.SnapFactorNode)) {
                 return new Waypoint(node.Position, node);
             }
@@ -159,12 +161,18 @@ namespace FreeFormGraph.Agents {
             return path;
         }
 
-        public static void BuildPath2(List<Waypoint> waypoints, IStreetGraph streetGraph, IWorld world, Parameters p) {
+        public static bool BuildPath2(List<Waypoint> waypoints, IStreetGraph streetGraph, IWorld world, Parameters p) {
             Debug.Assert(waypoints.Count >= 2);
             //TODO assert waypoints unique
 
             //#24
             var thresholdWpExistingConnection = p.thresholdExistingConnection;
+
+            var numNodesBefore = streetGraph.NodeCount;
+            var numEdgesBefore = streetGraph.EdgeCount;
+            var removeNodes = new List<IStreetNode>();
+            var removeEdges = new List<IStreetEdge>();
+            var removeRoad = false;
 
             var currentWaypointIndex = 0;
             IStreetNode? lastNode;
@@ -174,8 +182,10 @@ namespace FreeFormGraph.Agents {
                 lastNode = wp.GraphNode;
             } else if(wp.GraphEdge != null) {
                 streetGraph.InsertNodeOnEdge(wp.GraphEdge, wp.Pos, out lastNode, out _, out _);
+                GraphDebugUtils.AssertStreetGraphConnectivity(world);
             } else {
                 streetGraph.CreateUnconnectedNode(waypoints[currentWaypointIndex].Pos, out lastNode);
+                removeNodes.Add(lastNode);
             }
             currentWaypointIndex++;
             var lastWp = waypoints[0];
@@ -186,11 +196,11 @@ namespace FreeFormGraph.Agents {
                 Debug.Assert(lastNode != null);
                 var pf = new Pathfinding(streetGraph, world, new());
                 wp = waypoints[currentWaypointIndex];
+                Debug.Assert(lastWp != wp);
                 breakCounter++;
                 if(breakCounter > 10000) {
-                    Debug.Log("ESCAPE!");
-                    Debug.Assert(false);
-                    return;
+                    Debug.Assert(false, $"Trying to build path with length: {waypoints.Count}, looping for too long...");
+                    return false;
                 }
                 if(wp.GraphEdge != null || wp.GraphNode != null) {
                     //ensure only one state at a time
@@ -200,22 +210,31 @@ namespace FreeFormGraph.Agents {
                 //pathfinding does not handle intersections well. It's possible that the chosen path
                 //generates new roads which connects two points which are already connected (the new path would be shorter tho).
                 //#24
-                var roadConnection = pf.AStarStreetOnly(lastWp, wp, () => false);
-                if(roadConnection != null && GetPathLength(roadConnection) / Vector3.Distance(lastWp.Pos, wp.Pos) < thresholdWpExistingConnection) {
+                var roadConnection = AStarStreetOnly(world, lastWp, wp, () => false);
+                if(roadConnection != null && GetPathLength(roadConnection) / Vector2.Distance(lastWp.Pos, wp.Pos) < thresholdWpExistingConnection) {
                     currentWaypointIndex++;
                     lastWp = wp;
                     Debug.Assert(wp.GraphNode != null ^ wp.GraphEdge != null);
 
                     if(wp.GraphEdge != null) {
                         streetGraph.InsertNodeOnEdge(wp.GraphEdge, wp.Pos, out lastNode, out _, out _);
+                        removeNodes.Add(lastNode);
                     } else {
                         lastNode = wp.GraphNode;
                     }
                 } else {
                     Debug.Assert(lastNode != null, "Last node is null");
-                    streetGraph.CreateEdge(lastNode!, wp.Pos, out _, out lastNode, out _, out _);
+                    var edgeCreated = streetGraph.CreateEdge(lastNode!, wp.Pos, out var newEdge, out lastNode, out var isToNodeNew, out var isEdgeNew);
+                    //edge creation might fail because the road angle is to small or there are too many connections to a node already...
+                    //the easiest way to handle these issues is to just remove the road altogether.
+                    if(isToNodeNew) removeNodes.Add(lastNode);
+                    if(isEdgeNew) removeEdges.Add(newEdge);
+                    if(!edgeCreated) {
+                        removeRoad = true;
+                        break;
+                    } 
 
-                    if(Vector3.Distance(lastNode.Position, wp.Pos) > 0.001f) {
+                    if(Vector2.Distance(lastNode.Position, wp.Pos) > 0.001f) {
                         //found an intersection, keep next waypoint
                     } else {
                         currentWaypointIndex++;
@@ -223,11 +242,26 @@ namespace FreeFormGraph.Agents {
                     }
                 }
             }
+
+            if(removeRoad) {
+                foreach(var e in removeEdges) {
+                    streetGraph.RemoveEdge(e);
+                }
+                Debug.Assert(streetGraph.EdgeCount == numEdgesBefore);
+                foreach(var n in removeNodes) {
+                    streetGraph.RemoveNode(n);
+                }
+                Debug.Assert(streetGraph.NodeCount == numNodesBefore);
+                return false;
+            }
+        
+            GraphDebugUtils.AssertStreetGraphConnectivity(world);
+            return true;
         }
 
         private float Cost(Waypoint current, Waypoint next, Parameters p) {
             Debug.Assert(current.Pos != next.Pos, "Current and next waypoint are the same");
-            var cost = Vector3.Distance(current.Pos, next.Pos);
+            var cost = Vector2.Distance(current.Pos, next.Pos);
             /*if(cost <= 1.01f) {
                 cost += 0.1f; //make short segments more costly to force fewer nodes
             }*/
@@ -243,23 +277,26 @@ namespace FreeFormGraph.Agents {
             } 
             cost *= costPenaltyForRoad;
 
-            if(world.GetHeightAt(next.Pos.x, next.Pos.y) > p.maxRoadElevation) {
+            var heightStart = world.GetHeightAt(current.Pos.x, current.Pos.y);
+            var heightEnd = world.GetHeightAt(next.Pos.x, next.Pos.y);
+
+            if(heightEnd > p.maxRoadElevation) {
                 return float.PositiveInfinity;
             }
 
             if(next.CameFrom != current) {
                 //no slope penalty for existing roads
-                slopeCost = SlopeCost(world, current, next, p);
+                slopeCost = SlopeCost(world, current, next, p, heightStart, heightEnd);
             }
 
-            var heightPenalty = world.GetHeightAt(next.Pos.y, next.Pos.x) * p.heightPenaltyMultiplier;
+            var heightPenalty = heightEnd * p.heightPenaltyMultiplier;
             var totalCost = cost + slopeCost + heightPenalty;
             Debug.Assert(Heuristic(current.Pos, next.Pos, p) <= totalCost);
             return totalCost;
         }
 
-        public static float SlopeCost(IWorld w, Waypoint a, Waypoint b, Parameters p) {
-            var cost = Mathf.Abs(w.GetHeightAt(a.Pos.x, a.Pos.y) - w.GetHeightAt(b.Pos.x, b.Pos.y)) / Vector3.Distance(a.Pos, b.Pos);
+        public static float SlopeCost(IWorld w, Waypoint a, Waypoint b, Parameters p, float heightStart, float heightEnd) {
+            var cost = Mathf.Abs(heightStart - heightEnd) / Vector2.Distance(a.Pos, b.Pos);
             //0.5f = 50 % slope
             if(cost > p.slopeCostMaxGrade) return float.PositiveInfinity;
             cost = cost * cost;
@@ -267,8 +304,8 @@ namespace FreeFormGraph.Agents {
             return cost;
         }
 
-        private float Heuristic(Vector3 target, Vector3 current, Parameters p) {
-            return Vector3.Distance(target, current) * p.heuristicMultiplier;
+        private float Heuristic(Vector2 target, Vector2 current, Parameters p) {
+            return Vector2.Distance(target, current) * p.heuristicMultiplier;
         }
 
         public List<Waypoint> GetNeighbors(Waypoint n, float snapFactorNode, float snapFactorEdge, int k) {
@@ -312,7 +349,7 @@ namespace FreeFormGraph.Agents {
 
             var currentPosition = n.Pos;
             //snap position to grid in case we are on a edge/node which does not lie on grid
-            currentPosition = new Vector3(Mathf.Round(currentPosition.x), Mathf.Round(currentPosition.y), 0);
+            currentPosition = new Vector2(Mathf.Round(currentPosition.x), Mathf.Round(currentPosition.y));
 
             var possibleEdges = streetGraph.FindAllEdgesWithinRange(n.Pos, Mathf.Sqrt(k*k + k*k) + snapFactorEdge);
             var possibleNodes = new List<IStreetNode>();
@@ -329,7 +366,7 @@ namespace FreeFormGraph.Agents {
                 for(int j = -k; j <= k; j++) {
                     if (GCD(i, j) != 1) continue;
                     
-                    var newPos = new Vector3(i, j, 0) + currentPosition;
+                    var newPos = new Vector2(i, j) + currentPosition;
                     if(streetGraph.TryFindClosestNode(possibleNodes, newPos, out var node, snapFactorNode)) {
                         //move this point to the closest node
                         if(!skipNode.Contains(node)) {
@@ -372,19 +409,24 @@ namespace FreeFormGraph.Agents {
             return GCD(q, r);
         }
 
-        public List<Waypoint>? AStarStreetOnly(Waypoint start, Waypoint target, Func<bool> isCancelled) {
+        public static List<Waypoint>? AStarStreetOnly(IWorld world,
+                Waypoint start, 
+                Waypoint target, 
+                Func<bool> isCancelled) {
+            Debug.Assert(start.Pos != target.Pos);
+            var pathfinding = new Pathfinding(world.StreetGraph, world, Parameters.GetRoadPathSearchParameters());
             var startPos = start.Pos;
             var endPos = target.Pos;
             //a bit hacky, pathfinding on roads only makes only sense between nodes -> move position on edge to closest node :)
             if(start.GraphEdge != null) {
-                if(Vector3.Distance(startPos, start.GraphEdge.NodeA.Position) < Vector3.Distance(startPos, start.GraphEdge.NodeB.Position)) {
+                if(Vector2.Distance(startPos, start.GraphEdge.NodeA.Position) < Vector2.Distance(startPos, start.GraphEdge.NodeB.Position)) {
                     startPos = start.GraphEdge.NodeA.Position;
                 } else {
                     startPos = start.GraphEdge.NodeB.Position;
                 }
             }
             if(target.GraphEdge != null) {
-                if(Vector3.Distance(endPos, target.GraphEdge.NodeA.Position) < Vector3.Distance(endPos, target.GraphEdge.NodeB.Position)) {
+                if(Vector2.Distance(endPos, target.GraphEdge.NodeA.Position) < Vector2.Distance(endPos, target.GraphEdge.NodeB.Position)) {
                     endPos = target.GraphEdge.NodeA.Position;
                 } else {
                     endPos = target.GraphEdge.NodeB.Position;
@@ -392,7 +434,7 @@ namespace FreeFormGraph.Agents {
             }
 
             //TODO refactor AStar to pass waypoint
-            return AStar(startPos, endPos, wp => GetNeighbors(wp, 0, 0, 0), isCancelled);
+            return pathfinding.AStar(startPos, endPos, wp => pathfinding.GetNeighbors(wp, 0, 0, 0), isCancelled);
         }
 
         public static float GetPathLength(List<Waypoint> waypoints) {
@@ -400,7 +442,7 @@ namespace FreeFormGraph.Agents {
             for(var i = 0; i < waypoints.Count-1; i++) {
                 //calculating total length via geometry is not possible here
                 //because there is no geometry yet (i.e. Length() from IStreetEdge)!
-                length += Vector3.Distance(waypoints[i].Pos, waypoints[i+1].Pos);
+                length += Vector2.Distance(waypoints[i].Pos, waypoints[i+1].Pos);
             }
             return length;
         }
@@ -487,16 +529,25 @@ namespace FreeFormGraph.Agents {
             /// </summary>
             
             public float thresholdExistingConnection = 2f;
+
+            public static Parameters GetRoadPathSearchParameters() {
+                var p = new Parameters();
+                p.maxRoadElevation = float.MaxValue;
+                p.slopeCostMaxGrade = float.MaxValue;
+                return p;
+            }
         }
 
         public class Waypoint {
-            public Vector3 Pos { get; }
+            public Vector2 Pos { get; }
 
             public IStreetNode? GraphNode {get; set;}
             public IStreetEdge? GraphEdge {get; set;}
             public Waypoint? CameFrom {get; set;}
 
-            public Waypoint(Vector3 p, IStreetNode? node = null, IStreetEdge? edge = null) {
+            public Waypoint(IStreetNode node): this(node.Position, node, null) {}
+
+            public Waypoint(Vector2 p, IStreetNode? node = null, IStreetEdge? edge = null) {
                 Pos = p;
                 GraphNode = node;
                 GraphEdge = edge;

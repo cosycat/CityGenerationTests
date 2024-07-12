@@ -14,6 +14,8 @@ namespace FreeFormGraph.Agents {
 
         [SerializeField] private bool useRandomSeed = true;
         [SerializeField] private int seed = 1337;
+
+        [SerializeField] private bool workOnMainThread = false;
         
         /// <summary>
         /// The target frames per second the agents should run at.
@@ -174,7 +176,7 @@ namespace FreeFormGraph.Agents {
             // initialize the task, but let it wait if the previous frame was too fast
             var task = new Task(() => {
                 if (timeToWaitSeconds > 0) {
-                    // Debug.Log($"Waiting {timeToWaitSeconds} seconds.");
+                    //Debug.Log($"Waiting {timeToWaitSeconds} seconds.");
                     Thread.Sleep((int)(timeToWaitSeconds * 1000));
                 }
 
@@ -201,7 +203,8 @@ namespace FreeFormGraph.Agents {
                 }
             });
             
-            task.Start();
+            if(workOnMainThread) task.Start(TaskScheduler.FromCurrentSynchronizationContext());
+            else task.Start();
         }
 
         private void GenerateAgents() {

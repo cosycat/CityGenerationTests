@@ -472,6 +472,11 @@ namespace FreeFormGraph.SplineBased {
             return closestNode;
         }
 
+        public override bool RemoveEdge(IStreetEdge edge)
+        {
+            throw new NotImplementedException();
+        }
+
         public override void InsertNodeOnEdge(IStreetEdge foundEdge, Vector3 positionOnEdge, out IStreetNode node, out IStreetEdge leftEdge, out IStreetEdge rightEdge) {
             throw new NotImplementedException();
         }

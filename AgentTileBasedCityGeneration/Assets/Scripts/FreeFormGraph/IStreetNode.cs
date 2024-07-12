@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using FreeFormGraph.LineBased;
+using System.Linq;
 using UnityEngine;
 
 namespace FreeFormGraph {
@@ -37,6 +37,17 @@ namespace FreeFormGraph {
         /// Whether the maximum number of edges that can be connected to this node has been reached.
         /// </summary>
         public bool IsMaxConnectedEdgesReached => ConnectedEdgesCount >= MaxConnectedEdges;
+
+        public IList<IStreetNode> GetNeighbors() {
+            var neighbors = new List<IStreetNode>();
+            foreach(var edge in Edges) {
+                var otherNode = edge.NodeA;
+                if(otherNode == this) otherNode = edge.NodeB;
+                neighbors.Add(otherNode);
+            }
+            Debug.Assert(neighbors.Distinct().Count() == neighbors.Count());
+            return neighbors;
+        }
 
         /// <summary>
         /// Returns a string representation of the node for debugging purposes.
