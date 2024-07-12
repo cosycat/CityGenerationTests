@@ -19,6 +19,8 @@ namespace DataStructures {
         private readonly float centerX;
         private readonly float centerY;
         private readonly float halfSize;
+
+        private const int BUCKET_SIZE = 50;
         
         public QuadTreePointAdapter(Vector2 bottomLeft, Vector2 topRight) {
             Debug.Assert(bottomLeft.x < topRight.x);
@@ -28,7 +30,7 @@ namespace DataStructures {
             centerY = bottomLeft.y + (topRight.y-bottomLeft.y)/2.0f;
             halfSize = (topRight.x-bottomLeft.x)/2.0f;
             var region = new QuadTreeFloatPointRegion(centerX, centerY, halfSize);
-            quadTree = new QuadTreeFloatPoint<NodeDataAdapter>(region);
+            quadTree = new QuadTreeFloatPoint<NodeDataAdapter>(region, BUCKET_SIZE);
         }
 
         public IStreetNode? FindNearest(float x, float y) {
@@ -54,7 +56,7 @@ namespace DataStructures {
             Debug.Assert(objToRemove != null);
             //ugly but the quadtree can't remove elements...
             var region = new QuadTreeFloatPointRegion(centerX, centerY, halfSize);
-            var newQuadTree = new QuadTreeFloatPoint<NodeDataAdapter>(region);
+            var newQuadTree = new QuadTreeFloatPoint<NodeDataAdapter>(region, BUCKET_SIZE);
             foreach(var o in quadTree) {
                 if(o != objToRemove) {
                     newQuadTree.Insert(new NodeDataAdapter(o.n));
