@@ -203,13 +203,13 @@ def run_sumo_simulation():
                 if subscription_result is None or len(subscription_result) == 0:
                     print(f"WARNING: No subscription result for vehicle {vehicle_id}: {subscription_result}")
                     continue
-                vehicle = get_vehicle_info_subscription(id, subscription_result)
+                vehicle = get_vehicle_info_subscription(vehicle_id, subscription_result)
                 vehicle_list.append(vehicle)
                 # print(vehicle)
 
             simulation_step_info = SumoSimulationStepInfo(step, vehicle_list)
-            print(simulation_step_info)
-            print(vehicle_list)
+            # print(simulation_step_info)
+            # print(vehicle_list)
             simulation_step_info_json = simulation_step_info.convert_to_json_string()
 
             send_data_over_socket(simulation_step_info_json, conn)

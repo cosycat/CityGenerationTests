@@ -57,3 +57,6 @@ class VehicleInfo:
         self.speed = _speed
         self.signals = _signals
         self.vehicleType = _veh_type
+
+    def __str__(self):
+        return f"Vehicle: {self.id}, Pos: ({self.positionX}, {self.positionY}), Rot: {self.rotation}, Speed: {self.speed}, Signals: {self.signals}, Type: {self.vehicleType}"
