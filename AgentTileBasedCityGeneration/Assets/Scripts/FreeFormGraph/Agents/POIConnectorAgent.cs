@@ -33,12 +33,15 @@ namespace FreeFormGraph.Agents {
         [SerializeField]
         public Pathfinding.Parameters parameters = new();
 
+        [SerializeField] public List<SettlementDeveloperAgent.SdaParameters> sdaParameters = new() {new(), new(), new(), new(), new()};
+
 
         public void DoWork(CancellationToken cancellationToken, IWorld world, AgentManager.Context context) {
             var worldPOIs = world.PointsOfInterest.PointsOfInterest;
             if(connectedPOIs.Count == 0 && worldPOIs.Count >= 1) {
                 //initial condition: first POI in world does not need to be connected
                 connectedPOIs.Add(worldPOIs[0]);
+                context.Manager.AddNewAgent(new SettlementDeveloperAgent((BudgetPointOfInterest)worldPOIs[0], world, sdaParameters));
                 return;
             }
 
@@ -55,8 +58,15 @@ namespace FreeFormGraph.Agents {
             var path = pathfinding.AStar(unconnectedPoi.Position, closestPoi.Position, isCancelled);
 
             if(path != null) {
-                Pathfinding.BuildPath2(path, world.StreetGraph, world, parameters);
-                connectedPOIs.Add(unconnectedPoi);
+                if(Pathfinding.BuildPath2(path, world.StreetGraph, world, parameters)) {
+                    connectedPOIs.Add(unconnectedPoi);
+                    context.Manager.AddNewAgent(new SettlementDeveloperAgent((BudgetPointOfInterest)unconnectedPoi, world, sdaParameters));
+                    Debug.Assert(world.StreetGraph.TryFindClosestNode(unconnectedPoi.Position, out var node));
+                    world.PointsOfInterest.AddNodeRelationToPointOfInterest(node, unconnectedPoi);
+                } else {
+                    //path could not be built for some reason (angles, too many connections...)
+                    worldPOIs.Remove(unconnectedPoi);
+                }
             } else if(!isCancelled()) {
                 //isCancelled == false => AStar couldn't find a path, there is no need to test it again next time
                 //isCancelled == true => AStar couldn't finish and thus returned null (but could find a path still)
@@ -104,8 +114,8 @@ namespace FreeFormGraph.Agents {
                 var flagSize = 2;
                 Gizmos.color = Color.green;
                 //casting to force unwrap nullable...
-                Gizmos.DrawLine(currentStartPosition, currentStartPosition + Vector3.up * postHeight);
-                Gizmos.DrawCube(currentStartPosition + Vector3.up * (postHeight - (flagSize / 2f)) + Vector3.right * (flagSize / 2.0f), new Vector3(flagSize, flagSize, 0));
+                Gizmos.DrawLine(currentStartPosition, (Vector3)currentStartPosition + Vector3.up * postHeight);
+                Gizmos.DrawCube((Vector3)currentStartPosition + Vector3.up * (postHeight - (flagSize / 2f)) + Vector3.right * (flagSize / 2.0f), new Vector3(flagSize, flagSize, 0));
                 Gizmos.color = Color.red;
                 Gizmos.DrawLine(currentTarget, currentStartPosition);
                 Gizmos.DrawLine(currentTarget, currentTarget + Vector3.up * postHeight);

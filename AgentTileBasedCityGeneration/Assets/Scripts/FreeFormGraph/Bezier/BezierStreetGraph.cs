@@ -106,6 +106,11 @@ namespace FreeFormGraph.Bezier {
             // TODO: check if this needs anything else.
             return true;
         }
+
+        public override bool RemoveEdge(IStreetEdge edge)
+        {
+            throw new NotImplementedException();
+        }
         
         // Simple util method from https://stackoverflow.com/questions/59449628/check-when-two-vector3-lines-intersect-unity3d
         // TODO improve

@@ -6,13 +6,16 @@ using System.Threading;
 using System.Threading.Tasks;
 using FreeFormGraph.World;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Random = System.Random;
 
 namespace FreeFormGraph.Agents {
     public class AgentManager : MonoBehaviour {
 
-        [SerializeField] private bool useSeed = true;
+        [SerializeField] private bool useRandomSeed = true;
         [SerializeField] private int seed = 1337;
+
+        [SerializeField] private bool workOnMainThread = false;
         
         /// <summary>
         /// The target frames per second the agents should run at.
@@ -23,7 +26,7 @@ namespace FreeFormGraph.Agents {
         
         private float TargetFrameTimeSeconds => 1f / TargetFramesPerSecond;
 
-        private static AgentManager Instance { get; set; } = null!;
+        public static AgentManager Instance { get; private set; } = null!;
 
         private readonly List<(IAgent agent, int framesSinceWorked)> agents = new();
         private readonly List<IAgent> newlyAddedAgents = new();
@@ -56,8 +59,9 @@ namespace FreeFormGraph.Agents {
                 return;
             }
             Instance = this;
-
-            context = new Context(useSeed ? new Random(seed) : new Random(), this);
+            seed = useRandomSeed ? new Random().Next() : seed;
+            context = new Context(new Random(seed), this);
+            Debug.Log($"AgentManager initialized with seed {seed}");
         }
 
         private void Start() {
@@ -106,12 +110,14 @@ namespace FreeFormGraph.Agents {
                     var currCompletedTask = completedTask!;
                     completedTask = null;
                     
-                    Debug.Log($"Completed task, Before Lock - Application.IsPlaying(Instance): {Application.IsPlaying(Instance)}, Application.isPlaying: {Application.isPlaying}");
+                    // Debug.Log($"Completed task, Before Lock - Application.IsPlaying(Instance): {Application.IsPlaying(Instance)}, Application.isPlaying: {Application.isPlaying}");
                     lock (stopRequestLock) {
                         cancellationTokenSource = null;
-                        Debug.Log($"Application.IsPlaying(Instance): {Application.IsPlaying(Instance)} - If this is false only when a thread continues to run after play stopped, then this could be used here to stop a thread."); // TODO does this help in stopping tasks?
-                        Debug.Log($"Application.isPlaying: {Application.isPlaying} - If this is false only when a thread continues to run after play stopped, then this could be used here to stop a thread.");
-                    
+                        if (!Application.IsPlaying(Instance) || !Application.isPlaying) {
+                            Debug.Log($"Application.IsPlaying(Instance): {Application.IsPlaying(Instance)} - If this is false only when a thread continues to run after play stopped, then this could be used here to stop a thread."); // TODO does this help in stopping tasks?
+                            Debug.Log($"Application.isPlaying: {Application.isPlaying} - If this is false only when a thread continues to run after play stopped, then this could be used here to stop a thread.");
+                        }
+
                         if(currCompletedTask.IsFaulted) {
                             var exceptions = currCompletedTask.Exception?.Flatten().InnerExceptions;
                             Debug.LogError("Aborted AgentManager due to unhandled exception in child task");
@@ -182,29 +188,29 @@ namespace FreeFormGraph.Agents {
             }
             agents[currAgentIndex] = (agent, 0); // reset the frame counter for the agent
             cancellationTokenSource = new CancellationTokenSource();
-            Debug.Log($"Starting agent {agent.GetType().Name} with frequency {agent.WorkFrequency}.");
+            // Debug.Log($"Starting agent {agent.GetType().Name} with frequency {agent.WorkFrequency}.");
             
             // initialize the task, but let it wait if the previous frame was too fast
             var task = new Task(() => {
                 if (timeToWaitSeconds > 0) {
-                    Debug.Log($"Waiting {timeToWaitSeconds} seconds.");
+                    //Debug.Log($"Waiting {timeToWaitSeconds} seconds.");
                     Thread.Sleep((int)(timeToWaitSeconds * 1000));
                 }
 
-                Debug.Log($"Starting agent {agent.GetType().Name} with frequency {agent.WorkFrequency}.");
+                // Debug.Log($"Starting agent {agent.GetType().Name} with frequency {agent.WorkFrequency}.");
 
                 cancellationTokenSource.Token.ThrowIfCancellationRequested();
-                Debug.Log($"DoWork {agent.GetType().Name} with frequency {agent.WorkFrequency}.");
+                // Debug.Log($"DoWork {agent.GetType().Name} with frequency {agent.WorkFrequency}.");
                 
                 agent.DoWork(cancellationTokenSource.Token, world, context);
                 Thread.Sleep(1); // make sure the task is not too fast, not sure if needed.
-                Debug.Log($"Finished agent {agent.GetType().Name} with frequency {agent.WorkFrequency}.");
+                // Debug.Log($"Finished agent {agent.GetType().Name} with frequency {agent.WorkFrequency}.");
                 
             }, cancellationTokenSource.Token);
             
             // once the agent is done, either start the next agent or stop the manager, if requested
             task.ContinueWith(currCompletedTask => {
-                Debug.Log($"Task completed.");
+                // Debug.Log($"Task completed.");
                 Monitor.Enter(completedTaskLock);
                 try {
                     if (completedTask != null) throw new Exception($"Somehow the next task was started before the previous one was handled. Tasks should always run in sequence. current: {completedTask}, new: {currCompletedTask}, status: {currCompletedTask.Status}");
@@ -214,7 +220,8 @@ namespace FreeFormGraph.Agents {
                 }
             });
             
-            task.Start();
+            if(workOnMainThread) task.Start(TaskScheduler.FromCurrentSynchronizationContext());
+            else task.Start();
         }
 
         private void GenerateAgents() {

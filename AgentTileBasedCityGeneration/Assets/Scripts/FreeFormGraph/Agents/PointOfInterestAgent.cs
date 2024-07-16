@@ -16,29 +16,11 @@ namespace FreeFormGraph.Agents {
 
         [Tooltip("The parameters for used for the next generated settlement and its settlement developer agent."),
          SerializeField] private SettlementDeveloperAgent.SdaParameters settlementDeveloperAgentParameters = new();
-        [Tooltip("The type of point of interest that will be generated next."),
-         SerializeField] private PointOfInterestType pointOfInterestType = PointOfInterestType.Village;
         
         private IStreetGraph streetGraph;
 
         [SerializeField]
         public POIAgentParameters agentParameters = new();
-        
-        /// <summary>
-        /// Returns the min and max radius for a point of interest of the given type.
-        /// </summary>
-        /// <param name="type"> The type of the point of interest. </param>
-        /// <returns> The min and max radius for the point of interest. </returns>
-        /// <exception cref="ArgumentOutOfRangeException"> Thrown when the type is not a valid PointOfInterestType value. </exception>
-        public static (float min, float max) GetRadiusForPointOfInterestType(PointOfInterestType type) {
-            // TODO this should be moved to a more appropriate place
-            return type switch {
-                PointOfInterestType.Village => (5, 10),
-                PointOfInterestType.Town => (10, 15),
-                PointOfInterestType.City => (15, 20),
-                _ => throw new System.ArgumentOutOfRangeException(nameof(type), type, "Invalid PointOfInterestType value.")
-            };
-        }
 
         public void DoWork(CancellationToken cancellationToken, IWorld world, AgentManager.Context context) {
             if(streetGraph == null) return;
@@ -72,11 +54,8 @@ namespace FreeFormGraph.Agents {
             }
 
             //TODO check validity?
-            var radiusPoi = DetermineRadiusOfPoi(newPoiPos, world);
-            var pointOfInterest = new SpherePointOfInterest(newPoiPos, pointOfInterestType, radiusPoi);
+            var pointOfInterest = new BudgetPointOfInterest(newPoiPos, agentParameters.InitialBudgetForPOI);
             world.PointsOfInterest.AddPointOfInterest(pointOfInterest);
-            context.Manager.AddNewAgent(new SettlementDeveloperAgent(pointOfInterest, world, settlementDeveloperAgentParameters));
-            Debug.Log($"placed poi at {newPoiPos} {randomDir} {poiSeedPosition}");
         }
 
         /// <summary>
@@ -145,65 +124,6 @@ namespace FreeFormGraph.Agents {
             return currentTargetPos;
         }
 
-        /// <summary>
-        /// Determine the radius of a POI by growing it in steps. During each step, the slopes on the edge of the radius are
-        /// evaluated, penalised and accumulated according to some parameters. If this accumulated penalty is higher than some
-        /// threshold, growing stops and the radius is fixed.
-        /// </summary>
-        /// <param name="v">POI position</param>
-        /// <param name="world"></param>
-        /// <returns>Radius of POI in world units</returns>
-        private float DetermineRadiusOfPoi(Vector2Int v, IWorld world) {
-            var startingHeight = world.GetHeightAt(v.x, v.y);
-            var penalty = 0.0f;
-            var threshold = agentParameters.POIRadiusFlatnessThreshold;
-
-            var directions = new Vector2[] {
-                new Vector2Int(0, 1), //up
-                new Vector2Int(0, -1), //down
-                new Vector2Int(1, 0), //left
-                new Vector2Int(-1, 0), //right
-
-                new Vector2Int(1, 1), //top right
-                new Vector2Int(-1, -1), //bottom left
-                new Vector2Int(1, -1), //top left
-                new Vector2Int(-1, 1), //bottom right
-            };
-
-            //looks the same as above but 
-            var dirUpdateMask = (Vector2[])directions.Clone(); //vectors are value types!
-            var directionHeights = new float[directions.Count()];
-            Array.Fill(directionHeights, startingHeight);
-
-            var radius = 1; //radius could technically be inferred from directions array but lets keep that array flexible
-            while(penalty < threshold) {
-                penalty = 0;
-                for(int i = 0; i < directions.Count(); i++) {
-                    var testPos = v + directions[i];
-                    if(world.IsOutOfBounds(testPos)) return radius;
-                    var heightAtDir = directionHeights[i];
-                    var heightAtTestPos = world.GetHeightAt(testPos.x, testPos.y);
-
-                    var slopeCost = 0.0f;
-                    var slope = heightAtTestPos - heightAtDir;
-                    if(slope >= agentParameters.POIRadiusMinimumSlopeForPenalty) {
-                        slopeCost = Mathf.Pow(slope + 1, agentParameters.POIRadiusSlopePenaltyPower);
-                    }
-
-                    penalty += slopeCost;
-                    
-                    var heightPenalty = agentParameters.POIRadiusHeightPenalty.Evaluate(Mathf.InverseLerp(world.MinHeight, world.MaxHeight, heightAtDir));
-                    penalty += heightPenalty * agentParameters.POIRadiusHeightPenaltyMultiplier;
-
-                    directions[i] += dirUpdateMask[i];
-                    directionHeights[i] = heightAtTestPos;
-                }
-                radius++;
-            }
-            
-            return radius;
-        }
-
         void Start() {
             streetGraph = FindObjectOfType<StreetGraphGameObject>();
         }
@@ -260,6 +180,8 @@ namespace FreeFormGraph.Agents {
             /// Multiplier for the height penalty.
             /// </summary>
             [SerializeField] public float POIRadiusHeightPenaltyMultiplier = 3.5f;
+
+            [Min(0)] public int InitialBudgetForPOI = 500;
         }
     }
     

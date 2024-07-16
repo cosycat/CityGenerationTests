@@ -1,14 +1,12 @@
+#nullable enable
 using System.Linq;
 using System.Xml.Linq;
 using FreeFormGraph;
+using FreeFormGraph.World;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace SUMO {
-
-    public class SumoSimulationOptions {
-        public float SimulationStepLengthSeconds { get; set; } = 0.03f;
-    }
-    
     internal class SumoFileGenerator {
         private const string EDGES_FILE_NAME = "edges.edg.xml";
         private const string NODES_FILE_NAME = "nodes.nod.xml";
@@ -18,6 +16,7 @@ namespace SUMO {
         private const string CONFIGURATION_FILE_NAME = "configuration.sumocfg";
 
         private IStreetGraph Graph { get; }
+        private IWorld World { get; }
         private string SumoPath { get; }
         public SumoSimulationOptions SimulationOptions { get; }
 
@@ -28,16 +27,17 @@ namespace SUMO {
         public string OutputNetFilePath => $"{SumoPath}/{OUTPUT_NET_FILE_NAME}";
         public string ConfigurationFilePath => $"{SumoPath}/{CONFIGURATION_FILE_NAME}";
 
-        private SumoFileGenerator(string sumoPath, IStreetGraph graph, SumoSimulationOptions simulationOptions) {
+        private SumoFileGenerator(string sumoPath, IStreetGraph graph, SumoSimulationOptions simulationOptions, IWorld world) {
             Graph = graph;
+            World = world;
             SimulationOptions = simulationOptions;
             SumoPath = sumoPath;
             InitializeDirectory(sumoPath);
             CreateNetworkFiles();
         }
         
-        internal static SumoFileGenerator Create(string sumoPath, IStreetGraph graph, SumoSimulationOptions simulationOptions) {
-            return new SumoFileGenerator(sumoPath, graph, simulationOptions);
+        internal static SumoFileGenerator Create(string sumoPath, IStreetGraph graph, SumoSimulationOptions simulationOptions, IWorld world) {
+            return new SumoFileGenerator(sumoPath, graph, simulationOptions, world);
         }
 
         private static void InitializeDirectory(string sumoPath) {
@@ -71,22 +71,23 @@ namespace SUMO {
             var nodes = Graph.Nodes.ToArray();
             for (var i = 0; i < nodes.Length; i++) {
                 var node = nodes[i];
-                AddNode(nodesDoc, $"n{i}", node.Position.x, node.Position.y, "priority");
+                AddNode(nodesDoc, $"n{i}", node.PositionMeters.x, node.PositionMeters.y, World.GetHeightAt(node.Position.x, node.Position.y), "priority");
             }
             
             nodesDoc.Save(NodesFilePath);
         }
 
-        private static void AddNode(XDocument nodesDoc, string nodeId, double x, double y, string type) {
+        private static void AddNode(XDocument nodesDoc, string nodeId, double x, double y, double height, string type) {
             var newNode = new XElement("node",
                 new XAttribute("id", nodeId),
                 new XAttribute("x", x),
                 new XAttribute("y", y),
+                new XAttribute("z", height),
                 new XAttribute("type", type)
             );
 
             Debug.Assert(nodesDoc.Root != null, "nodesDoc.Root != null");
-            nodesDoc.Root.Add(newNode);
+            nodesDoc.Root?.Add(newNode);
         }
 
         private void GenerateEdges() {
@@ -117,7 +118,8 @@ namespace SUMO {
                 new XAttribute("speed", speed)
             );
 
-            edgesDoc.Root!.Add(newEdge);
+            Debug.Assert(edgesDoc.Root != null, "edgesDoc.Root != null");
+            edgesDoc.Root?.Add(newEdge);
         }
 
         private void GenerateConnections()
@@ -160,14 +162,34 @@ namespace SUMO {
 
         private void GenerateRoutes() {
             var routesDoc = new XDocument(new XElement("routes"));
-
+            
             AddCarType(routesDoc, "Car", 15.0f, 2.0f, 1.0f, 5.0f, 0.0f);
+
+            for (int i = 0; i < SimulationOptions.RandomTripCount; i++) {
+                var fromEdge = GetRandomEdge();
+                var toEdge = GetRandomEdge();
+                if (fromEdge == toEdge) continue;
+                AddTrip(routesDoc, $"trip{i}", fromEdge, toEdge, "Car");
+            }
             
-            AddTrip(routesDoc, "trip0", "e0", "e3", "Car");
+            for (int i = 0; i < SimulationOptions.RandomFlowCount; i++) {
+                var fromEdge = GetRandomEdge();
+                var toEdge = GetRandomEdge();
+                if (fromEdge == toEdge) continue;
+                AddFlow(routesDoc, $"flow{i}", fromEdge, toEdge, 0, 10000, 20, "Car");
+            }
+
             
-            AddTrip(routesDoc, "trip1", "e0", "e4", "Car", 10);
+            // AddTrip(routesDoc, "trip0", "e0", "e3", "Car");
+            //
+            // AddTrip(routesDoc, "trip1", "e0", "e4", "Car", 10);
             
             routesDoc.Save(RoutesFilePath);
+        }
+        
+        private string GetRandomEdge(bool withReverse = false) {
+            var edgeIndex = Random.Range(0, Graph.Edges.Count());
+            return $"e{edgeIndex}{(withReverse && Random.value < 0.5 ? "_reverse" : "")}";
         }
         
         private static void AddCarType(XDocument routesDoc, string id, float maxSpeed, float length, float accel, float decel, float sigma) {
@@ -240,7 +262,7 @@ namespace SUMO {
             var time = new XElement("time",
                 new XElement("begin", new XAttribute("value", "0")),
                 new XElement("end", new XAttribute("value", "10000")),
-                new XElement("step", new XAttribute("value", SimulationOptions.SimulationStepLengthSeconds))
+                new XElement("step-length", new XAttribute("value", SimulationOptions.SimulationStepLengthSeconds))
             );
             configurationDoc.Root!.Add(time);
             

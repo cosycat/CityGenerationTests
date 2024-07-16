@@ -15,12 +15,11 @@ namespace FreeFormGraph {
         [CanBeNull] private IStreetNode dragStartNode;
         
         [SerializeField] private bool drawGrid = true;
-        [SerializeField] private bool drawCurveBoxes;
-        [SerializeField] private bool drawIntersectionLines = true;
         [SerializeField] private bool drawLabelsEdges = false;
         [SerializeField] private bool drawLabelsNodes = false;
         [SerializeField] private bool drawMouseLabel = true;
         [SerializeField] private float mouseNodeDistanceThreshold = 0.3f;
+        [SerializeField] private bool allowMouseCreation = false;
 
         private readonly Dictionary<IStreetEdge, Color> edgeColors = new();
 
@@ -39,7 +38,7 @@ namespace FreeFormGraph {
         }
 
         private void Update() {
-            CheckMouseCreation();
+            if (allowMouseCreation) CheckMouseCreation();
         }
 
         private void CheckMouseCreation() {
@@ -79,12 +78,6 @@ namespace FreeFormGraph {
             if (GUILayout.Button($"Draw grid: ({drawGrid})")) {
                 drawGrid = !drawGrid;
             }
-            if (GUILayout.Button($"Bezier B-Boxes: ({drawCurveBoxes})")) {
-                drawCurveBoxes = !drawCurveBoxes;
-            }
-            if (GUILayout.Button($"Intersection Lines: ({drawIntersectionLines})")) {
-                drawIntersectionLines = !drawIntersectionLines;
-            }
             if (GUILayout.Button($"Graph color: Recalculate colors")) {
                 GraphColoring();
             }
@@ -107,7 +100,7 @@ namespace FreeFormGraph {
         private void GraphColoring() {
             //BFS
             //I know there are probably better algorithms for this...
-            var colors = new List<Color>(){Color.red, Color.blue, Color.yellow, Color.green, Color.cyan, Color.magenta};
+            var colors = new List<Color>(){Color.red, Color.blue, Color.yellow, Color.green, Color.cyan, Color.magenta, Color.grey, Color.black};
             var queue = new Queue<IStreetNode>();
             var visited = new HashSet<IStreetNode>();
             queue.Enqueue(streetGraph.Nodes.ToList()[0]);

@@ -4,13 +4,14 @@ using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.Splines;
 using DataStructures;
+using FreeFormGraph.World;
 
 namespace FreeFormGraph.LineBased {
     public class LineGraph : StreetGraphGameObject {
 
         private readonly List<LineEdge> edges = new();
 
-        private readonly BVH<LineEdge> bvh = new(new BVHLineAdapter(), new List<LineEdge>()); 
+        private ISpatialPointDatastructure<IStreetNode> nodeDatastructure;
 
         private readonly List<LineNode> nodes = new();
         public override IEnumerable<IStreetNode> Nodes => nodes;
@@ -28,6 +29,10 @@ namespace FreeFormGraph.LineBased {
         [field: SerializeField] public float MinAngleBetweenNewEdgesDegree { get; set; } = 15f;
         public float MinAngleBetweenNewEdgesRad => Mathf.Deg2Rad * MinAngleBetweenNewEdgesDegree;
         [SerializeField] private float edgeWidthMeters = 5f;
+
+        public override void Init(IWorld world) {
+            nodeDatastructure = new QuadTreePointAdapter(Vector2.zero, new Vector2(world.Width, world.Height));
+        }
 
         public override bool CreateEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode,
             out bool isToNodeNew, out bool isEdgeNew, bool failIfIntersection = false) {
@@ -86,7 +91,10 @@ namespace FreeFormGraph.LineBased {
                     }
                 }
                 
-                return CreateEdge(from, toNode, out newEdge, out isEdgeNew);
+                var result = CreateEdge(from, toNode, out newEdge, out isEdgeNew);
+                //edge building might still fail due to bad angles for example. Newly created nodes have then to be removed again otherwise they are dangling
+                if(!result && isToNodeNew) RemoveNode(toNode);
+                return result;
             }
         
         public override bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge, out bool isEdgeNew) {
@@ -148,7 +156,13 @@ namespace FreeFormGraph.LineBased {
         }
 
         public override bool RemoveNode(IStreetNode node) {
-            throw new NotImplementedException();
+            if(node.ConnectedEdgesCount == 0) {
+                nodes.Remove((LineNode)node);
+                nodeDatastructure.Remove((LineNode)node);
+                OnNodeRemoved((LineNode)node);
+                return true;
+            }
+            else throw new NotImplementedException("Node not allowed to rmeove because it still has edges");
         }
 
         public override bool CreateUnconnectedNode(Vector3 position, out IStreetNode newNode) {
@@ -222,13 +236,30 @@ namespace FreeFormGraph.LineBased {
             node = n;
         }
         
+        public override bool TryFindClosestNode(Vector3 position, out IStreetNode foundNode, float threshold = float.MaxValue) {
+            if(nodeDatastructure == null) {
+                //logically it should not happen (init() should always be called before working with graph) but sometimes order of execution is not always quite right...
+                foundNode = null!;
+                return false;
+            }
+            foundNode = nodeDatastructure.FindNearest(position.x, position.y);
+            var f1 = foundNode;
+            if(foundNode == null) return false; //no nodes yet
+            if(Vector2.Distance(foundNode.Position,position) > threshold) foundNode = null!;
+            return foundNode != null;
+        }
+
         public override IStreetEdge[] FindAllEdgesWithinRange(Vector2 position, float radius) {
+            if(radius == 0) return new List<IStreetEdge>().ToArray();
             var closeEdges = new List<IStreetEdge>();
-            var bvhHits = bvh.Traverse(BVHHelper.RadialNodeTraversalTest(position, radius));
+            var bvhHits = nodeDatastructure.FindRegion(
+                new Vector2(position.x-radius, position.y-radius),
+                new Vector2(position.x+radius, position.y+radius)
+            );
 
             foreach(var g in bvhHits) {
-                if (g.GObjects == null) continue;
-                foreach(var edge in g.GObjects) {
+                foreach(var edge in g.Edges) {
+                    if(closeEdges.Contains(edge)) continue;
                     var distance = edge.GetDistanceEdgeToPosition(position, out _);
                     if (distance < radius) {
                         closeEdges.Add(edge);
@@ -238,28 +269,26 @@ namespace FreeFormGraph.LineBased {
             return closeEdges.ToArray();
         }
 
-        private void AddEdge(LineEdge edge) {
-            edges.Add(edge);
-            bvh.Add(edge);
-            bvh.Optimize(); //maybe use batch operations for adding?
-            OnEdgeAdded(edge);
+        public override bool RemoveEdge(IStreetEdge edge)
+        {
+            if(edge is LineEdge lineEdge) {
+                ((LineNode)lineEdge.NodeA).RemoveEdge(lineEdge);
+                ((LineNode)lineEdge.NodeB).RemoveEdge(lineEdge);
+                OnEdgeRemoved(lineEdge);
+                return edges.Remove(lineEdge);
+            }
+            return false;
         }
 
-        private void RemoveEdge(LineEdge edge) {
-            edges.Remove(edge);
-            bvh.Remove(edge);
-            bvh.Optimize();
-            OnEdgeRemoved(edge);
+        private void AddEdge(LineEdge edge) {
+            edges.Add(edge);
+            OnEdgeAdded(edge);
         }
         
         private void AddNode(LineNode n) {
             nodes.Add(n);
+            nodeDatastructure.Insert(n);
             OnNodeAdded(n);
-        }
-        
-        private void RemoveNode(LineNode n) {
-            nodes.Remove(n);
-            OnNodeRemoved(n);
         }
     }
 
