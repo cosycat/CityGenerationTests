@@ -268,7 +268,7 @@ namespace FreeFormGraph.Agents {
             
             var costPenaltyForRoad = p.roadDistanceCostMultiplier1;
             float slopeCost = 0;
-            if(next.CameFrom == current) {
+            if(next.DidUseRoad) {
                 //we are walking over an existing road. make it cheap
                 costPenaltyForRoad = p.roadDistanceCostMultiplier2;
             }
@@ -284,7 +284,7 @@ namespace FreeFormGraph.Agents {
                 return float.PositiveInfinity;
             }
 
-            if(next.CameFrom != current) {
+            if(!next.DidUseRoad) {
                 //no slope penalty for existing roads
                 slopeCost = SlopeCost(world, current, next, p, heightStart, heightEnd);
             }
@@ -324,7 +324,7 @@ namespace FreeFormGraph.Agents {
 
                     var newWaypoint = new Waypoint(otherNode.Position) {
                         GraphNode = otherNode,
-                        CameFrom = n
+                        DidUseRoad = true
                     };
                     list.Add(newWaypoint);
                     skipEdge.Add(edge);
@@ -336,11 +336,11 @@ namespace FreeFormGraph.Agents {
             if(n.GraphEdge != null) { //TODO assert that only one of them is active
                 list.Add(new Waypoint(n.GraphEdge.NodeA.Position) {
                     GraphNode = n.GraphEdge.NodeA,
-                    CameFrom = n
+                    DidUseRoad = true
                 });
                 list.Add(new Waypoint(n.GraphEdge.NodeB.Position) {
                     GraphNode = n.GraphEdge.NodeB,
-                    CameFrom = n
+                    DidUseRoad = true
                 });
                 skipEdge.Add(n.GraphEdge);
                 skipNode.Add(n.GraphEdge.NodeA);
@@ -543,7 +543,7 @@ namespace FreeFormGraph.Agents {
 
             public IStreetNode? GraphNode {get; set;}
             public IStreetEdge? GraphEdge {get; set;}
-            public Waypoint? CameFrom {get; set;}
+            public bool DidUseRoad = false;
 
             public Waypoint(IStreetNode node): this(node.Position, node, null) {}
 
@@ -551,7 +551,6 @@ namespace FreeFormGraph.Agents {
                 Pos = p;
                 GraphNode = node;
                 GraphEdge = edge;
-                CameFrom = null;
             }
 
             public override string ToString() {
