@@ -67,7 +67,7 @@ namespace FreeFormGraph.Agents {
             if(age > parameters[currentParameterSetIndex].time) {
                 currentParameterSetIndex++;
                 age = 0;
-                Debug.Log("Settlement developer: swithed to a new timeline!");
+                Debug.Log("Settlement developer: switched to a new timeline!");
             }
         }
 
@@ -79,9 +79,9 @@ namespace FreeFormGraph.Agents {
             var node = GetRandomNode(nodes, random);
             // Debug.Assert(node != null, $"PoIDeveloperAgent: Node is null.");
             // var averageInPosition = GetAverageInPosition(node); // TODO take a random incoming edge as direction
-            var averageInPosition = GetRandomConnectedNodePosition(node, random);
-            Debug.Assert(node.Position != averageInPosition);
-            var direction = node.Position - averageInPosition;
+            var randomInPosition = GetRandomConnectedNodePosition(node, random);
+            Debug.Assert(node.Position != randomInPosition);
+            var direction = node.Position - randomInPosition;
             var inStreetAngle = Mathf.Atan2(direction.y, direction.x);
             var angleRandom = (float)random.NextDouble() * 2f * parameters.AngleRandomMax - parameters.AngleRandomMax; //UnityEngine.Random.Range(-angleRandomMax, angleRandomMax);
             var angleOffset = parameters.AngleInBothDirections ? (random.Next(2) == 1 ? parameters.AngleOffset : -parameters.AngleOffset) : parameters.AngleOffset;
