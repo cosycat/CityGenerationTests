@@ -8,13 +8,13 @@ using Utils;
 namespace Simulation {
     public class Vehicle : MonoBehaviour {
         
-        [FormerlySerializedAs("blinkerRightGO")] [SerializeField] private VehicleSignal? blinkerRight;
-        [FormerlySerializedAs("blinkerLeftGO")] [SerializeField] private VehicleSignal? blinkerLeft;
-        [FormerlySerializedAs("brakeLightGO")] [SerializeField] private VehicleSignal? brakeLight;
+        [FormerlySerializedAs("blinkerRightGO")] [SerializeField] protected VehicleSignal? blinkerRight;
+        [FormerlySerializedAs("blinkerLeftGO")] [SerializeField] protected VehicleSignal? blinkerLeft;
+        [FormerlySerializedAs("brakeLightGO")] [SerializeField] protected VehicleSignal? brakeLight;
         
         public string ID { get; internal set; } = null!;
 
-        private void Start() {
+        protected virtual void Start() {
             if (!Settings.UseVehicleSignals) {
                 if (blinkerRight != null) Destroy(blinkerRight.gameObject);
                 if (blinkerLeft != null) Destroy(blinkerLeft.gameObject);
@@ -33,12 +33,12 @@ namespace Simulation {
             
         }
 
-        public void UpdatePosition(Vector3 position, Quaternion rotation) {
+        public virtual void UpdatePosition(Vector3 position, Quaternion rotation) {
             transform.position = position;
             transform.rotation = rotation;
         }
 
-        public void UpdateSignals(bool isBlinkerRightOn, bool isBlinkerLeftOn, bool isBrakeLightOn) {
+        public virtual void UpdateSignals(bool isBlinkerRightOn, bool isBlinkerLeftOn, bool isBrakeLightOn) {
             if (!Settings.UseVehicleSignals) return;
             blinkerRight?.SetSignal(isBlinkerRightOn);
             blinkerLeft?.SetSignal(isBlinkerLeftOn);
