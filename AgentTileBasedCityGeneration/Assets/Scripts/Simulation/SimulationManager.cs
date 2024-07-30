@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using FreeFormGraph;
 using FreeFormGraph.World;
 using SUMO;
@@ -13,6 +14,7 @@ namespace Simulation {
         private GameObject vehicleParent = null!;
         
         [SerializeField] private Vehicle vehiclePrefab = null!;
+        [SerializeField] private PlayerVehicle playerVehiclePrefab = null!;
 
         private IWorld? world;
 
@@ -35,8 +37,18 @@ namespace Simulation {
 
             if (!CheckSimulationValidity()) return;
             
+            CreatePlayerVehicle();
+            
             sumoClient.VehicleDataReceived += SumoClientOnVehicleDataReceived;
             sumoClient.StartClient();
+        }
+
+        private void CreatePlayerVehicle() {
+            var playerVehicle = Instantiate(playerVehiclePrefab);
+            Debug.Assert(world != null);
+            var firstEdge = world.StreetGraph.Edges.First();
+            var firstPointOnEdge = firstEdge.SplitIntoEvenlySpacedPoints(out _)[0];
+            playerVehicle.transform.position = new Vector3(firstPointOnEdge.x, firstPointOnEdge.y, world.GetHeightAt(firstPointOnEdge.x, firstPointOnEdge.y));
         }
 
         private void SumoClientOnVehicleDataReceived(object sender, VehicleEventArgs e) {

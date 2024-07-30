@@ -3,6 +3,7 @@ import time
 import traci.constants as tc
 import socket
 import os
+import threading
 
 from SumoInfoUtility import VehicleInfo
 from SumoInfoUtility import SumoSimulationStepInfo
@@ -13,8 +14,10 @@ IS_DEBUG = False
 JSON_DIRECTLY = False
 SKIP_IF_SLOW = True
 
-TCP_IP = 'localhost'
-TCP_PORT = 9999
+IP_SEND_DATA = 'localhost'
+PORT_SEND_DATA = 9999
+IP_RECEIVE_DATA = 'localhost'
+PORT_RECEIVE_DATA = 9998
 BUFFER_SIZE = 64
 
 time_step_seconds = 0.03
@@ -24,32 +27,33 @@ should_stop = False
 ### Signals ###
 
 # a list of signals and their corresponding methods as lambda functions
+# they all need to be thread safe
 signalsList = {
     "end_simulation": lambda: end_simulation(),
     "continue" : lambda: continue_simulation(),
 }
 
-def end_simulation():
+def end_simulation(data):
     print("Ending simulation...")
     global should_stop
     should_stop = True
 
-def continue_simulation():
+def continue_simulation(data):
     print("Continuing simulation...")
     pass
 
 ### Connection Methods ###
 
-def start_socket_server():
+def start_socket_server(ip, port):
     if IS_DEBUG:
         print("Starting socket server...")
         return None, None
     # Setup socket server
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind((TCP_IP, TCP_PORT))
+    server_socket.bind((ip, port))
     server_socket.listen(1)
 
-    print("Waiting for a connection from Unity...")
+    print(f"Waiting for a connection from Unity on {ip}:{port}...")
     conn, addr = server_socket.accept()
     print("Connected by", addr)
 
@@ -63,6 +67,15 @@ def send_data_over_socket(data, conn):
     conn.sendall(data.encode('utf-8'))
 
 
+### Incoming Data ###
+
+def incoming_data_loop():
+    # Start connection
+    conn, addr = start_socket_server(IP_RECEIVE_DATA, PORT_RECEIVE_DATA)
+    while(not should_stop):
+        receive_data_over_socket(conn)
+
+
 def receive_data_over_socket(conn):
     if IS_DEBUG:
         return
@@ -70,14 +83,14 @@ def receive_data_over_socket(conn):
     print(f"Received data: {data}")
     # split data at newline character
     dataArray = data.split(b'\n')
-    for signal, method in signalsList.items():
-        if signal.encode('utf-8') in dataArray:
-            method()
-            break
-        # if data.decode('utf-8') == signal:
-        #     method()
-        #     break
-    print("other signal received...")
+    for line in dataArray:
+        for signal, method in signalsList.items():
+            if (line.startswith(signal)):
+                data = ""
+                if len(line) > len(signal):
+                    data = line[len(signal)]
+                method(data)
+                break
     # if data.decode('utf-8') == end_simulation_signal:
     #     should_stop = True
 
@@ -142,7 +155,7 @@ def run_sumo_simulation():
     #    traci.connect(port=57230)
 
     # Setup socket server
-    conn, addr = start_socket_server()
+    conn, addr = start_socket_server(IP_SEND_DATA, PORT_SEND_DATA)
 
     # Prepare Simulation loop
     step = 0

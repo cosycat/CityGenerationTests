@@ -19,6 +19,7 @@ namespace SUMO {
         private static class Signals {
             public static readonly byte[] EndSimulation = Encoding.UTF8.GetBytes("end_simulation\n");
             public static readonly byte[] Continue = Encoding.UTF8.GetBytes("continue\n");
+            public static readonly byte[] SetPlayerVehicleId = Encoding.UTF8.GetBytes("set_player_id");
         }
         
         public bool IsConnected => socketConnection != null && socketConnection.Connected;
@@ -143,6 +144,12 @@ namespace SUMO {
         private void SendSignal(byte[] signal) {
             stream.Write(signal, 0, signal.Length);
             Debug.Log($"Sent signal: {Encoding.UTF8.GetString(signal)}");
+        }
+
+        private void SendSignalWithData(byte[] signal, byte[] data) {
+            stream.Write(signal, 0, signal.Length);
+            stream.Write(data, 0, data.Length);
+            Debug.Log($"Sent signal with data");
         }
 
         private void ProcessResponse(string response) {
