@@ -86,7 +86,7 @@ namespace FreeFormGraph.Agents {
                 }
                 if(visited.Contains(Current)) continue;
                 visited.Add(Current);
-                if(costSoFar.ContainsKey(Current) && float.IsPositiveInfinity(costSoFar[Current])) continue;
+                if(float.IsPositiveInfinity(costSoFar[Current])) continue;
                 
                 foreach(var i in getNeighbors(Current)) {
                     var nextWaypoint = i;
