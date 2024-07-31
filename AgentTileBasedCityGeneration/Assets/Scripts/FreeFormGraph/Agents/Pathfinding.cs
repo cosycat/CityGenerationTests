@@ -53,10 +53,6 @@ namespace FreeFormGraph.Agents {
             this.parameters = parameters;
         }
 
-        public List<Waypoint>? AStar(Vector2 start, Vector2 target) {
-            return AStar(start, target, wp => GetNeighbors(wp, parameters.SnapFactorNode, parameters.SnapFactorEdge, parameters.moveMaskK), () => false);
-        }
-
         public List<Waypoint>? AStar(Vector2 start, Vector2 target, Func<bool> isCancelled, bool perfStats = true) {
             Debug.Log($"Start pathfinding from {start} to {target}");
             return AStar(start, target, wp => GetNeighbors(wp, parameters.SnapFactorNode, parameters.SnapFactorEdge, parameters.moveMaskK), isCancelled, perfStats);
@@ -168,7 +164,8 @@ namespace FreeFormGraph.Agents {
 
         public static bool BuildPath2(List<Waypoint> waypoints, IStreetGraph streetGraph, IWorld world, Parameters p) {
             Debug.Assert(waypoints.Count >= 2);
-            //TODO assert waypoints unique
+            var distinctWaypoints = new HashSet<Waypoint>(waypoints);
+            Debug.Assert(distinctWaypoints.Count == waypoints.Count);
 
             //#24
             var thresholdWpExistingConnection = p.thresholdExistingConnection;
@@ -204,7 +201,7 @@ namespace FreeFormGraph.Agents {
                 Debug.Assert(lastWp != wp);
                 breakCounter++;
                 if(breakCounter > 10000) {
-                    Debug.Assert(false, $"Trying to build path with length: {waypoints.Count}, looping for too long...");
+                    Debug.Assert(false/*, $"Trying to build path with length: {waypoints.Count}, looping for too long..."*/);
                     return false;
                 }
                 if(wp.GraphEdge != null || wp.GraphNode != null) {
@@ -228,7 +225,7 @@ namespace FreeFormGraph.Agents {
                         lastNode = wp.GraphNode;
                     }
                 } else {
-                    Debug.Assert(lastNode != null, "Last node is null");
+                    Debug.Assert(lastNode != null/*, "Last node is null"*/);
                     var edgeCreated = streetGraph.CreateEdge(lastNode!, wp.Pos, out var newEdge, out lastNode, out var isToNodeNew, out var isEdgeNew);
                     //edge creation might fail because the road angle is to small or there are too many connections to a node already...
                     //the easiest way to handle these issues is to just remove the road altogether.
@@ -239,9 +236,8 @@ namespace FreeFormGraph.Agents {
                         break;
                     } 
 
-                    if(Vector2.Distance(lastNode.Position, wp.Pos) > 0.001f) {
-                        //found an intersection, keep next waypoint
-                    } else {
+                    if (Vector2.Distance(lastNode.Position, wp.Pos) <= 0.001f) {
+                        //no intersection was found
                         currentWaypointIndex++;
                         lastWp = wp;
                     }
@@ -265,7 +261,7 @@ namespace FreeFormGraph.Agents {
         }
 
         private float Cost(Waypoint current, Waypoint next, Parameters p) {
-            Debug.Assert(current.Pos != next.Pos, "Current and next waypoint are the same");
+            Debug.Assert(current.Pos != next.Pos/*, "Current and next waypoint are the same"*/);
             var cost = Vector2.Distance(current.Pos, next.Pos);
             /*if(cost <= 1.01f) {
                 cost += 0.1f; //make short segments more costly to force fewer nodes
