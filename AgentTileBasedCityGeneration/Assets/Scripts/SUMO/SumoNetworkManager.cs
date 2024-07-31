@@ -36,6 +36,8 @@ namespace SUMO {
         private string NetconvertCommand => sumoFileGenerator == null ? "netconvert" :
             $"netconvert --node-files=\"{sumoFileGenerator.NodesFilePath}\" --edge-files=\"{sumoFileGenerator.EdgesFilePath}\" --output-file=\"{sumoFileGenerator.OutputNetFilePath}\" --offset.disable-normalization=\"true\"\n";
 
+        private string SumoExecutionCommand => sumoFileGenerator == null ? "sumo" :
+            $"sumo -c \"{sumoFileGenerator.ConfigurationFilePath}\" --remote-port {SumoClient.SUMO_PORT}\n";
 
         private void Awake() {
             SumoGeneratedFilesPath = $"{Application.persistentDataPath}/SUMO";
@@ -84,19 +86,15 @@ namespace SUMO {
                 $"\n" +
                 $"# Run this script to generate the SUMO network and run the simulation.\n" +
                 $"# Alternatively, you can copy the following commands and run them in your terminal.\n" +
-                $"# Make sure to have sumo, netconvert and python3 installed.\n" +
+                $"# Make sure to have sumo and netconvert installed.\n" +
                 $"#\n" +
                 $"# run with:" +
                 $"# chmod u+x run_sumo.sh && ./run_sumo.sh\n" +
                 $"\n" +
-                $"# Create a virtual environment and install the required python packages.\n" +
-                $"python3 -m venv .venv\n" +
-                $"source .venv/bin/activate\n" +
-                $"pip install -r requirements.txt\n" +
                 $"# Convert the graph to a SUMO network\n" +
                 NetconvertCommand +
                 $"# Run the simulation\n" +
-                $"python3 traciConnector.py\n";
+                SumoExecutionCommand;
             System.IO.File.WriteAllText(scriptPath, script);
         }
 
@@ -132,6 +130,38 @@ namespace SUMO {
         /// <returns> An enumerator for the coroutine. </returns>
         private IEnumerator ConvertToSumoNetwork() {
             Debug.Log("Converting to SUMO network not implemented, use manual command in README.");
+            // run chmod u+x run_sumo.sh && ./run_sumo.sh
+
+            // var processStartInfo = new ProcessStartInfo {
+            //     FileName = "/bin/bash",
+            //     Arguments = $"-c \"chmod u+x {SumoGeneratedFilesPath}/run_sumo.sh && {SumoGeneratedFilesPath}/run_sumo.sh\"",
+            //     RedirectStandardOutput = true,
+            //     RedirectStandardError = true,
+            //     UseShellExecute = false,
+            //     CreateNoWindow = true
+            // };
+            //
+            //
+            // using var process = new Process();
+            // process.StartInfo = processStartInfo;
+            // process.OutputDataReceived += (_, e) => Debug.Log(e.Data);
+            // process.ErrorDataReceived += (_, e) => Debug.LogError($"{e.GetType()}: {e.Data}");
+            //
+            // process.Start();
+            // process.BeginOutputReadLine();
+            // process.BeginErrorReadLine();
+            //
+            // while (!process.HasExited) {
+            //     yield return null;
+            // }
+            //
+            // if (process.ExitCode != 0) {
+            //     Debug.LogError($"Failed to convert to SUMO network with exit code {process.ExitCode}");
+            // }
+            // else {
+            //     Debug.Log("Converted to SUMO network successfully.");
+            // }
+
             yield return null;
             // if (sumoFileGenerator == null) {
             //     Debug.LogError("No SumoFileGenerator found. Did you call GenerateNetwork first?");

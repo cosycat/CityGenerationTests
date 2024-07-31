@@ -17,27 +17,27 @@ namespace SUMO {
 
         private IStreetGraph Graph { get; }
         private IWorld World { get; }
-        private string SumoPath { get; }
+        private string SumoFilesPath { get; }
         public SumoSimulationOptions SimulationOptions { get; }
 
-        public string NodesFilePath => $"{SumoPath}/{NODES_FILE_NAME}";
-        public string EdgesFilePath => $"{SumoPath}/{EDGES_FILE_NAME}";
-        public string ConnectionsFilePath => $"{SumoPath}/{CONNECTIONS_FILE_NAME}";
-        public string RoutesFilePath => $"{SumoPath}/{ROUTES_FILE_NAME}";
-        public string OutputNetFilePath => $"{SumoPath}/{OUTPUT_NET_FILE_NAME}";
-        public string ConfigurationFilePath => $"{SumoPath}/{CONFIGURATION_FILE_NAME}";
+        public string NodesFilePath => $"{SumoFilesPath}/{NODES_FILE_NAME}";
+        public string EdgesFilePath => $"{SumoFilesPath}/{EDGES_FILE_NAME}";
+        public string ConnectionsFilePath => $"{SumoFilesPath}/{CONNECTIONS_FILE_NAME}";
+        public string RoutesFilePath => $"{SumoFilesPath}/{ROUTES_FILE_NAME}";
+        public string OutputNetFilePath => $"{SumoFilesPath}/{OUTPUT_NET_FILE_NAME}";
+        public string ConfigurationFilePath => $"{SumoFilesPath}/{CONFIGURATION_FILE_NAME}";
 
-        private SumoFileGenerator(string sumoPath, IStreetGraph graph, SumoSimulationOptions simulationOptions, IWorld world) {
+        private SumoFileGenerator(string sumoFilesPath, IStreetGraph graph, SumoSimulationOptions simulationOptions, IWorld world) {
             Graph = graph;
             World = world;
             SimulationOptions = simulationOptions;
-            SumoPath = sumoPath;
-            InitializeDirectory(sumoPath);
+            SumoFilesPath = sumoFilesPath;
+            InitializeDirectory(sumoFilesPath);
             CreateNetworkFiles();
         }
         
-        internal static SumoFileGenerator Create(string sumoPath, IStreetGraph graph, SumoSimulationOptions simulationOptions, IWorld world) {
-            return new SumoFileGenerator(sumoPath, graph, simulationOptions, world);
+        internal static SumoFileGenerator Create(string sumoFilesPath, IStreetGraph graph, SumoSimulationOptions simulationOptions, IWorld world) {
+            return new SumoFileGenerator(sumoFilesPath, graph, simulationOptions, world);
         }
 
         private static void InitializeDirectory(string sumoPath) {
@@ -176,7 +176,7 @@ namespace SUMO {
                 var fromEdge = GetRandomEdge();
                 var toEdge = GetRandomEdge();
                 if (fromEdge == toEdge) continue;
-                AddFlow(routesDoc, $"flow{i}", fromEdge, toEdge, 0, 10000, 20, "Car");
+                AddFlow(routesDoc, $"flow{i}", fromEdge, toEdge, 0, 10000, SimulationOptions.FlowPeriod, "Car");
             }
 
             
@@ -226,7 +226,7 @@ namespace SUMO {
             routesDoc.Root!.Add(trip);
         }
         
-        private static void AddFlow(XDocument routesDoc, string id, string fromEdge, string toEdge, int beginTime, int endTime, int period, string vehicleType) {
+        private static void AddFlow(XDocument routesDoc, string id, string fromEdge, string toEdge, int beginTime, int endTime, float period, string vehicleType) {
             var flow = new XElement("flow",
                 new XAttribute("id", id),
                 new XAttribute("from", fromEdge),
