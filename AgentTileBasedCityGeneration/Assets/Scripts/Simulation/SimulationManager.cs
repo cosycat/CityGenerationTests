@@ -37,21 +37,11 @@ namespace Simulation {
 
             if (!CheckSimulationValidity()) return;
             
-            CreatePlayerVehicle();
-            
-            sumoClient.VehicleDataReceived += SumoClientOnVehicleDataReceived;
+            sumoClient.SimulationAdvancedOneStep += SumoClientOnSimulationAdvancedOneStep;
             sumoClient.StartClient();
         }
-
-        private void CreatePlayerVehicle() {
-            var playerVehicle = Instantiate(playerVehiclePrefab);
-            Debug.Assert(world != null);
-            var firstEdge = world.StreetGraph.Edges.First();
-            var firstPointOnEdge = firstEdge.SplitIntoEvenlySpacedPoints(out _)[0];
-            playerVehicle.transform.position = new Vector3(firstPointOnEdge.x, firstPointOnEdge.y, world.GetHeightAt(firstPointOnEdge.x, firstPointOnEdge.y));
-        }
-
-        private void SumoClientOnVehicleDataReceived(object sender, VehicleEventArgs e) {
+        
+        private void SumoClientOnSimulationAdvancedOneStep(object sender, VehicleEventArgs e) {
             if (!CheckSimulationValidity()) return;
             
             Debug.Log($"Received {e.VehicleInfo.Length} vehicle data.");
@@ -81,7 +71,7 @@ namespace Simulation {
                 vehicle.ID = id;
                 vehicles.Add(id, vehicle);
             }
-            vehicle.UpdatePosition(new Vector3(position2D.x, worldHeight, position2D.y), Quaternion.Euler(0, vehicleInfo.rotation + 180, 0));
+            vehicle.UpdatePosition(new Vector3(position2D.x, worldHeight, position2D.y), Quaternion.Euler(0, vehicleInfo.rotation, 0));
             vehicle.UpdateSignals(vehicleInfo.BlinkerRight, vehicleInfo.BlinkerLeft, vehicleInfo.BrakeLight);
         }
 

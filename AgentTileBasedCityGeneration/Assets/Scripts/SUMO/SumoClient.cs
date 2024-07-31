@@ -2,9 +2,13 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using CodingConnected.TraCI.NET;
+using CodingConnected.TraCI.NET.Types;
 using FreeFormGraph;
 using UnityEngine;
 
@@ -15,203 +19,136 @@ namespace SUMO {
     /// Connects to a Python server running a SUMO simulation and receives data.
     /// </summary>
     public class SumoClient : MonoBehaviour {
-        
-        private static class Signals {
-            public static readonly byte[] EndSimulation = Encoding.UTF8.GetBytes("end_simulation\n");
-            public static readonly byte[] Continue = Encoding.UTF8.GetBytes("continue\n");
-            public static readonly byte[] SetPlayerVehicleId = Encoding.UTF8.GetBytes("set_player_id");
-        }
-        
-        public bool IsConnected => socketConnection != null && socketConnection.Connected;
-        
-        private TcpClient? socketConnection;
-        private NetworkStream stream = null!; // always initialized when socketConnection is not null
+        private const float TIME_STEP_SECONDS = 0.03f;
+        private const int SUMO_PORT = 4321;
 
-        private readonly Regex singleVehicleRegex = new Regex(@"\('(?<name>\w+\d+\.\d+)', \((?<x>\d+\.\d+), (?<y>\d+\.\d+)\)\)");
+        private static readonly List<byte> VariablesToSubscribeTo = new() {
+            TraCIConstants.VAR_POSITION, TraCIConstants.VAR_ANGLE, TraCIConstants.VAR_SPEED, TraCIConstants.VAR_SIGNALS,
+            TraCIConstants.VAR_TYPE
+        };
+
+        private Task? connectionTask = null;
+        private TraCIClient client = new();
+        private float totalSimulationTime = 0f;
+        private float timeSinceLastUpdate = 0f;
+        private int step = 0;
+        
+        
+        public bool IsConnected => connectionTask is { IsCompleted: true };
         
         private bool StopRequested { get; set; }
 
         public void StartClient() {
-            StartCoroutine(WaitForConnection());
-        }
-
-        private void Update() {
-            if (socketConnection == null)
-                return;
-            Debug.Assert(stream != null, "Stream is null when socket connection is not null.");
-
-            if (!socketConnection.Connected) {
-                Debug.Log("Socket connection lost.");
-                return;
-            }
-
-            if (stream is { CanRead: true, DataAvailable: true }) {
-                HandleIncomingData();
-            }
-            if (stream is { CanWrite: true }) {
-                HandleOutgoingData();
-            }
-        }
-
-        private string answer = "";
-        private int previousAnswerLengthBytes = 1024*4;
-
-        private void HandleIncomingData() {
-            try {
-                var buffer = new byte[previousAnswerLengthBytes];
-                var bytesRead = stream.Read(buffer, 0, buffer.Length);
-                var newAnswer = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                answer += newAnswer;
-            }
-            catch (Exception e) {
-                Debug.LogError("Error: " + e);
-            }
-            if (answer.Length == 0) return;
-            
-            var completeJson = CheckForCompleteJson(out var lastCompleteResponse);
-            if (!completeJson) {
-                // Debug.Log($"Incomplete JSON object received:\n{answer}");
-                return; // we need to wait for more data to arrive
-            }
-            
-            var skippedFrames = 0;
-            while (answer.Length > 0 && CheckForCompleteJson(out var response)) {
-                // if we have multiple complete JSON objects, it means we are at least one frame behind,
-                // so we skip to the last one where we already received all the data
-                skippedFrames++;
-                lastCompleteResponse = response;
-            }
-            // Debug.Log($"lastCompleteResponse:\n{lastCompleteResponse}");
-
-            previousAnswerLengthBytes = System.Text.Encoding.UTF8.GetByteCount(lastCompleteResponse);
-            Debug.Log($"Previous answer length: {previousAnswerLengthBytes} bytes.");
-
-            if (skippedFrames > 0) {
-                switch (skippedFrames) {
-                    case > 1:
-                        Debug.LogWarning($"Skipped {skippedFrames} frames!");
-                        break;
-                    case 1:
-                        Debug.Log($"Skipped {skippedFrames} frames.");
-                        break;
+            client = new TraCIClient();
+            connectionTask = client.ConnectAsync("127.0.0.1", SUMO_PORT);
+            connectionTask.ContinueWith(task => {
+                if (task.IsFaulted) {
+                    Debug.LogError("Connection failed: " + task.Exception);
                 }
-            }
-
-            ProcessResponse(lastCompleteResponse);
-            
-            return;
-
-            bool CheckForCompleteJson(out string response) {
-                Debug.Assert(answer[0] == '{', $"Answer does not start with '{{' character: {answer}");
-                var bracketCount = 0;
-                for (var i = 0; i < answer.Length; i++) {
-                    switch (answer[i]) {
-                        case '{':
-                            bracketCount++;
-                            break;
-                        case '}':
-                            bracketCount--;
-                            break;
-                    }
-
-                    if (bracketCount == 0) {
-                        // Found a complete JSON object. Process it.
-                        response = answer[..(i + 1)];
-                        // Skip answer to the next character after the JSON object
-                        answer = answer[(i + 1)..].TrimStart(' ', '\n', '\r', '\t');
-                        Debug.Assert(answer.Length == 0 || answer[0] == '{', "Remaining answer does not start with '{' character.");
-                        // Debug.Log($"Gathered response: {response}");
-                        // Debug.Log($"Remaining answer: {answer}");
-                        return true;
-                    }
-                }
-                response = "";
-                return false;
-            }
+                Debug.Log("Connected to SUMO server.");
+                
+            });
+            // client.VehicleSubscription += OnClientOnVehicleSubscription;
         }
 
-        private void HandleOutgoingData() {
-            if (StopRequested) {
-                StopRequested = false;
-                Cleanup(true);
-                return;
-            }
+        // private void OnClientOnVehicleSubscription(object sender, SubscriptionEventArgs args) {
+        //     
+        //     // from https://github.com/CodingConnected/CodingConnected.Traci/blob/master/TracCI.NET-Usage-example/UsageExample.cs
+        //     foreach (var r in args.Responses) {
+        //         /* Responses are object that can be cast to IResponseInfo, so we can retrieve
+        //          the variable type. */
+        //         var respInfo = r as IResponseInfo;
+        //         if (respInfo == null) {
+        //             Debug.LogError("respInfo is null");
+        //             continue;
+        //         }
+        //         var variableCode = respInfo.Variable;
+        //
+        //         /*We can then cast to TraCIResponse to get the Content
+        //          We can also use IResponseInfo.GetContentAs<> ()s*/
+        //         // WARNING using TraCIResponse<> we must use the exact type (i.e for speed, accel, angle, is double and not float)
+        //         switch (variableCode) {
+        //             case TraCIConstants.VAR_POSITION:
+        //                 var position = respInfo.GetContentAs<Position2D>();
+        //                 break;
+        //             case TraCIConstants.VAR_ANGLE:
+        //                 
+        //             
+        //             default:
+        //                 /* Intentionaly ommit VAR_ACCEL*/
+        //                 Console.WriteLine($" Variable with code {ByteToHex(variableCode)} not handled ");
+        //                 break;
+        //         }
+        //     }
+        // }
+
+        private void HandleTraCI() {
+            // TODO maybe call this in a coroutine instead of Update
+            if (connectionTask == null || !connectionTask.IsCompleted) return;
             
-            // if we send nothing else, make sure the server receives a continue signal, to keep the simulation running
-            // SendSignal(Signals.Continue);
+            totalSimulationTime += Time.deltaTime;
+            timeSinceLastUpdate += Time.deltaTime;
+            if (timeSinceLastUpdate < TIME_STEP_SECONDS) return;
+            
+            // forwards the simulation by one step
+            var stepsAdvanced = 0;
+            while (timeSinceLastUpdate >= TIME_STEP_SECONDS) {
+                timeSinceLastUpdate -= TIME_STEP_SECONDS;
+                stepsAdvanced++;
+                client.Control.SimStep();
+            }
+            if (stepsAdvanced == 0) Debug.LogWarning("No steps advanced.");
+            if (stepsAdvanced > 1) Debug.LogWarning($"Advanced {stepsAdvanced} steps - simulation running behind.");
+            step += stepsAdvanced;
+            
+            // // subscribe to all newly departed vehicles
+            // var departedIDList = client.Simulation.GetDepartedIDList("");
+            // foreach (var id in departedIDList.Content) {
+            //     Debug.Log($"Vehicle {id} departed.");
+            //     client.Vehicle.Subscribe(id, 0, 100_000, VariablesToSubscribeTo);
+            // }
+            
+            
+            var allVehiclesID = client.Vehicle.GetIdList();
+            Debug.Log($"Number of vehicles: {allVehiclesID.Content.Count}");
+            var vehicleInfoList = new List<VehicleInfo>();
+            foreach (var id in allVehiclesID.Content) {
+                var position = client.Vehicle.GetPosition(id);
+                var angle = client.Vehicle.GetAngle(id);
+                var speed = client.Vehicle.GetSpeed(id);
+                var signals = client.Vehicle.GetSignals(id);
+                var vehicleType = client.Vehicle.GetTypeID(id);
+                vehicleInfoList.Add(new VehicleInfo(
+                    id,
+                    (float)position.Content.X,
+                    (float)position.Content.Y,
+                    (float)angle.Content,
+                    signals.Content,
+                    (float)speed.Content,
+                    vehicleType.Content
+                ));
+            }
+            OnSimulationAdvancedOneStep(vehicleInfoList.ToArray());
         }
         
-        private void SendSignal(byte[] signal) {
-            stream.Write(signal, 0, signal.Length);
-            Debug.Log($"Sent signal: {Encoding.UTF8.GetString(signal)}");
-        }
 
-        private void SendSignalWithData(byte[] signal, byte[] data) {
-            stream.Write(signal, 0, signal.Length);
-            stream.Write(data, 0, data.Length);
-            Debug.Log($"Sent signal with data");
+        private void Update() {
+            HandleTraCI();
         }
-
-        private void ProcessResponse(string response) {
-            Debug.Assert(response[0] == '{', "Response does not start with '{' character.");
-            Debug.Assert(response[^1] == '}', "Response does not end with '}' character.");
-            // Debug.Log(response);
-            try {
-                var simulationStepInfo = JsonUtility.FromJson<SimulationStepInfo>(response);
-                // Debug.Log($"simulationStepInfo: {simulationStepInfo}");
-                Debug.Assert(simulationStepInfo != null, "Could not parse JSON.");
-                Debug.Assert(simulationStepInfo.vehicleList != null, "Could not parse JSON vehicle list.");
-                var vehicleInfo = simulationStepInfo.vehicleList;
-                OnVehicleDataReceived(vehicleInfo.ToArray());
-            }
-            catch (Exception e) {
-                Debug.LogError("Error: " + e);
-            }
-        }
-
-        private IEnumerator WaitForConnection() {
-            while (socketConnection is not { Connected: true }) {
-                yield return new WaitForSeconds(1f);
-                try {
-                    socketConnection = new TcpClient("localhost", 9999);
-                    stream = socketConnection.GetStream();
-                    Debug.Log("Connected to Python server.");
-                    break;
-                }
-                catch (SocketException e) {
-                    // Debug.Log("Socket error: " + e);
-                }
-                catch (Exception e) {
-                    Debug.Log("other error on connection: " + e);
-                }
-            }
-        }
-
-        private void Cleanup(bool sendStop) {
-            if (socketConnection == null) return;
-            
-            if (sendStop) {
-                SendSignal(Signals.EndSimulation);
-            }
-            
-            stream.Flush();
-            stream.Close();
-            socketConnection.Close();
-            socketConnection = null;
+        
+        
+        private void Cleanup() {
+            client.Dispose();
         }
 
         private void OnDestroy() {
-            Cleanup(true);
+            Cleanup();
         }
 
-        private void OnApplicationQuit() {
-            Cleanup(true);
-        }
+        public event EventHandler<VehicleEventArgs>? SimulationAdvancedOneStep;
         
-        public event EventHandler<VehicleEventArgs> VehicleDataReceived;
-        
-        protected virtual void OnVehicleDataReceived(VehicleInfo[] vehicleInfo) {
-            VehicleDataReceived?.Invoke(this, new VehicleEventArgs(vehicleInfo));
+        protected virtual void OnSimulationAdvancedOneStep(VehicleInfo[] vehicleInfo) {
+            SimulationAdvancedOneStep?.Invoke(this, new VehicleEventArgs(vehicleInfo));
         }
 
         public void StopClient() {
@@ -262,18 +199,15 @@ namespace SUMO {
         public bool BlinkerLeft => (signals & 2) == 2;
         public bool BrakeLight => (signals & 8) == 8;
 
-        // public VehicleInfo(string id, float positionX, float positionY, float rotation, int signals, float speed, string vehicleType) {
-        //     this.id = id;
-        //     this.positionX = positionX;
-        //     this.positionY = positionY;
-        //     this.rotation = rotation;
-        //     this.signals = signals;
-        //     this.speed = speed;
-        //     this.vehicleType = vehicleType;
-        // }
-
-        // public VehicleInfo VehicleInfoFromJson(string json) {
-        //     return JsonUtility.FromJson<VehicleInfo>(json);
-        // }
+        public VehicleInfo(string id, float positionX, float positionY, float rotation, int signals, float speed, string vehicleType) {
+            this.id = id;
+            this.positionX = positionX;
+            this.positionY = positionY;
+            this.rotation = rotation;
+            this.signals = signals;
+            this.speed = speed;
+            this.vehicleType = vehicleType;
+        }
+        
     }
 }
