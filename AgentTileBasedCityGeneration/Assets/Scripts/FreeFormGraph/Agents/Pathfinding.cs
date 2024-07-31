@@ -167,9 +167,6 @@ namespace FreeFormGraph.Agents {
             var distinctWaypoints = new HashSet<Waypoint>(waypoints);
             Debug.Assert(distinctWaypoints.Count == waypoints.Count);
 
-            //#24
-            var thresholdWpExistingConnection = p.thresholdExistingConnection;
-
             var numNodesBefore = streetGraph.NodeCount;
             var numEdgesBefore = streetGraph.EdgeCount;
             var removeNodes = new List<IStreetNode>();
@@ -204,43 +201,22 @@ namespace FreeFormGraph.Agents {
                     Debug.Assert(false/*, $"Trying to build path with length: {waypoints.Count}, looping for too long..."*/);
                     return false;
                 }
-                if(wp.GraphEdge != null || wp.GraphNode != null) {
-                    //ensure only one state at a time
-                    Debug.Assert(wp.GraphEdge != null ^ wp.GraphNode != null);
-                }
 
-                //pathfinding does not handle intersections well. It's possible that the chosen path
-                //generates new roads which connects two points which are already connected (the new path would be shorter tho).
-                //#24
-                var roadConnection = AStarStreetOnly(world, lastWp, wp, () => false);
-                if(roadConnection != null && GetPathLength(roadConnection) / Vector2.Distance(lastWp.Pos, wp.Pos) < thresholdWpExistingConnection) {
+                Debug.Assert(lastNode != null/*, "Last node is null"*/);
+                var edgeCreated = streetGraph.CreateEdge(lastNode!, wp.Pos, out var newEdge, out lastNode, out var isToNodeNew, out var isEdgeNew);
+                //edge creation might fail because the road angle is to small or there are too many connections to a node already...
+                //the easiest way to handle these issues is to just remove the road altogether.
+                if(isToNodeNew) removeNodes.Add(lastNode);
+                if(isEdgeNew) removeEdges.Add(newEdge);
+                if(!edgeCreated) {
+                    removeRoad = true;
+                    break;
+                } 
+
+                if (Vector2.Distance(lastNode.Position, wp.Pos) <= streetGraph.SnapToExistingNodeThreshold) {
+                    //no intersection was found
                     currentWaypointIndex++;
                     lastWp = wp;
-                    Debug.Assert(wp.GraphNode != null ^ wp.GraphEdge != null);
-
-                    if(wp.GraphEdge != null) {
-                        streetGraph.InsertNodeOnEdge(wp.GraphEdge, wp.Pos, out lastNode, out _, out _);
-                        removeNodes.Add(lastNode);
-                    } else {
-                        lastNode = wp.GraphNode;
-                    }
-                } else {
-                    Debug.Assert(lastNode != null/*, "Last node is null"*/);
-                    var edgeCreated = streetGraph.CreateEdge(lastNode!, wp.Pos, out var newEdge, out lastNode, out var isToNodeNew, out var isEdgeNew);
-                    //edge creation might fail because the road angle is to small or there are too many connections to a node already...
-                    //the easiest way to handle these issues is to just remove the road altogether.
-                    if(isToNodeNew) removeNodes.Add(lastNode);
-                    if(isEdgeNew) removeEdges.Add(newEdge);
-                    if(!edgeCreated) {
-                        removeRoad = true;
-                        break;
-                    } 
-
-                    if (Vector2.Distance(lastNode.Position, wp.Pos) <= 0.001f) {
-                        //no intersection was found
-                        currentWaypointIndex++;
-                        lastWp = wp;
-                    }
                 }
             }
 
@@ -385,6 +361,10 @@ namespace FreeFormGraph.Agents {
             }
             foreach(var wp in list) {
                 Debug.Assert(wp.GraphEdge == null || !skipEdge.Contains(wp.GraphEdge));
+                if(wp.GraphEdge != null || wp.GraphNode != null) {
+                    //ensure only one state at a time
+                    Debug.Assert(wp.GraphEdge != null ^ wp.GraphNode != null);
+                }
             }
 
             //TODO why does this fail so often?
@@ -529,18 +509,6 @@ namespace FreeFormGraph.Agents {
             /// Cost of slope will be multiplied by this value.
             /// </summary>
             public float slopeCostMultiplier = 30f;
-
-            /// <summary>
-            /// Related to issue #24. Sometimes during the path building step, the algorithm wouldn't
-            /// realise that two waypoint are reachable via a road, yielding weird looking intersections. 
-            /// One way to solve is by changing the cost function parameters, the other way is to check during 
-            /// the building step if these waypoints are reachable with the help of A* (but only moving on the roads).
-            /// If the existing road connection is <see cref="thresholdExistingConnection"/> times longer than the
-            /// road which would be built, the existing road is ignored. Otherwise the existing road is used, meaning
-            /// the new road will not be built between these two waypoints.
-            /// </summary>
-            
-            public float thresholdExistingConnection = 2f;
 
             public static Parameters GetRoadPathSearchParameters() {
                 var p = new Parameters();
