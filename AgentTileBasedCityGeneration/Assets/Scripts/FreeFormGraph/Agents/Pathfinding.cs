@@ -43,6 +43,8 @@ namespace FreeFormGraph.Agents {
 
         private readonly Parameters parameters;
 
+        private static List<(int i, int j)>[] kMaskCached = new List<(int i, int j)>[16];
+
         public Pathfinding(IStreetGraph streetGraph, IWorld world, Parameters parameters) {
             Debug.Assert(streetGraph != null);
             Debug.Assert(world != null);
@@ -72,12 +74,15 @@ namespace FreeFormGraph.Agents {
             var sw = new System.Diagnostics.Stopwatch();
             if(perfStats) sw.Start();
 
+            var worldWidth = world.Width;
+            var worldHeight = world.Height;
 
             var nodesChecked = 0;
             while(q.Count != 0) {
                 if(isCancelled()) return null;
 
-                Current = q.Dequeue();
+                var Current = q.Dequeue();
+                this.Current = Current;
                 nodesChecked++;
                 if(Current.Pos == target) {
                     targetWaypoint = Current;
@@ -91,9 +96,9 @@ namespace FreeFormGraph.Agents {
                     var nextWaypoint = i;
                     //TODO do this in GetWaypoint()
                     if(nextWaypoint.Pos.x < 0 
-                        || nextWaypoint.Pos.x >= world.Width
+                        || nextWaypoint.Pos.x >= worldWidth 
                         || nextWaypoint.Pos.y < 0
-                        || nextWaypoint.Pos.y >= world.Height) {
+                        || nextWaypoint.Pos.y >= worldHeight) {
                         continue;
                     }
                     
@@ -120,7 +125,7 @@ namespace FreeFormGraph.Agents {
                 var secs = sw.ElapsedMilliseconds / 1000.0f;
                 var heuristicCost = Heuristic(start, target, parameters);
                 // current is not null because it enters the loop at least once (start node)
-                var actualCost = costSoFar[Current!];
+                var actualCost = costSoFar[Current!.Value];
                 Debug.Log($"A* perf: Elapsed (s): {secs}; " +
                         $"Nodes checked: {nodesChecked}; " +
                         $"Throughput (nodes/sec): {nodesChecked / secs}; " +
@@ -132,7 +137,7 @@ namespace FreeFormGraph.Agents {
             }
 
             if (targetWaypoint != null) {
-                return GetShortestPath(startWaypoint, targetWaypoint);
+                return GetShortestPath(startWaypoint, targetWaypoint!.Value);
             } else {
                 return null;
             }
@@ -268,7 +273,7 @@ namespace FreeFormGraph.Agents {
             
             var costPenaltyForRoad = p.roadDistanceCostMultiplier1;
             float slopeCost = 0;
-            if(next.CameFrom == current) {
+            if(next.DidUseRoad) {
                 //we are walking over an existing road. make it cheap
                 costPenaltyForRoad = p.roadDistanceCostMultiplier2;
             }
@@ -284,7 +289,7 @@ namespace FreeFormGraph.Agents {
                 return float.PositiveInfinity;
             }
 
-            if(next.CameFrom != current) {
+            if(!next.DidUseRoad) {
                 //no slope penalty for existing roads
                 slopeCost = SlopeCost(world, current, next, p, heightStart, heightEnd);
             }
@@ -324,7 +329,7 @@ namespace FreeFormGraph.Agents {
 
                     var newWaypoint = new Waypoint(otherNode.Position) {
                         GraphNode = otherNode,
-                        CameFrom = n
+                        DidUseRoad = true
                     };
                     list.Add(newWaypoint);
                     skipEdge.Add(edge);
@@ -336,11 +341,11 @@ namespace FreeFormGraph.Agents {
             if(n.GraphEdge != null) { //TODO assert that only one of them is active
                 list.Add(new Waypoint(n.GraphEdge.NodeA.Position) {
                     GraphNode = n.GraphEdge.NodeA,
-                    CameFrom = n
+                    DidUseRoad = true
                 });
                 list.Add(new Waypoint(n.GraphEdge.NodeB.Position) {
                     GraphNode = n.GraphEdge.NodeB,
-                    CameFrom = n
+                    DidUseRoad = true
                 });
                 skipEdge.Add(n.GraphEdge);
                 skipNode.Add(n.GraphEdge.NodeA);
@@ -362,27 +367,24 @@ namespace FreeFormGraph.Agents {
 
             //see Marechal et al. section 5.1
             //this is the case were we are currently not on existing roads
-            for(int i = -k; i <= k; i++) {
-                for(int j = -k; j <= k; j++) {
-                    if (GCD(i, j) != 1) continue;
-                    
-                    var newPos = new Vector2(i, j) + currentPosition;
-                    if(streetGraph.TryFindClosestNode(possibleNodes, newPos, out var node, snapFactorNode)) {
-                        //move this point to the closest node
-                        if(!skipNode.Contains(node)) {
-                            var wp = new Waypoint(node.Position, node);
-                            list.Add(wp);
-                        }
-                    } else if(streetGraph.TryFindClosestEdge(possibleEdges, newPos, out var edge, out var posOnEdge, snapFactorEdge)) {
-                        //move this point to the closest edge
-                        if(!skipEdge.Contains(edge)) {
-                            var wp = new Waypoint(posOnEdge, edge: edge);
-                            list.Add(wp);
-                        }
-                    } else {
-                        var wp = new Waypoint(newPos);
+            var kMask = GetConnectivityMask(k);
+            foreach(var (i,j) in kMask) {
+                var newPos = new Vector2(i, j) + currentPosition;
+                if(streetGraph.TryFindClosestNode(possibleNodes, newPos, out var node, snapFactorNode)) {
+                    //move this point to the closest node
+                    if(!skipNode.Contains(node)) {
+                        var wp = new Waypoint(node.Position, node);
                         list.Add(wp);
                     }
+                } else if(streetGraph.TryFindClosestEdge(possibleEdges, newPos, out var edge, out var posOnEdge, snapFactorEdge)) {
+                    //move this point to the closest edge
+                    if(!skipEdge.Contains(edge)) {
+                        var wp = new Waypoint(posOnEdge, edge: edge);
+                        list.Add(wp);
+                    }
+                } else {
+                    var wp = new Waypoint(newPos);
+                    list.Add(wp);
                 }
             }
             foreach(var wp in list) {
@@ -392,6 +394,20 @@ namespace FreeFormGraph.Agents {
             //TODO why does this fail so often?
             //Debug.Assert(list.Count == new HashSet<Waypoint>(list).Count);
 
+            return list;
+        }
+
+        private static List<(int i, int j)> GetConnectivityMask(int k) {
+            Debug.Assert(k < kMaskCached.Length); //if that feature is desired, resizing would need to be implemented
+            if(kMaskCached[k] != null) return kMaskCached[k];
+            var list = new List<(int i, int j)>();
+            for(int i = -k; i <= k; i++) {
+                for(int j = -k; j <= k; j++) {
+                    if (GCD(i, j) != 1) continue;
+                    list.Add((i,j));
+                }
+            }
+            kMaskCached[k] = list;
             return list;
         }
 
@@ -538,12 +554,12 @@ namespace FreeFormGraph.Agents {
             }
         }
 
-        public class Waypoint {
+        public struct Waypoint {
             public Vector2 Pos { get; }
 
             public IStreetNode? GraphNode {get; set;}
             public IStreetEdge? GraphEdge {get; set;}
-            public Waypoint? CameFrom {get; set;}
+            public bool DidUseRoad;
 
             public Waypoint(IStreetNode node): this(node.Position, node, null) {}
 
@@ -551,7 +567,7 @@ namespace FreeFormGraph.Agents {
                 Pos = p;
                 GraphNode = node;
                 GraphEdge = edge;
-                CameFrom = null;
+                DidUseRoad = false;
             }
 
             public override string ToString() {
