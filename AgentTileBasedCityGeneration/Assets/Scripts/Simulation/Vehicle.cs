@@ -8,13 +8,13 @@ using Utils;
 namespace Simulation {
     public class Vehicle : MonoBehaviour {
         
-        [FormerlySerializedAs("blinkerRightGO")] [SerializeField] protected VehicleSignal? blinkerRight;
-        [FormerlySerializedAs("blinkerLeftGO")] [SerializeField] protected VehicleSignal? blinkerLeft;
-        [FormerlySerializedAs("brakeLightGO")] [SerializeField] protected VehicleSignal? brakeLight;
+        [SerializeField] protected VehicleSignal blinkerRight = null!;
+        [SerializeField] protected VehicleSignal blinkerLeft = null!;
+        [SerializeField] protected VehicleSignal brakeLight = null!;
         
         public string ID { get; internal set; } = null!;
 
-        protected virtual void Start() {
+        protected virtual void Awake() {
             if (!Settings.UseVehicleSignals) {
                 if (blinkerRight != null) Destroy(blinkerRight.gameObject);
                 if (blinkerLeft != null) Destroy(blinkerLeft.gameObject);
@@ -22,15 +22,15 @@ namespace Simulation {
             }
             else {
                 if (blinkerRight == null || blinkerLeft == null || brakeLight == null) {
-                    Debug.LogError("Vehicle is set to use signals but has missing signal GameObjects!");
+                    Debug.LogError($"Vehicle is set to use signals but has missing signal GameObjects: {blinkerRight}, {blinkerLeft}, {brakeLight}");
                 }
             }
-            
+        }
+
+        private void Start() {
             if (ID is null or "") {
-                Debug.LogError("Vehicle ID not set.");
+                Debug.LogError($"Vehicle ID not set: {ID ?? "null"}");
             }
-            
-            
         }
 
         public virtual void UpdatePosition(Vector3 position, Quaternion rotation) {
@@ -40,9 +40,9 @@ namespace Simulation {
 
         public virtual void UpdateSignals(bool isBlinkerRightOn, bool isBlinkerLeftOn, bool isBrakeLightOn) {
             if (!Settings.UseVehicleSignals) return;
-            blinkerRight?.SetSignal(isBlinkerRightOn);
-            blinkerLeft?.SetSignal(isBlinkerLeftOn);
-            brakeLight?.SetSignal(isBrakeLightOn);
+            blinkerRight.SetSignal(isBlinkerRightOn);
+            blinkerLeft.SetSignal(isBlinkerLeftOn);
+            brakeLight.SetSignal(isBrakeLightOn);
         }
     }
 }

@@ -1,22 +1,16 @@
 #nullable enable
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net.Sockets;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using CodingConnected.TraCI.NET;
 using CodingConnected.TraCI.NET.Types;
-using FreeFormGraph;
 using UnityEngine;
 
 
 namespace SUMO {
     
     /// <summary>
-    /// Connects to a Python server running a SUMO simulation and receives data.
+    /// Starts a connection to a SUMO server and forwards the simulation.
     /// </summary>
     public class SumoClient : MonoBehaviour {
         private const float TIME_STEP_SECONDS = 0.03f;
@@ -48,39 +42,68 @@ namespace SUMO {
                 Debug.Log("Connected to SUMO server.");
                 
             });
-            // client.VehicleSubscription += OnClientOnVehicleSubscription;
+            client.VehicleSubscription += OnVehicleChangedSubscription;
         }
 
-        // private void OnClientOnVehicleSubscription(object sender, SubscriptionEventArgs args) {
-        //     
-        //     // from https://github.com/CodingConnected/CodingConnected.Traci/blob/master/TracCI.NET-Usage-example/UsageExample.cs
-        //     foreach (var r in args.Responses) {
-        //         /* Responses are object that can be cast to IResponseInfo, so we can retrieve
-        //          the variable type. */
-        //         var respInfo = r as IResponseInfo;
-        //         if (respInfo == null) {
-        //             Debug.LogError("respInfo is null");
-        //             continue;
-        //         }
-        //         var variableCode = respInfo.Variable;
-        //
-        //         /*We can then cast to TraCIResponse to get the Content
-        //          We can also use IResponseInfo.GetContentAs<> ()s*/
-        //         // WARNING using TraCIResponse<> we must use the exact type (i.e for speed, accel, angle, is double and not float)
-        //         switch (variableCode) {
-        //             case TraCIConstants.VAR_POSITION:
-        //                 var position = respInfo.GetContentAs<Position2D>();
-        //                 break;
-        //             case TraCIConstants.VAR_ANGLE:
-        //                 
-        //             
-        //             default:
-        //                 /* Intentionaly ommit VAR_ACCEL*/
-        //                 Console.WriteLine($" Variable with code {ByteToHex(variableCode)} not handled ");
-        //                 break;
-        //         }
-        //     }
-        // }
+        private readonly object updatedVehicleInfoListLock = new();
+        private readonly List<VehicleInfo> updatedVehicleInfoList = new();
+        private void OnVehicleChangedSubscription(object sender, SubscriptionEventArgs args) {
+
+            // var vehicleInfo = new VehicleInfo(args.ObjectId);
+            string id = args.ObjectId;
+            Position2D? position = null;
+            float? angle = null;
+            float? speed = null;
+            int? signals = null;
+            string? vehicleType = null;
+            
+            // from https://github.com/CodingConnected/CodingConnected.Traci/blob/master/TracCI.NET-Usage-example/UsageExample.cs
+            foreach (var responseObject in args.Responses) {
+                /* Responses are object that can be cast to IResponseInfo, so we can retrieve
+                 the variable type. */
+                if (responseObject is not IResponseInfo respInfo) {
+                    Debug.LogError("respInfo is null");
+                    continue;
+                }
+                var variableCode = respInfo.Variable;
+        
+                /*We can then cast to TraCIResponse to get the Content
+                 We can also use IResponseInfo.GetContentAs<> ()s*/
+                // WARNING using TraCIResponse<> we must use the exact type (i.e for speed, accel, angle, is double and not float)
+                switch (variableCode) {
+                    case TraCIConstants.VAR_POSITION:
+                        position = respInfo.GetContentAs<Position2D>();
+                        // vehicleInfo.positionX = (float)position.X;
+                        // vehicleInfo.positionY = (float)position.Y;
+                        break;
+                    case TraCIConstants.VAR_ANGLE:
+                        angle = respInfo.GetContentAs<float>();
+                        // vehicleInfo.rotation = angle;
+                        break;
+                    case TraCIConstants.VAR_SPEED:
+                        speed = respInfo.GetContentAs<float>();
+                        // vehicleInfo.speed = speed;
+                        break;
+                    case TraCIConstants.VAR_SIGNALS:
+                        signals = respInfo.GetContentAs<int>();
+                        // vehicleInfo.signals = signals;
+                        break;
+                    case TraCIConstants.VAR_TYPE:
+                        vehicleType = respInfo.GetContentAs<string>();
+                        // vehicleInfo.vehicleType = vehicleType;
+                        break;
+                    
+                    default:
+                        Console.WriteLine($" Variable with code {variableCode} not handled ");
+                        break;
+                }
+            }
+            Debug.Assert(position != null && angle != null && speed != null && signals != null && vehicleType != null, $"Some values are null: {position}, {angle}, {speed}, {signals}, {vehicleType}");
+            var vehicleInfo = new VehicleInfo(id, (float)position!.X, (float)(position.Y), angle!.Value, signals!.Value, speed!.Value, vehicleType!);
+            lock (updatedVehicleInfoListLock) {
+                updatedVehicleInfoList.Add(vehicleInfo);
+            }
+        }
 
         private void HandleTraCI() {
             // TODO maybe call this in a coroutine instead of Update
@@ -97,36 +120,41 @@ namespace SUMO {
                 stepsAdvanced++;
                 client.Control.SimStep();
             }
-            if (stepsAdvanced == 0) Debug.LogWarning("No steps advanced.");
+            Debug.Assert(stepsAdvanced > 0, "No steps advanced.");
             if (stepsAdvanced > 1) Debug.LogWarning($"Advanced {stepsAdvanced} steps - simulation running behind.");
             step += stepsAdvanced;
             
-            // // subscribe to all newly departed vehicles
-            // var departedIDList = client.Simulation.GetDepartedIDList("");
-            // foreach (var id in departedIDList.Content) {
-            //     Debug.Log($"Vehicle {id} departed.");
-            //     client.Vehicle.Subscribe(id, 0, 100_000, VariablesToSubscribeTo);
+            // subscribe to all newly departed vehicles
+            var departedIDList = client.Simulation.GetDepartedIDList("");
+            foreach (var id in departedIDList.Content) {
+                Debug.Log($"Vehicle {id} departed.");
+                client.Vehicle.Subscribe(id, 0, 100_000, VariablesToSubscribeTo);
+            }
+            
+            
+            var vehicleInfoList = new List<VehicleInfo>();
+            // var allVehiclesID = client.Vehicle.GetIdList();
+            // Debug.Log($"Number of vehicles: {allVehiclesID.Content.Count}");
+            // foreach (var id in allVehiclesID.Content) {
+            //     var position = client.Vehicle.GetPosition(id);
+            //     var angle = client.Vehicle.GetAngle(id);
+            //     var speed = client.Vehicle.GetSpeed(id);
+            //     var signals = client.Vehicle.GetSignals(id);
+            //     var vehicleType = client.Vehicle.GetTypeID(id);
+            //     vehicleInfoList.Add(new VehicleInfo(
+            //         id,
+            //         (float)position.Content.X,
+            //         (float)position.Content.Y,
+            //         (float)angle.Content,
+            //         signals.Content,
+            //         (float)speed.Content,
+            //         vehicleType.Content
+            //     ));
             // }
             
-            
-            var allVehiclesID = client.Vehicle.GetIdList();
-            Debug.Log($"Number of vehicles: {allVehiclesID.Content.Count}");
-            var vehicleInfoList = new List<VehicleInfo>();
-            foreach (var id in allVehiclesID.Content) {
-                var position = client.Vehicle.GetPosition(id);
-                var angle = client.Vehicle.GetAngle(id);
-                var speed = client.Vehicle.GetSpeed(id);
-                var signals = client.Vehicle.GetSignals(id);
-                var vehicleType = client.Vehicle.GetTypeID(id);
-                vehicleInfoList.Add(new VehicleInfo(
-                    id,
-                    (float)position.Content.X,
-                    (float)position.Content.Y,
-                    (float)angle.Content,
-                    signals.Content,
-                    (float)speed.Content,
-                    vehicleType.Content
-                ));
+            lock (updatedVehicleInfoListLock) {
+                vehicleInfoList.AddRange(updatedVehicleInfoList);
+                updatedVehicleInfoList.Clear();
             }
             OnSimulationAdvancedOneStep(vehicleInfoList.ToArray());
         }

@@ -408,9 +408,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19144433ef01440484113c26d2b30462, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  blinkerRightGO: {fileID: 8229925673821169303}
-  blinkerLeftGO: {fileID: 3651612519916834630}
-  brakeLightGO: {fileID: 8981335794578067793}
+  blinkerRight: {fileID: 8229925673821169303}
+  blinkerLeft: {fileID: 3651612519916834630}
+  brakeLight: {fileID: 8981335794578067793}
 --- !u!1 &9110398259856764790
 GameObject:
   m_ObjectHideFlags: 0
