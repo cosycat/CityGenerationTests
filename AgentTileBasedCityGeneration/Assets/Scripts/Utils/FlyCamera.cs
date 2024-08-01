@@ -1,8 +1,10 @@
 //https://gist.github.com/gunderson/d7f096bd07874f31671306318019d996
 
+using System;
 using UnityEngine;
 
 namespace Utils {
+    [RequireComponent(typeof(Camera))]
     public class FlyCamera : MonoBehaviour {
  
         /*
@@ -22,8 +24,16 @@ namespace Utils {
         float camSens = 0.25f; //How sensitive it with mouse
         private Vector3 lastMouse = new Vector3(255, 255, 255); //kind of in the middle of the screen, rather than at the top (play)
         private float totalRun= 1.0f;
-     
+
+        public SelectableCamera Cam { get; private set; } = null!;
+
+        private void Awake() {
+            Cam = GetComponent<SelectableCamera>();
+        }
+
         void Update () {
+            if (Cam.enabled == false) return;
+            
             if (Input.GetKeyDown(KeyCode.Tab)) {
                 MouseLookEnabled = !MouseLookEnabled;
             }
@@ -89,5 +99,6 @@ namespace Utils {
             
             return p_Velocity;
         }
+
     }
 }

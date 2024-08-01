@@ -14,9 +14,12 @@ namespace Simulation {
         private GameObject vehicleParent = null!;
         
         [SerializeField] private Vehicle vehiclePrefab = null!;
-        // [SerializeField] private PlayerVehicle playerVehiclePrefab = null!;
+
+        public Vehicle? PlayerVehicle { get; private set; }
 
         private IWorld? world;
+        
+        private SumoClient? sumoClient;
 
         private void Awake() {
             // if (vehiclePrefab == null) {
@@ -30,24 +33,49 @@ namespace Simulation {
             // vehicleParent.transform.parent = transform;
         }
 
+        private void Update() {
+            if (Input.GetKeyDown(KeyCode.Space)) {
+                if (sumoClient == null || !sumoClient.IsConnected) {
+                    StartSimulation();
+                }
+                else if (sumoClient.IsPaused) {
+                    ResumeSimulation();
+                }
+                else {
+                    PauseSimulation();
+                }
+            }
+            
+            if (Input.GetKeyDown(KeyCode.Escape)) {
+                StopSimulation();
+            }
+
+            if (Input.GetKeyDown(KeyCode.V)) {
+                if (vehicles.Count == 0) return;
+                // get random vehicle
+                var vehicle = vehicles.ElementAt(UnityEngine.Random.Range(0, vehicles.Count)).Value;
+                SetPlayerVehicle(vehicle);
+            }
+        }
+
         public void StartSimulation() {
             Debug.Log("Starting simulation...");
-            var sumoClient = FindObjectOfType<SumoClient>() ?? new GameObject("SumoClient").AddComponent<SumoClient>();
+            sumoClient = FindObjectOfType<SumoClient>() ?? new GameObject("SumoClient").AddComponent<SumoClient>();
             world = FindObjectOfType<WorldGameObject>();
 
             if (!CheckSimulationValidity()) return;
             
             sumoClient.SimulationAdvancedOneStep += SumoClientOnSimulationAdvancedOneStep;
-            sumoClient.StartClient();
+            sumoClient.StartClient(this);
         }
         
         
-        private object sumoStepLock = new object();
+        private readonly object sumoStepLock = new();
         private void SumoClientOnSimulationAdvancedOneStep(object sender, VehicleEventArgs e) {
             if (!CheckSimulationValidity()) return;
             
             lock (sumoStepLock) {
-                Debug.Log($"Received {e.VehicleInfo.Length} vehicle data.");
+                // Debug.Log($"Received {e.VehicleInfo.Length} vehicle data.");
                 var idsStillActive = new HashSet<string>();
                 foreach (var vehicleInfo in e.VehicleInfo) {
                     UpdateOrCreateVehicle(vehicleInfo);
@@ -57,6 +85,9 @@ namespace Simulation {
                 var keys = new List<string>(vehicles.Keys);
                 foreach (var id in keys) {
                     if (!idsStillActive.Contains(id)) {
+                        if (PlayerVehicle?.ID == id) {
+                            SetPlayerVehicle(null);
+                        }
                         Destroy(vehicles[id].gameObject, 0.2f);
                         vehicles.Remove(id);
                     }
@@ -96,8 +127,45 @@ namespace Simulation {
 
         public void StopSimulation() {
             Debug.Log("Stopping simulation...");
-            var sumoClient = FindObjectOfType<SumoClient>();
             sumoClient?.StopClient();
+        }
+        
+        public void PauseSimulation() {
+            Debug.Log("Pausing simulation...");
+            sumoClient?.PauseClient();
+        }
+        
+        public void ResumeSimulation() {
+            Debug.Log("Resuming simulation...");
+            sumoClient?.ResumeClient();
+        }
+
+        public VehicleInfo? GetPlayerVehicleInfo() {
+            if (PlayerVehicle == null) return null;
+            return new VehicleInfo(PlayerVehicle.ID, PlayerVehicle.transform.position.x / Constants.METERS_PER_UNIT,
+                PlayerVehicle.transform.position.z / Constants.METERS_PER_UNIT, PlayerVehicle.transform.rotation.eulerAngles.y, 0, 0,
+                PlayerVehicle.VehicleType);
+        }
+        
+        public event EventHandler<PlayerVehicleChangedEventArgs>? PlayerVehicleChanged;
+        
+        public void SetPlayerVehicle(Vehicle? vehicle) {
+            Debug.Log($"Setting player vehicle from {PlayerVehicle?.ID ?? "null"} to {vehicle?.ID ?? "null"}");
+            PlayerVehicle?.SetPlayerVehicle(false);
+            var oldPlayerVehicle = PlayerVehicle;
+            PlayerVehicle = vehicle;
+            PlayerVehicle?.SetPlayerVehicle(true);
+            PlayerVehicleChanged?.Invoke(this, new PlayerVehicleChangedEventArgs(oldPlayerVehicle, PlayerVehicle));
+        }
+    }
+    
+    public class PlayerVehicleChangedEventArgs : EventArgs {
+        public Vehicle? OldPlayerVehicle { get; }
+        public Vehicle? NewPlayerVehicle { get; }
+
+        public PlayerVehicleChangedEventArgs(Vehicle? oldPlayerVehicle, Vehicle? newPlayerVehicle) {
+            OldPlayerVehicle = oldPlayerVehicle;
+            NewPlayerVehicle = newPlayerVehicle;
         }
     }
 }

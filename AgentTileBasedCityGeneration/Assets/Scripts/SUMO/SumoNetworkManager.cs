@@ -130,85 +130,7 @@ namespace SUMO {
         /// <returns> An enumerator for the coroutine. </returns>
         private IEnumerator ConvertToSumoNetwork() {
             Debug.Log("Converting to SUMO network not implemented, use manual command in README.");
-            // run chmod u+x run_sumo.sh && ./run_sumo.sh
-
-            // var processStartInfo = new ProcessStartInfo {
-            //     FileName = "/bin/bash",
-            //     Arguments = $"-c \"chmod u+x {SumoGeneratedFilesPath}/run_sumo.sh && {SumoGeneratedFilesPath}/run_sumo.sh\"",
-            //     RedirectStandardOutput = true,
-            //     RedirectStandardError = true,
-            //     UseShellExecute = false,
-            //     CreateNoWindow = true
-            // };
-            //
-            //
-            // using var process = new Process();
-            // process.StartInfo = processStartInfo;
-            // process.OutputDataReceived += (_, e) => Debug.Log(e.Data);
-            // process.ErrorDataReceived += (_, e) => Debug.LogError($"{e.GetType()}: {e.Data}");
-            //
-            // process.Start();
-            // process.BeginOutputReadLine();
-            // process.BeginErrorReadLine();
-            //
-            // while (!process.HasExited) {
-            //     yield return null;
-            // }
-            //
-            // if (process.ExitCode != 0) {
-            //     Debug.LogError($"Failed to convert to SUMO network with exit code {process.ExitCode}");
-            // }
-            // else {
-            //     Debug.Log("Converted to SUMO network successfully.");
-            // }
-
             yield return null;
-            // if (sumoFileGenerator == null) {
-            //     Debug.LogError("No SumoFileGenerator found. Did you call GenerateNetwork first?");
-            //     yield break;
-            // }
-            // var nodesFilePath = sumoFileGenerator.NodesFilePath;
-            // var edgesFilePath = sumoFileGenerator.EdgesFilePath;
-            // var connectionsFilePath = sumoFileGenerator.ConnectionsFilePath;
-            // var routesFilePath = sumoFileGenerator.RoutesFilePath;
-            // var outputNetFilePath = sumoFileGenerator.OutputNetFilePath;
-            // var configurationFilePath = sumoFileGenerator.ConfigurationFilePath;
-            //
-            // var arguments = "";
-            // arguments += $"--node-files=\"{nodesFilePath}\" ";
-            // arguments += $"--edge-files=\"{edgesFilePath}\" ";
-            // // arguments += $"--connection-files=\"{connectionsFilePath}\" ";
-            // arguments += $"--output-file=\"{outputNetFilePath}\" ";
-            //
-            // var startInfo = new ProcessStartInfo {
-            //     FileName = NETCONVERT_PATH_HOMEBREW,
-            //     Arguments = arguments,
-            //     RedirectStandardOutput = true,
-            //     RedirectStandardError = true,
-            //     UseShellExecute = false,
-            //     CreateNoWindow = true
-            // };
-            //
-            // using var process = new Process();
-            // process.StartInfo = startInfo;
-            // process.OutputDataReceived += (_, e) => Debug.Log(e.Data);
-            // process.ErrorDataReceived += (_, e) => Debug.LogError($"{e.GetType()}: {e.Data}");
-            //
-            // process.Start();
-            // process.BeginOutputReadLine();
-            // process.BeginErrorReadLine();
-            //
-            // while (!process.HasExited) {
-            //     yield return null;
-            // }
-            //
-            // if (process.ExitCode != 0) {
-            //     Debug.LogError($"netconvert failed with exit code {process.ExitCode}");
-            // }
-            // else {
-            //     Debug.Log("netconvert completed successfully.");
-            // }
-
         }
         
         public void RequestStopSimulation() {
@@ -242,27 +164,6 @@ namespace SUMO {
         private IEnumerator OpenSumoGUI() {
             Debug.Log("Opening SUMO GUI not implemented.");
             yield return null;
-            // if (sumoFileGenerator == null) {
-            //     Debug.LogError("No SumoFileGenerator found. Did you call GenerateNetwork first?");
-            //     yield break;
-            // }
-            //
-            // using var process = new Process();
-            // process.StartInfo.FileName = SUMO_GUI_PATH_HOMEBREW;
-            // process.StartInfo.Arguments = $"-c \"{sumoFileGenerator.ConfigurationFilePath}\"";
-            //
-            // process.Start();
-            //
-            // while (!process.HasExited) {
-            //     yield return null;
-            // }
-            //
-            // if (process.ExitCode != 0) {
-            //     Debug.LogError($"Failed to open SUMO GUI with exit code {process.ExitCode}");
-            // }
-            // else {
-            //     Debug.Log("Opened SUMO GUI.");
-            // }
         }
         
     }

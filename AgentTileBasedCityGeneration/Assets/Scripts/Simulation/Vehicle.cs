@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using FreeFormGraph;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -12,7 +13,27 @@ namespace Simulation {
         [SerializeField] protected VehicleSignal blinkerLeft = null!;
         [SerializeField] protected VehicleSignal brakeLight = null!;
         
-        public string ID { get; internal set; } = null!;
+        private string id = null!;
+
+        private SelectableCamera[] vehicleCameras = Array.Empty<SelectableCamera>();
+
+        public string VehicleType { get; set; } = "car";
+
+        public string ID {
+            get => id;
+            internal set {
+                if (id is not null and not "") {
+                    Debug.LogError($"Vehicle ID already set: {id}");
+                    return;
+                }
+                id = value;
+                name = $"Vehicle_{id}";
+            }
+        }
+
+        public bool IsPlayerVehicle { get; private set; }
+        
+        public SelectableCamera[] VehicleCameras => vehicleCameras;
 
         protected virtual void Awake() {
             if (!Settings.UseVehicleSignals) {
@@ -31,18 +52,28 @@ namespace Simulation {
             if (ID is null or "") {
                 Debug.LogError($"Vehicle ID not set: {ID ?? "null"}");
             }
+            vehicleCameras = GetComponentsInChildren<SelectableCamera>(true);
         }
 
         public virtual void UpdatePosition(Vector3 position, Quaternion rotation) {
+            // if (IsPlayerVehicle) return;
             transform.position = position;
             transform.rotation = rotation;
         }
 
         public virtual void UpdateSignals(bool isBlinkerRightOn, bool isBlinkerLeftOn, bool isBrakeLightOn) {
+            // if (IsPlayerVehicle) return;
             if (!Settings.UseVehicleSignals) return;
             blinkerRight.SetSignal(isBlinkerRightOn);
             blinkerLeft.SetSignal(isBlinkerLeftOn);
             brakeLight.SetSignal(isBrakeLightOn);
+        }
+
+        public void SetPlayerVehicle(bool isPlayerVehicle) {
+            // if (IsPlayerVehicle == isPlayerVehicle) return;
+            UpdateSignals(false, false, false);
+            
+            IsPlayerVehicle = isPlayerVehicle;
         }
     }
 }

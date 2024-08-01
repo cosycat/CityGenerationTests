@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using CodingConnected.TraCI.NET;
 using CodingConnected.TraCI.NET.Types;
+using Simulation;
 using UnityEngine;
 
 
@@ -27,12 +28,16 @@ namespace SUMO {
         private float timeSinceLastUpdate = 0f;
         private int step = 0;
         
+        private SimulationManager simulationManager = null!;
         
         public bool IsConnected => connectionTask is { IsCompleted: true };
         
+        public bool IsPaused { get; private set; }
+        
         private bool StopRequested { get; set; }
 
-        public void StartClient() {
+        public void StartClient(SimulationManager correspondingSimulationManager) {
+            simulationManager = correspondingSimulationManager;
             client = new TraCIClient();
             connectionTask = client.ConnectAsync("127.0.0.1", SUMO_PORT);
             connectionTask.ContinueWith(task => {
@@ -73,24 +78,18 @@ namespace SUMO {
                 switch (variableCode) {
                     case TraCIConstants.VAR_POSITION:
                         position = respInfo.GetContentAs<Position2D>();
-                        // vehicleInfo.positionX = (float)position.X;
-                        // vehicleInfo.positionY = (float)position.Y;
                         break;
                     case TraCIConstants.VAR_ANGLE:
                         angle = respInfo.GetContentAs<float>();
-                        // vehicleInfo.rotation = angle;
                         break;
                     case TraCIConstants.VAR_SPEED:
                         speed = respInfo.GetContentAs<float>();
-                        // vehicleInfo.speed = speed;
                         break;
                     case TraCIConstants.VAR_SIGNALS:
                         signals = respInfo.GetContentAs<int>();
-                        // vehicleInfo.signals = signals;
                         break;
                     case TraCIConstants.VAR_TYPE:
                         vehicleType = respInfo.GetContentAs<string>();
-                        // vehicleInfo.vehicleType = vehicleType;
                         break;
                     
                     default:
@@ -108,6 +107,7 @@ namespace SUMO {
         private void HandleTraCI() {
             // TODO maybe call this in a coroutine instead of Update
             if (connectionTask == null || !connectionTask.IsCompleted) return;
+            if (IsPaused) return;
             
             totalSimulationTime += Time.deltaTime;
             timeSinceLastUpdate += Time.deltaTime;
@@ -124,39 +124,32 @@ namespace SUMO {
             if (stepsAdvanced > 1) Debug.LogWarning($"Advanced {stepsAdvanced} steps - simulation running behind.");
             step += stepsAdvanced;
             
+            // Update the player vehicle in the simulation
+            // var playerVehicleInfo = simulationManager.GetPlayerVehicleInfo();
+            // if (playerVehicleInfo != null) {
+            //     client.Vehicle.MoveToXY(playerVehicleInfo.id, "-1", -1, playerVehicleInfo.positionX, playerVehicleInfo.positionY, playerVehicleInfo.rotation, 2);
+            //     client.Vehicle.SetSpeed(playerVehicleInfo.id, playerVehicleInfo.speed);
+            // }
+
             // subscribe to all newly departed vehicles
             var departedIDList = client.Simulation.GetDepartedIDList("");
             foreach (var id in departedIDList.Content) {
-                Debug.Log($"Vehicle {id} departed.");
+                // Debug.Log($"Vehicle {id} departed.");
                 client.Vehicle.Subscribe(id, 0, 100_000, VariablesToSubscribeTo);
             }
             
-            
+            // Inform about all vehicles that have been updated
             var vehicleInfoList = new List<VehicleInfo>();
-            // var allVehiclesID = client.Vehicle.GetIdList();
-            // Debug.Log($"Number of vehicles: {allVehiclesID.Content.Count}");
-            // foreach (var id in allVehiclesID.Content) {
-            //     var position = client.Vehicle.GetPosition(id);
-            //     var angle = client.Vehicle.GetAngle(id);
-            //     var speed = client.Vehicle.GetSpeed(id);
-            //     var signals = client.Vehicle.GetSignals(id);
-            //     var vehicleType = client.Vehicle.GetTypeID(id);
-            //     vehicleInfoList.Add(new VehicleInfo(
-            //         id,
-            //         (float)position.Content.X,
-            //         (float)position.Content.Y,
-            //         (float)angle.Content,
-            //         signals.Content,
-            //         (float)speed.Content,
-            //         vehicleType.Content
-            //     ));
-            // }
-            
             lock (updatedVehicleInfoListLock) {
                 vehicleInfoList.AddRange(updatedVehicleInfoList);
                 updatedVehicleInfoList.Clear();
             }
             OnSimulationAdvancedOneStep(vehicleInfoList.ToArray());
+            
+            if (StopRequested) {
+                client.Control.Close();
+                Cleanup();
+            }
         }
         
 
@@ -181,6 +174,14 @@ namespace SUMO {
 
         public void StopClient() {
             StopRequested = true;
+        }
+
+        public void PauseClient() {
+            IsPaused = true;
+        }
+
+        public void ResumeClient() {
+            IsPaused = false;
         }
     }
     
