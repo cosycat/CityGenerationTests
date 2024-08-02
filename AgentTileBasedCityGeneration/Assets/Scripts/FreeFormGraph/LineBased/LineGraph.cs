@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using UnityEngine.Splines;
 using DataStructures;
 using FreeFormGraph.World;
+using System.Linq;
 using SUMO;
 
 namespace FreeFormGraph.LineBased {
@@ -38,6 +39,8 @@ namespace FreeFormGraph.LineBased {
         public override bool CreateEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode,
             out bool isToNodeNew, out bool isEdgeNew, bool failIfIntersection = false) {
                 // Debug.Assert(from != null, $"CreateEdge: From node is null, to position: {to}");
+                var numEdgesBefore = edges.Count();
+                var numNodesBefore = nodes.Count();
 
                 IStreetEdge? lastIntersectionEdge = null;
                 //check for intersections
@@ -58,6 +61,8 @@ namespace FreeFormGraph.LineBased {
 
                 isToNodeNew = true;
 
+                Action undo = () => {};
+
                 if(lastIntersectionEdge != null) {
                     if(Vector3.Distance(to, lastIntersectionEdge.NodeA.Position) < SnapToExistingNodeThreshold) {
                         isToNodeNew = false;
@@ -77,7 +82,16 @@ namespace FreeFormGraph.LineBased {
                         }
 
                         Debug.Assert(!TryFindClosestNode(to, out _, EPS), $"Intersection with edge, but no node found at {to}");
-                        InsertNodeOnEdge(lastIntersectionEdge, to, out toNode, out _, out _);
+                        InsertNodeOnEdge(lastIntersectionEdge, to, out toNode, out var leftEdge, out var rightEdge);
+                        var nodeUsed = toNode;
+                        undo = () => {
+                            //reverting to previous state makes things easier for pathfinding removal
+                            RemoveEdge(leftEdge);
+                            RemoveEdge(rightEdge);
+                            RemoveNode(nodeUsed);
+                            CreateEdge(lastIntersectionEdge.NodeA, lastIntersectionEdge.NodeB, out var restoredEdge, out var isNewEdge);
+                            Debug.Assert(isNewEdge);
+                        };
                     }
 
                 } else {
@@ -89,12 +103,21 @@ namespace FreeFormGraph.LineBased {
                         node = new LineNode(to, MinAngleBetweenNewEdgesRad);
                         AddNode((LineNode)node);
                         toNode = node;
+                        undo = () => {
+                            RemoveNode(node);
+                        };
                     }
                 }
                 
                 var result = CreateEdge(from, toNode, out newEdge, out isEdgeNew);
-                //edge building might still fail due to bad angles for example. Newly created nodes have then to be removed again otherwise they are dangling
-                if(!result && isToNodeNew) RemoveNode(toNode);
+                //edge building might still fail due to bad angles for example. Newly created nodes/edges have then to be removed again otherwise they are dangling
+                if(!result) {
+                    undo();
+                    if(edges.Count() != numEdgesBefore) {
+                        Debug.Assert(edges.Count() == numEdgesBefore);
+                        Debug.Assert(nodes.Count() == numNodesBefore);
+                    }
+                }
                 return result;
             }
         
