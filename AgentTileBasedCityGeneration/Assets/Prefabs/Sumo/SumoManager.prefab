@@ -56,13 +56,13 @@ MonoBehaviour:
       <Length>k__BackingField: 5
       <Accel>k__BackingField: 2
       <Decel>k__BackingField: 2
-      <Prefab>k__BackingField: {fileID: 5308231941517584958, guid: a1c24b84b201c4cadae9cdcd146a960b, type: 3}
+      prefab: {fileID: 7789293729836674695, guid: a1c24b84b201c4cadae9cdcd146a960b, type: 3}
     - <Id>k__BackingField: speeder
       <MaxSpeed>k__BackingField: 100
       <Length>k__BackingField: 5
       <Accel>k__BackingField: 20
       <Decel>k__BackingField: 10
-      <Prefab>k__BackingField: {fileID: 3868194324983762729, guid: e721f769df6e642ce8db16a5ddfad30f, type: 3}
+      prefab: {fileID: 1161110174753672080, guid: e721f769df6e642ce8db16a5ddfad30f, type: 3}
 --- !u!114 &3617010318408248544
 MonoBehaviour:
   m_ObjectHideFlags: 0

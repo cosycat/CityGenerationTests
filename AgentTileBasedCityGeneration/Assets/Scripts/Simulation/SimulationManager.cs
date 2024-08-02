@@ -21,6 +21,7 @@ namespace Simulation {
         private IWorld? world;
         
         private SumoClient? sumoClient;
+        public bool IsPaused => sumoClient?.IsPaused ?? false;
         
         // Eventually this could be moved to a general options object, but for now, they just share the options.
         private SumoSimulationOptions? simulationOptions;

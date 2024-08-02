@@ -48,17 +48,19 @@ namespace SUMO {
                 return;
             }
 
-            if (!networkConverter.IsSimulationRunning) {
-                if (GUILayout.Button("Resume Simulation")) {
-                    simulationManager.ResumeSimulation();
+            if (networkConverter.IsSimulationRunning) {
+                if (simulationManager.IsPaused) {
+                    if (GUILayout.Button("Resume Simulation")) {
+                        simulationManager.ResumeSimulation();
+                    }
+                }
+                else {
+                    if (GUILayout.Button("Pause Simulation")) {
+                        simulationManager.PauseSimulation();
+                    }
                 }
             }
-            else {
-                if (GUILayout.Button("Pause Simulation")) {
-                    simulationManager.PauseSimulation();
-                }
-            }
-            
+
             GUILayout.EndArea();
         }
     }

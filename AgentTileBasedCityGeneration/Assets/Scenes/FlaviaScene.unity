@@ -235,28 +235,8 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 5555805729518258908, guid: a3c81a5d058314c4d8ac00e3d695e24c, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1521221929}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a3c81a5d058314c4d8ac00e3d695e24c, type: 3}
---- !u!1 &1521221924 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 5555805729518258908, guid: a3c81a5d058314c4d8ac00e3d695e24c, type: 3}
-  m_PrefabInstance: {fileID: 672821483}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1521221929
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1521221924}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 92fbdd75b301452a80389f59b76830d5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1001 &1883455840
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -391,14 +371,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: SumoManager
       objectReference: {fileID: 0}
-    - target: {fileID: 638975536412610055, guid: ff5a2fb049189417cb2c167220e497f9, type: 3}
-      propertyPath: <SimulationOptions>k__BackingField.<VehicleTypes>k__BackingField.Array.data[0].prefab
-      value: 
-      objectReference: {fileID: 7789293729836674695, guid: a1c24b84b201c4cadae9cdcd146a960b, type: 3}
-    - target: {fileID: 638975536412610055, guid: ff5a2fb049189417cb2c167220e497f9, type: 3}
-      propertyPath: <SimulationOptions>k__BackingField.<VehicleTypes>k__BackingField.Array.data[1].prefab
-      value: 
-      objectReference: {fileID: 1161110174753672080, guid: e721f769df6e642ce8db16a5ddfad30f, type: 3}
     - target: {fileID: 1731860193232760171, guid: ff5a2fb049189417cb2c167220e497f9, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -1144,10 +1116,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 5672689044775689650, guid: 83328e1d641764e77a382effca310bb0, type: 3}
-      propertyPath: defaultVehiclePrefab
-      value: 
-      objectReference: {fileID: 7789293729836674695, guid: a1c24b84b201c4cadae9cdcd146a960b, type: 3}
     - target: {fileID: 8111618484513989270, guid: 83328e1d641764e77a382effca310bb0, type: 3}
       propertyPath: m_Name
       value: SimulationManager
