@@ -391,6 +391,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: SumoManager
       objectReference: {fileID: 0}
+    - target: {fileID: 638975536412610055, guid: ff5a2fb049189417cb2c167220e497f9, type: 3}
+      propertyPath: <SimulationOptions>k__BackingField.<VehicleTypes>k__BackingField.Array.data[0].prefab
+      value: 
+      objectReference: {fileID: 7789293729836674695, guid: a1c24b84b201c4cadae9cdcd146a960b, type: 3}
+    - target: {fileID: 638975536412610055, guid: ff5a2fb049189417cb2c167220e497f9, type: 3}
+      propertyPath: <SimulationOptions>k__BackingField.<VehicleTypes>k__BackingField.Array.data[1].prefab
+      value: 
+      objectReference: {fileID: 1161110174753672080, guid: e721f769df6e642ce8db16a5ddfad30f, type: 3}
     - target: {fileID: 1731860193232760171, guid: ff5a2fb049189417cb2c167220e497f9, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
