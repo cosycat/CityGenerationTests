@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using SUMO;
 using UnityEngine;
 using UnityEngine.Splines;
 
@@ -200,6 +201,8 @@ namespace FreeFormGraph.Bezier {
         public IStreetNode NodeB => nodeB;
 
         public float StreetWidth { get; }
+        
+        public virtual RoadType Type { get; set; } = RoadType.Primary;
 
         public BezierStreetEdge(BezierStreetNode nodeA, BezierStreetNode nodeB, BezierCurve curve, float streetWidth = 0.3f) {
             Debug.Assert(Vector3.Distance(curve.P0, nodeA.Position) < 0.01f, $"Distance from {curve.P0} to {nodeA.Position} is {Vector3.Distance(curve.P0, nodeA.Position)}");

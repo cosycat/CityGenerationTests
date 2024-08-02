@@ -1,4 +1,6 @@
 #nullable enable
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Linq;
 using FreeFormGraph;
@@ -14,6 +16,7 @@ namespace SUMO {
         private const string ROUTES_FILE_NAME = "routes.rou.xml";
         private const string OUTPUT_NET_FILE_NAME = "output.net.xml";
         private const string CONFIGURATION_FILE_NAME = "configuration.sumocfg";
+        private const string EDGES_TYPES_FILE_NAME = "edges.typ.xml";
 
         private IStreetGraph Graph { get; }
         private IWorld World { get; }
@@ -26,6 +29,7 @@ namespace SUMO {
         public string RoutesFilePath => $"{SumoFilesPath}/{ROUTES_FILE_NAME}";
         public string OutputNetFilePath => $"{SumoFilesPath}/{OUTPUT_NET_FILE_NAME}";
         public string ConfigurationFilePath => $"{SumoFilesPath}/{CONFIGURATION_FILE_NAME}";
+        public string EdgesTypesFilePath => $"{SumoFilesPath}/{EDGES_TYPES_FILE_NAME}";
 
         private SumoFileGenerator(string sumoFilesPath, IStreetGraph graph, SumoSimulationOptions simulationOptions, IWorld world) {
             Graph = graph;
@@ -59,6 +63,7 @@ namespace SUMO {
         private void CreateNetworkFiles() {
             GenerateNodes();
             GenerateEdges();
+            GenerateEdgesTypes();
             GenerateConnections();
             GenerateRoutes();
             GenerateConfiguration();
@@ -94,32 +99,49 @@ namespace SUMO {
             var edgesDoc = new XDocument(new XElement("edges"));
             
             var edges = Graph.Edges.ToArray();
-            var nodes = Graph.Nodes.Select((node, i) => (node, i)).ToDictionary(t => t.node, t => t.i);
+            var nodesToIndex = Graph.Nodes.Select((node, i) => (node, i)).ToDictionary(t => t.node, t => t.i);
             for (var i = 0; i < edges.Length; i++) {
                 var edge = edges[i];
                 var nodeA = edge.NodeA;
                 var nodeB = edge.NodeB;
-                var nodeAIndex = nodes[nodeA];
-                var nodeBIndex = nodes[nodeB];
-                AddEdge(edgesDoc, $"e{i}", $"n{nodeAIndex}", $"n{nodeBIndex}", 1, 1, 10);
-                AddEdge(edgesDoc, $"e{i}_reverse", $"n{nodeBIndex}", $"n{nodeAIndex}", 1, 1, 10);
+                var nodeAIndex = nodesToIndex[nodeA];
+                var nodeBIndex = nodesToIndex[nodeB];
+                var roadType = edge.Type;
+                var edgeType = SimulationOptions.RoadTypeToEdgeType[roadType].Id;
+                AddEdge(edgesDoc, $"e{i}", $"n{nodeAIndex}", $"n{nodeBIndex}", edgeType);
+                AddEdge(edgesDoc, $"e{i}_reverse", $"n{nodeBIndex}", $"n{nodeAIndex}", edgeType);
             }
             
             edgesDoc.Save(EdgesFilePath);
         }
 
-        private static void AddEdge(XDocument edgesDoc, string edgeId, string fromNode, string toNode, int priority, int numLanes, double speed) {
+        private static void AddEdge(XDocument edgesDoc, string edgeId, string fromNode, string toNode, string typeId) {
             var newEdge = new XElement("edge",
                 new XAttribute("id", edgeId),
                 new XAttribute("from", fromNode),
                 new XAttribute("to", toNode),
-                new XAttribute("priority", priority),
-                new XAttribute("numLanes", numLanes),
-                new XAttribute("speed", speed)
+                new XAttribute("type", typeId)
             );
 
             Debug.Assert(edgesDoc.Root != null, "edgesDoc.Root != null");
             edgesDoc.Root?.Add(newEdge);
+        }
+
+        private void GenerateEdgesTypes() {
+            var edgesTypesDoc = new XDocument(new XElement("types"));
+            
+            foreach (var roadType in Enum.GetValues(typeof(RoadType)).Cast<RoadType>()) {
+                var edgeType = SimulationOptions.RoadTypeToEdgeType.TryGetValue(roadType, out var e) ? e : SumoEdgeTypes.DefaultSumoEdgeType;
+                var type = new XElement("type",
+                    new XAttribute("id", edgeType.Id),
+                    new XAttribute("speed", edgeType.Speed),
+                    new XAttribute("numLanes", edgeType.NumLanes),
+                    new XAttribute("priority", edgeType.Priority)
+                );
+                edgesTypesDoc.Root!.Add(type);
+            }
+
+            edgesTypesDoc.Save(EdgesTypesFilePath);
         }
 
         private void GenerateConnections()
@@ -162,49 +184,50 @@ namespace SUMO {
 
         private void GenerateRoutes() {
             var routesDoc = new XDocument(new XElement("routes"));
-            
-            AddCarType(routesDoc, "Car", 15.0f, 2.0f, 1.0f, 5.0f, 0.0f);
+
+            foreach (var vehicleType in SimulationOptions.VehicleTypes) {
+                AddCarType(routesDoc, vehicleType);
+            }
 
             for (int i = 0; i < SimulationOptions.RandomTripCount; i++) {
                 var fromEdge = GetRandomEdge();
                 var toEdge = GetRandomEdge();
                 if (fromEdge == toEdge) continue;
-                AddTrip(routesDoc, $"trip{i}", fromEdge, toEdge, "Car");
+                AddTrip(routesDoc, $"trip{i}", fromEdge, toEdge, GetRandomVehicleType());
             }
             
             for (int i = 0; i < SimulationOptions.RandomFlowCount; i++) {
                 var fromEdge = GetRandomEdge();
                 var toEdge = GetRandomEdge();
                 if (fromEdge == toEdge) continue;
-                AddFlow(routesDoc, $"flow{i}", fromEdge, toEdge, 0, 10000, SimulationOptions.FlowPeriod, "Car");
+                AddFlow(routesDoc, $"flow{i}", fromEdge, toEdge, 0, 10000, SimulationOptions.FlowPeriod, GetRandomVehicleType());
             }
-
-            
-            // AddTrip(routesDoc, "trip0", "e0", "e3", "Car");
-            //
-            // AddTrip(routesDoc, "trip1", "e0", "e4", "Car", 10);
             
             routesDoc.Save(RoutesFilePath);
         }
         
+        private string GetRandomVehicleType() {
+            var vehicleTypeIndex = Random.Range(0, SimulationOptions.VehicleTypes.Length);
+            return SimulationOptions.VehicleTypes[vehicleTypeIndex].Id;
+        }
+
         private string GetRandomEdge(bool withReverse = false) {
             var edgeIndex = Random.Range(0, Graph.Edges.Count());
             return $"e{edgeIndex}{(withReverse && Random.value < 0.5 ? "_reverse" : "")}";
         }
-        
-        private static void AddCarType(XDocument routesDoc, string id, float maxSpeed, float length, float accel, float decel, float sigma) {
+
+        private static void AddCarType(XDocument routesDoc, SumoVehicleType vehicleType) {
             var vType = new XElement("vType",
-                new XAttribute("id", id),
-                new XAttribute("maxSpeed", maxSpeed),
-                new XAttribute("length", length),
-                new XAttribute("accel", accel),
-                new XAttribute("decel", decel),
-                new XAttribute("sigma", sigma)
+                new XAttribute("id", vehicleType.Id),
+                new XAttribute("length", vehicleType.Length),
+                new XAttribute("maxSpeed", vehicleType.MaxSpeed),
+                new XAttribute("accel", vehicleType.Accel),
+                new XAttribute("decel", vehicleType.Decel)
             );
 
             routesDoc.Root!.Add(vType);
         }
-        
+
         private static void AddRoute(XDocument routesDoc, string id, string edges) {
             var route = new XElement("route",
                 new XAttribute("id", id),
@@ -213,7 +236,7 @@ namespace SUMO {
 
             routesDoc.Root!.Add(route);
         }
-        
+
         private static void AddTrip(XDocument routesDoc, string id, string fromEdge, string toEdge, string vehicleType, int depart = 0) {
             var trip = new XElement("trip",
                 new XAttribute("id", id),
@@ -225,7 +248,7 @@ namespace SUMO {
 
             routesDoc.Root!.Add(trip);
         }
-        
+
         private static void AddFlow(XDocument routesDoc, string id, string fromEdge, string toEdge, int beginTime, int endTime, float period, string vehicleType) {
             var flow = new XElement("flow",
                 new XAttribute("id", id),
@@ -239,7 +262,7 @@ namespace SUMO {
 
             routesDoc.Root!.Add(flow);
         }
-        
+
         private static void AddVehicle(XDocument routesDoc, string id, string route, string type) {
             var vehicle = new XElement("vehicle",
                 new XAttribute("depart", 1),
@@ -269,4 +292,5 @@ namespace SUMO {
             configurationDoc.Save(ConfigurationFilePath);
         }
     }
+    
 }

@@ -9,9 +9,9 @@ using Utils;
 namespace Simulation {
     public class Vehicle : MonoBehaviour {
         
-        [SerializeField] protected VehicleSignal blinkerRight = null!;
-        [SerializeField] protected VehicleSignal blinkerLeft = null!;
-        [SerializeField] protected VehicleSignal brakeLight = null!;
+        [SerializeField] private VehicleSignal blinkerRight = null!;
+        [SerializeField] private VehicleSignal blinkerLeft = null!;
+        [SerializeField] private VehicleSignal brakeLight = null!;
         
         private string id = null!;
 
@@ -35,7 +35,7 @@ namespace Simulation {
         
         public SelectableCamera[] VehicleCameras => vehicleCameras;
 
-        protected virtual void Awake() {
+        private void Awake() {
             if (!Settings.UseVehicleSignals) {
                 if (blinkerRight != null) Destroy(blinkerRight.gameObject);
                 if (blinkerLeft != null) Destroy(blinkerLeft.gameObject);
@@ -55,13 +55,13 @@ namespace Simulation {
             vehicleCameras = GetComponentsInChildren<SelectableCamera>(true);
         }
 
-        public virtual void UpdatePosition(Vector3 position, Quaternion rotation) {
+        public void UpdatePosition(Vector3 position, Quaternion rotation) {
             // if (IsPlayerVehicle) return;
             transform.position = position;
             transform.rotation = rotation;
         }
 
-        public virtual void UpdateSignals(bool isBlinkerRightOn, bool isBlinkerLeftOn, bool isBrakeLightOn) {
+        public void UpdateSignals(bool isBlinkerRightOn, bool isBlinkerLeftOn, bool isBrakeLightOn) {
             // if (IsPlayerVehicle) return;
             if (!Settings.UseVehicleSignals) return;
             blinkerRight.SetSignal(isBlinkerRightOn);

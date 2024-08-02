@@ -6,6 +6,7 @@ using FreeFormGraph;
 using FreeFormGraph.World;
 using SUMO;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Simulation {
     public class SimulationManager : MonoBehaviour {
@@ -13,24 +14,20 @@ namespace Simulation {
         private readonly Dictionary<string, Vehicle> vehicles = new();
         private GameObject vehicleParent = null!;
         
-        [SerializeField] private Vehicle vehiclePrefab = null!;
+        [SerializeField] private Vehicle defaultVehiclePrefab = null!;
 
         public Vehicle? PlayerVehicle { get; private set; }
 
         private IWorld? world;
         
         private SumoClient? sumoClient;
+        
+        // Eventually this could be moved to a general options object, but for now, they just share the options.
+        private SumoSimulationOptions? simulationOptions;
+        public SumoSimulationOptions SimulationOptions => simulationOptions ?? FindObjectOfType<SumoNetworkConverter>()?.SimulationOptions ?? new SumoSimulationOptions();
 
         private void Awake() {
-            // if (vehiclePrefab == null) {
-            //     Debug.LogError("Vehicle prefab not set.");
-            //     vehiclePrefab = GameObject.CreatePrimitive(PrimitiveType.Cube).AddComponent<Vehicle>();
-            //     vehiclePrefab.gameObject.SetActive(false);
-            //     vehiclePrefab.name = "VehicleDebugPrefab";
-            // }
-
             vehicleParent = new GameObject("Vehicles");
-            // vehicleParent.transform.parent = transform;
         }
 
         private void Update() {
@@ -101,7 +98,8 @@ namespace Simulation {
             var id = vehicleInfo.id;
             var worldHeight = world!.GetHeightAt(position2D.x, position2D.y);
             if (!vehicles.TryGetValue(id, out var vehicle)) {
-                vehicle = Instantiate(vehiclePrefab, new Vector3(position2D.x, worldHeight, position2D.y), Quaternion.identity);
+                var prefab = SimulationOptions.GetVehiclePrefab(vehicleInfo.vehicleType) ?? defaultVehiclePrefab;
+                vehicle = Instantiate(prefab, new Vector3(position2D.x, worldHeight, position2D.y), Quaternion.identity);
                 vehicle.ID = id;
                 vehicle.transform.parent = vehicleParent.transform;
                 vehicle.UpdatePosition(new Vector3(position2D.x, worldHeight, position2D.y), Quaternion.Euler(0, vehicleInfo.rotation, 0));
@@ -115,7 +113,7 @@ namespace Simulation {
         }
 
         private bool CheckSimulationValidity() {
-            if (world != null && vehiclePrefab != null) {
+            if (world != null && defaultVehiclePrefab != null) {
                 return true;
             }
             
