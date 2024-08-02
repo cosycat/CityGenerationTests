@@ -34,7 +34,12 @@ namespace SUMO {
         private bool SimulationStopRequested { get; set; }
 
         private string NetconvertCommand => sumoFileGenerator == null ? "netconvert" :
-            $"netconvert --node-files=\"{sumoFileGenerator.NodesFilePath}\" --edge-files=\"{sumoFileGenerator.EdgesFilePath}\" --output-file=\"{sumoFileGenerator.OutputNetFilePath}\" --offset.disable-normalization=\"true\"\n";
+            $"netconvert " +
+            $"--node-files=\"{sumoFileGenerator.NodesFilePath}\" " +
+            $"--edge-files=\"{sumoFileGenerator.EdgesFilePath}\" " +
+            $"--type-files=\"{sumoFileGenerator.EdgesTypesFilePath}\" " +
+            $"--output-file=\"{sumoFileGenerator.OutputNetFilePath}\" " +
+            $"--offset.disable-normalization=\"true\"\n";
 
         private string SumoExecutionCommand => sumoFileGenerator == null ? "sumo" :
             $"sumo -c \"{sumoFileGenerator.ConfigurationFilePath}\" --remote-port {SumoClient.SUMO_PORT}\n";
