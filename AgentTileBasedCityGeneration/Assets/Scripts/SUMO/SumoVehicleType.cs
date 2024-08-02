@@ -16,6 +16,8 @@ namespace SUMO {
         [field:SerializeField] public float Accel { get; private set; }
         [field:SerializeField] public float Decel { get; private set; }
 
+        [field: SerializeField] public SumoVehicleClass VehicleClass { get; private set; } = SumoVehicleClass.Passenger;
+
         [SerializeField] private Vehicle? prefab;
         public Vehicle? Prefab {
             get => prefab;
@@ -30,5 +32,16 @@ namespace SUMO {
         //     Decel = decel;
         //     Prefab = prefab;
         // }
+    }
+    
+    public enum SumoVehicleClass {
+        Passenger,
+        Bus,
+        Truck,
+        Emergency,
+        Taxi,
+        Bicycle,
+        Pedestrian,
+        Motorcycle,
     }
 }

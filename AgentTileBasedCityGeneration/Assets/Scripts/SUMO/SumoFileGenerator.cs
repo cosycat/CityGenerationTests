@@ -222,7 +222,8 @@ namespace SUMO {
                 new XAttribute("length", vehicleType.Length),
                 new XAttribute("maxSpeed", vehicleType.MaxSpeed),
                 new XAttribute("accel", vehicleType.Accel),
-                new XAttribute("decel", vehicleType.Decel)
+                new XAttribute("decel", vehicleType.Decel),
+                new XAttribute("vClass", vehicleType.VehicleClass.ToString().ToLower())
             );
 
             routesDoc.Root!.Add(vType);
