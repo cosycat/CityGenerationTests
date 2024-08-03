@@ -18,8 +18,7 @@ namespace SUMO {
         public const int SUMO_PORT = 4321;
 
         private static readonly List<byte> VariablesToSubscribeTo = new() {
-            TraCIConstants.VAR_POSITION, TraCIConstants.VAR_ANGLE, TraCIConstants.VAR_SPEED, TraCIConstants.VAR_SIGNALS,
-            TraCIConstants.VAR_TYPE
+            TraCIConstants.VAR_POSITION, TraCIConstants.VAR_ANGLE, TraCIConstants.VAR_SPEED, TraCIConstants.VAR_SIGNALS, TraCIConstants.VAR_TYPE
         };
 
         private Task? connectionTask = null;
@@ -30,7 +29,7 @@ namespace SUMO {
         
         private SimulationManager simulationManager = null!;
         
-        public bool IsConnected => connectionTask is { IsCompleted: true };
+        public bool IsConnected => connectionTask is { IsCompletedSuccessfully: true };
         
         public bool IsPaused { get; private set; }
         
@@ -40,13 +39,7 @@ namespace SUMO {
             simulationManager = correspondingSimulationManager;
             client = new TraCIClient();
             connectionTask = client.ConnectAsync("127.0.0.1", SUMO_PORT);
-            connectionTask.ContinueWith(task => {
-                if (task.IsFaulted) {
-                    Debug.LogError("Connection failed: " + task.Exception);
-                }
-                Debug.Log("Connected to SUMO server.");
-                
-            });
+            connectionTask.ContinueWith(task => { if (task.IsFaulted) Debug.LogWarning("Connection failed: " + task.Exception); else Debug.Log($"Connected to SUMO server: {task.IsCompletedSuccessfully}"); });
             client.VehicleSubscription += OnVehicleChangedSubscription;
         }
 
@@ -104,9 +97,20 @@ namespace SUMO {
             }
         }
 
-        private void HandleTraCI() {
+        private void UpdateTraCI() {
             // TODO maybe call this in a coroutine instead of Update
-            if (connectionTask == null || !connectionTask.IsCompleted) return;
+            if (connectionTask == null) return; // we have not yet tried to connect
+            if (!connectionTask.IsCompleted) return; // we are still trying to connect
+            if (!connectionTask.IsCompletedSuccessfully) { // The connection has failed or was cancelled, retry
+                if (connectionTask.IsCanceled) return; // The connection was cancelled, do nothing
+                if (connectionTask.IsFaulted) { // The connection has failed, retry
+                    Debug.LogWarning("Connection failed, retrying...");
+                    StartClient(simulationManager);
+                    return;
+                }
+                Debug.LogError("Connection task is in an invalid state.");
+            }
+            if (!IsConnected) return; // we are connected, but not yet ready to start the simulation
             if (IsPaused) return;
             
             totalSimulationTime += Time.deltaTime;
@@ -134,7 +138,6 @@ namespace SUMO {
             // subscribe to all newly departed vehicles
             var departedIDList = client.Simulation.GetDepartedIDList("");
             foreach (var id in departedIDList.Content) {
-                // Debug.Log($"Vehicle {id} departed.");
                 client.Vehicle.Subscribe(id, 0, 100_000, VariablesToSubscribeTo);
             }
             
@@ -154,7 +157,7 @@ namespace SUMO {
         
 
         private void Update() {
-            HandleTraCI();
+            UpdateTraCI();
         }
         
         

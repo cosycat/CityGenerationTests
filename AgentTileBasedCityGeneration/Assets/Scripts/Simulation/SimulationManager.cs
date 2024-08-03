@@ -63,17 +63,16 @@ namespace Simulation {
 
             if (!CheckSimulationValidity()) return;
             
-            sumoClient.SimulationAdvancedOneStep += SumoClientOnSimulationAdvancedOneStep;
+            sumoClient.SimulationAdvancedOneStep += OnSimulationAdvancedOneStep;
             sumoClient.StartClient(this);
         }
         
-        
+        // Lock to prevent multiple updates interfering with each other.
         private readonly object sumoStepLock = new();
-        private void SumoClientOnSimulationAdvancedOneStep(object sender, VehicleEventArgs e) {
+        private void OnSimulationAdvancedOneStep(object sender, VehicleEventArgs e) {
             if (!CheckSimulationValidity()) return;
             
             lock (sumoStepLock) {
-                // Debug.Log($"Received {e.VehicleInfo.Length} vehicle data.");
                 var idsStillActive = new HashSet<string>();
                 foreach (var vehicleInfo in e.VehicleInfo) {
                     UpdateOrCreateVehicle(vehicleInfo);
@@ -81,14 +80,15 @@ namespace Simulation {
                 }
 
                 var keys = new List<string>(vehicles.Keys);
+                
                 foreach (var id in keys) {
-                    if (!idsStillActive.Contains(id)) {
-                        if (PlayerVehicle?.ID == id) {
-                            SetPlayerVehicle(null);
-                        }
-                        Destroy(vehicles[id].gameObject, 0.2f);
-                        vehicles.Remove(id);
+                    if (idsStillActive.Contains(id)) continue;
+                    
+                    if (PlayerVehicle?.ID == id) {
+                        SetPlayerVehicle(null);
                     }
+                    Destroy(vehicles[id].gameObject, 0.2f);
+                    vehicles.Remove(id);
                 }
             }
 
@@ -114,7 +114,7 @@ namespace Simulation {
         }
 
         private bool CheckSimulationValidity() {
-            if (world != null && defaultVehiclePrefab != null) {
+            if (world != null) {
                 return true;
             }
             
