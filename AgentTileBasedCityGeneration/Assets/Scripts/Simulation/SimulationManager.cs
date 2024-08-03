@@ -95,21 +95,18 @@ namespace Simulation {
         }
 
         private void UpdateOrCreateVehicle(VehicleInfo vehicleInfo) {
-            var position2D = new Vector2(vehicleInfo.positionX / Constants.METERS_PER_UNIT, vehicleInfo.positionY / Constants.METERS_PER_UNIT);
+            var position = new Vector3(vehicleInfo.positionX / Constants.METERS_PER_UNIT, vehicleInfo.positionZ!, vehicleInfo.positionY / Constants.METERS_PER_UNIT);
             var id = vehicleInfo.id;
-            var worldHeight = world!.GetHeightAt(position2D.x, position2D.y);
             if (!vehicles.TryGetValue(id, out var vehicle)) {
                 var prefab = SimulationOptions.GetVehiclePrefab(vehicleInfo.vehicleType) ?? defaultVehiclePrefab;
-                vehicle = Instantiate(prefab, new Vector3(position2D.x, worldHeight, position2D.y), Quaternion.identity);
+                vehicle = Instantiate(prefab, position, Quaternion.Euler(0, vehicleInfo.rotation, 0));
                 vehicle.ID = id;
                 vehicle.transform.parent = vehicleParent.transform;
-                vehicle.UpdatePosition(new Vector3(position2D.x, worldHeight, position2D.y), Quaternion.Euler(0, vehicleInfo.rotation, 0));
                 vehicles.Add(id, vehicle);
             }
             else {
-                vehicle.UpdatePosition(new Vector3(position2D.x, worldHeight, position2D.y), Quaternion.Euler(0, vehicleInfo.rotation, 0));
+                vehicle.UpdatePosition(position, Quaternion.Euler(0, vehicleInfo.rotation, 0));
                 vehicle.UpdateSignals(vehicleInfo.BlinkerRight, vehicleInfo.BlinkerLeft, vehicleInfo.BrakeLight);
-                
             }
         }
 
@@ -142,7 +139,7 @@ namespace Simulation {
         public VehicleInfo? GetPlayerVehicleInfo() {
             if (PlayerVehicle == null) return null;
             return new VehicleInfo(PlayerVehicle.ID, PlayerVehicle.transform.position.x / Constants.METERS_PER_UNIT,
-                PlayerVehicle.transform.position.z / Constants.METERS_PER_UNIT, PlayerVehicle.transform.rotation.eulerAngles.y, 0, 0,
+                PlayerVehicle.transform.position.z / Constants.METERS_PER_UNIT, PlayerVehicle.transform.position.y, PlayerVehicle.transform.rotation.eulerAngles.y, 0, 0,
                 PlayerVehicle.VehicleType);
         }
         

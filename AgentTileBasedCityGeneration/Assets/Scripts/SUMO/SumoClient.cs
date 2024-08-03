@@ -18,7 +18,7 @@ namespace SUMO {
         public const int SUMO_PORT = 4339;
 
         private static readonly List<byte> VariablesToSubscribeTo = new() {
-            TraCIConstants.VAR_POSITION, TraCIConstants.VAR_ANGLE, TraCIConstants.VAR_SPEED, TraCIConstants.VAR_SIGNALS, TraCIConstants.VAR_TYPE
+            TraCIConstants.VAR_POSITION3D, TraCIConstants.VAR_ANGLE, TraCIConstants.VAR_SPEED, TraCIConstants.VAR_SIGNALS, TraCIConstants.VAR_TYPE
         };
 
         private Task? connectionTask = null;
@@ -49,7 +49,7 @@ namespace SUMO {
 
             // var vehicleInfo = new VehicleInfo(args.ObjectId);
             string id = args.ObjectId;
-            Position2D? position = null;
+            Position3D? position3D = null;
             float? angle = null;
             float? speed = null;
             int? signals = null;
@@ -69,8 +69,8 @@ namespace SUMO {
                  We can also use IResponseInfo.GetContentAs<> ()s*/
                 // WARNING using TraCIResponse<> we must use the exact type (i.e for speed, accel, angle, is double and not float)
                 switch (variableCode) {
-                    case TraCIConstants.VAR_POSITION:
-                        position = respInfo.GetContentAs<Position2D>();
+                    case TraCIConstants.VAR_POSITION3D:
+                        position3D = respInfo.GetContentAs<Position3D>();
                         break;
                     case TraCIConstants.VAR_ANGLE:
                         angle = respInfo.GetContentAs<float>();
@@ -90,8 +90,8 @@ namespace SUMO {
                         break;
                 }
             }
-            Debug.Assert(position != null && angle != null && speed != null && signals != null && vehicleType != null, $"Some values are null: {position}, {angle}, {speed}, {signals}, {vehicleType}");
-            var vehicleInfo = new VehicleInfo(id, (float)position!.X, (float)(position.Y), angle!.Value, signals!.Value, speed!.Value, vehicleType!);
+            Debug.Assert(position3D != null && angle != null && speed != null && signals != null && vehicleType != null, $"Some values are null: {position3D}, {angle}, {speed}, {signals}, {vehicleType}");
+            var vehicleInfo = new VehicleInfo(id, (float)(position3D!.X), (float)(position3D.Y), (float)(position3D.Z), angle!.Value, signals!.Value, speed!.Value, vehicleType!);
             lock (updatedVehicleInfoListLock) {
                 updatedVehicleInfoList.Add(vehicleInfo);
             }

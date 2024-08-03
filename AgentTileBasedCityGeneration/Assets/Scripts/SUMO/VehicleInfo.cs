@@ -8,6 +8,7 @@ namespace SUMO {
         public string id;
         public float positionX;
         public float positionY;
+        public float positionZ;
         public float rotation;
         /// <summary>
         /// A vehicle's signals are encoded in an integer, each by one bit, encoding whether the according signal/... is on or off.
@@ -24,7 +25,7 @@ namespace SUMO {
         public bool BlinkerLeft => (signals & 2) == 2;
         public bool BrakeLight => (signals & 8) == 8;
 
-        public VehicleInfo(string id, float positionX, float positionY, float rotation, int signals, float speed, string vehicleType) {
+        public VehicleInfo(string id, float positionX, float positionY, float positionZ, float rotation, int signals, float speed, string vehicleType) {
             this.id = id;
             this.positionX = positionX;
             this.positionY = positionY;
@@ -32,6 +33,7 @@ namespace SUMO {
             this.signals = signals;
             this.speed = speed;
             this.vehicleType = vehicleType;
+            this.positionZ = positionZ;
         }
         
     }
