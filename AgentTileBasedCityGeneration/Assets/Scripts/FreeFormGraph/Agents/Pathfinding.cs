@@ -511,6 +511,9 @@ namespace FreeFormGraph.Agents {
             /// </summary>
             public float slopeCostMultiplier = 30f;
 
+            /// <summary>
+            /// The type of roads which will be built.
+            /// </summary>
             public RoadType roadType = RoadType.Highway;
             
             public static Parameters GetRoadPathSearchParameters() {
