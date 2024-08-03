@@ -15,9 +15,10 @@ namespace SUMO {
         [field:SerializeField] public int RandomFlowCount { get; set; } = 10;
         [field:SerializeField] public float FlowPeriod { get; set; } = 30f;
         [field: SerializeField] public SumoVehicleType[] VehicleTypes { get; set; } = Array.Empty<SumoVehicleType>();
+        [field: SerializeField] private Vehicle defaultVehiclePrefab = null!;
         
-        public Vehicle? GetVehiclePrefab(string vehicleType) {
-            return VehicleTypes.FirstOrDefault(v => v.Id == vehicleType)?.Prefab;
+        public Vehicle GetVehiclePrefab(string vehicleType) {
+            return VehicleTypes.FirstOrDefault(v => v.Id == vehicleType)?.Prefab ?? defaultVehiclePrefab;
         }
         
         public Dictionary<RoadType, SumoEdgeTypes> RoadTypeToEdgeType = new() {

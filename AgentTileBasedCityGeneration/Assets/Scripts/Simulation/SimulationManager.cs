@@ -14,8 +14,6 @@ namespace Simulation {
         private readonly Dictionary<string, Vehicle> vehicles = new();
         private GameObject vehicleParent = null!;
         
-        [SerializeField] private Vehicle defaultVehiclePrefab = null!;
-
         public Vehicle? PlayerVehicle { get; private set; }
 
         private IWorld? world;
@@ -95,10 +93,13 @@ namespace Simulation {
         }
 
         private void UpdateOrCreateVehicle(VehicleInfo vehicleInfo) {
-            var position = new Vector3(vehicleInfo.positionX / Constants.METERS_PER_UNIT, vehicleInfo.positionZ!, vehicleInfo.positionY / Constants.METERS_PER_UNIT);
+            var position = new Vector3(
+                vehicleInfo.positionX / Constants.METERS_PER_UNIT,
+                vehicleInfo.positionZ!,
+                vehicleInfo.positionY / Constants.METERS_PER_UNIT);
             var id = vehicleInfo.id;
             if (!vehicles.TryGetValue(id, out var vehicle)) {
-                var prefab = SimulationOptions.GetVehiclePrefab(vehicleInfo.vehicleType) ?? defaultVehiclePrefab;
+                var prefab = SimulationOptions.GetVehiclePrefab(vehicleInfo.vehicleType);
                 vehicle = Instantiate(prefab, position, Quaternion.Euler(0, vehicleInfo.rotation, 0));
                 vehicle.ID = id;
                 vehicle.transform.parent = vehicleParent.transform;

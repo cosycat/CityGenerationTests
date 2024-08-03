@@ -72,6 +72,7 @@ MonoBehaviour:
       <Decel>k__BackingField: 1
       <VehicleClass>k__BackingField: 2
       prefab: {fileID: 1161110174753672080, guid: bca2de1f81eb0403dab34f9b684a2937, type: 3}
+    defaultVehiclePrefab: {fileID: 7789293729836674695, guid: a1c24b84b201c4cadae9cdcd146a960b, type: 3}
 --- !u!114 &3617010318408248544
 MonoBehaviour:
   m_ObjectHideFlags: 0
