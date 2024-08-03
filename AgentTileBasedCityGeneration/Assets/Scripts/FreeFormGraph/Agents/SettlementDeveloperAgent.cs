@@ -8,6 +8,7 @@ using FreeFormGraph.World.PoI;
 using UnityEngine;
 using Random = System.Random;
 using DebugUtils;
+using SUMO;
 
 namespace FreeFormGraph.Agents {
     
@@ -67,7 +68,7 @@ namespace FreeFormGraph.Agents {
             if(age > parameters[currentParameterSetIndex].time) {
                 currentParameterSetIndex++;
                 age = 0;
-                Debug.Log("Settlement developer: swithed to a new timeline!");
+                Debug.Log("Settlement developer: switched to a new timeline!");
             }
         }
 
@@ -79,9 +80,9 @@ namespace FreeFormGraph.Agents {
             var node = GetRandomNode(nodes, random);
             // Debug.Assert(node != null, $"PoIDeveloperAgent: Node is null.");
             // var averageInPosition = GetAverageInPosition(node); // TODO take a random incoming edge as direction
-            var averageInPosition = GetRandomConnectedNodePosition(node, random);
-            Debug.Assert(node.Position != averageInPosition);
-            var direction = node.Position - averageInPosition;
+            var randomInPosition = GetRandomConnectedNodePosition(node, random);
+            Debug.Assert(node.Position != randomInPosition);
+            var direction = node.Position - randomInPosition;
             var inStreetAngle = Mathf.Atan2(direction.y, direction.x);
             var angleRandom = (float)random.NextDouble() * 2f * parameters.AngleRandomMax - parameters.AngleRandomMax; //UnityEngine.Random.Range(-angleRandomMax, angleRandomMax);
             var angleOffset = parameters.AngleInBothDirections ? (random.Next(2) == 1 ? parameters.AngleOffset : -parameters.AngleOffset) : parameters.AngleOffset;
@@ -112,6 +113,8 @@ namespace FreeFormGraph.Agents {
                 //Debug.LogWarning($"Could not create a new node for the PoIDeveloperAgent at {newPoint} from {node.Position} {newNode.Position} edge: ({newEdge == null}).");
                 return false;
             }
+            newEdge.Type = parameters.GrowRoadType;
+            
             GraphDebugUtils.AssertStreetGraphConnectivity(world);
             DecreasePOIBudget(world, node.Position, newPoint, parameters);
             world.PointsOfInterest.AddNodeRelationToPointOfInterest(newNode, pointOfInterest);
@@ -205,10 +208,12 @@ namespace FreeFormGraph.Agents {
             
             if(!IsRoadWithinBudget(world, nodeA.Position, nodeB.Position, parameters)) return false;
             
-            if (!world.StreetGraph.CreateEdge(nodeA, nodeB.Position, out _, out var toNode, out var isToNodeNew, out var isEdgeNew, failIfIntersection: true)) {
+            if (!world.StreetGraph.CreateEdge(nodeA, nodeB.Position, out var newEdge, out var toNode, out var isToNodeNew, out var isEdgeNew, failIfIntersection: true)) {
                 // Debug.Log("Could not connect the cul-de-sacs.");
                 return false;
             }
+            newEdge.Type = parameters.ConnectRoadType;
+            
             GraphDebugUtils.AssertStreetGraphConnectivity(world);
             DecreasePOIBudget(world, nodeA.Position, nodeB.Position, parameters);
             Debug.Assert(!isToNodeNew, $"PoIDeveloperAgent: Cul-de-sac connection created a new node at {toNode}.");
@@ -256,6 +261,15 @@ namespace FreeFormGraph.Agents {
             [field: SerializeField] public bool AngleInBothDirections { get; set; } = true;
             
             /// <summary>
+            /// The type of roads for new roads.
+            /// </summary>
+            [field: SerializeField] public RoadType GrowRoadType { get; set; } = RoadType.Tertiary;
+            /// <summary>
+            /// The type of road to connect cul-de-sacs with.
+            /// </summary>
+            [field: SerializeField] public RoadType ConnectRoadType { get; set; } = RoadType.Tertiary;
+            
+            /// <summary>
             /// Each POI has a radius which is needed to sample nodes from. While the POI grows,
             /// the radius will so too, but the radius needs to be a bit bigger than the real dimension of the POI.
             /// If the radius would be exactly as the farthest point (this parameter = 0), growing outwards
@@ -286,9 +300,13 @@ namespace FreeFormGraph.Agents {
                 ConnectCulDeSacs = other.ConnectCulDeSacs;
                 ConnectCulDeSacWithNonCulDeSac = other.ConnectCulDeSacWithNonCulDeSac;
                 AngleInBothDirections = other.AngleInBothDirections;
+                GrowRoadType = other.GrowRoadType;
+                ConnectRoadType = other.ConnectRoadType;
+                GrowRadiusAddition = other.GrowRadiusAddition;
+                MaxSlope = other.MaxSlope;
             }
 
-            public SdaParameters(float minStreetLength, float maxStreetLength, float minNodeEdgeDistance, float angleOffset, float angleRandomMax, float maxConnectionDistance, bool snapToGrid, ConnectionHandling connectCulDeSacs, bool connectCulDeSacWithNonCulDeSac, bool angleInBothDirections) {
+            public SdaParameters(float minStreetLength, float maxStreetLength, float minNodeEdgeDistance, float angleOffset, float angleRandomMax, float maxConnectionDistance, bool snapToGrid, ConnectionHandling connectCulDeSacs, bool connectCulDeSacWithNonCulDeSac, bool angleInBothDirections, RoadType growRoadType, RoadType connectRoadType, float growRadiusAddition, float maxSlope) {
                 MinStreetLength = minStreetLength;
                 MaxStreetLength = maxStreetLength;
                 MinNodeEdgeDistance = minNodeEdgeDistance;
@@ -299,6 +317,10 @@ namespace FreeFormGraph.Agents {
                 ConnectCulDeSacs = connectCulDeSacs;
                 ConnectCulDeSacWithNonCulDeSac = connectCulDeSacWithNonCulDeSac;
                 AngleInBothDirections = angleInBothDirections;
+                GrowRoadType = growRoadType;
+                ConnectRoadType = connectRoadType;
+                GrowRadiusAddition = growRadiusAddition;
+                MaxSlope = maxSlope;
             }
 
             public enum ConnectionHandling {

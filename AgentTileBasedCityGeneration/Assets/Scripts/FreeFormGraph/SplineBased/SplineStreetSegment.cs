@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System;
 using JetBrains.Annotations;
+using SUMO;
 using UnityEngine;
 using UnityEngine.Splines;
 using Utils;
@@ -21,6 +22,8 @@ namespace FreeFormGraph.SplineBased {
         public BezierCurve Curve => Spline.GetCurve(GetIndices().lowerIndex);
 
         public float StreetWidth { get; } = 0.3f;
+        
+        public virtual RoadType Type { get; set; } = RoadType.Primary;
         
         public Vector3[] SplitIntoEvenlySpacedPoints(out Vector3[] tangents, float stepSize = 0.1f) {
             tangents = Array.Empty<Vector3>();

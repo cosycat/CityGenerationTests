@@ -6,6 +6,7 @@ using UnityEngine.Splines;
 using DataStructures;
 using FreeFormGraph.World;
 using System.Linq;
+using SUMO;
 
 namespace FreeFormGraph.LineBased {
     public class LineGraph : StreetGraphGameObject {
@@ -363,6 +364,8 @@ namespace FreeFormGraph.LineBased {
         public IStreetNode NodeA { get; }
         public IStreetNode NodeB { get; }
         public float StreetWidth { get; set;}
+        
+        public virtual RoadType Type { get; set; } = RoadType.Primary;
 
         public LineEdge(IStreetNode nodeA, IStreetNode nodeB, float streetWidth) {
             NodeA = nodeA;

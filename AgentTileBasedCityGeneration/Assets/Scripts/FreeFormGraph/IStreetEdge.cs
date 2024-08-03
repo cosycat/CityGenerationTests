@@ -26,7 +26,12 @@ namespace FreeFormGraph {
         /// The street width measured from the center of the street to the edge of the street.
         /// </summary>
         public float StreetWidth { get; }
-        
+
+        /// <summary>
+        /// The type of the road.
+        /// </summary>
+        public RoadType Type { get; set; }
+
         /// <summary>
         /// Returns a string representation of the edge for debugging purposes.
         /// </summary>

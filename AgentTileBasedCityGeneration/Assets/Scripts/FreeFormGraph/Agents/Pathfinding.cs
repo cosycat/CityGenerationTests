@@ -204,6 +204,7 @@ namespace FreeFormGraph.Agents {
 
                 Debug.Assert(lastNode != null/*, "Last node is null"*/);
                 var edgeCreated = streetGraph.CreateEdge(lastNode!, wp.Pos, out var newEdge, out lastNode, out var isToNodeNew, out var isEdgeNew);
+                if (edgeCreated) newEdge.Type = p.roadType;
                 //edge creation might fail because the road angle is to small or there are too many connections to a node already...
                 //the easiest way to handle these issues is to just remove the road altogether.
                 if(isToNodeNew) removeNodes.Add(lastNode);
@@ -510,6 +511,11 @@ namespace FreeFormGraph.Agents {
             /// </summary>
             public float slopeCostMultiplier = 30f;
 
+            /// <summary>
+            /// The type of roads which will be built.
+            /// </summary>
+            public RoadType roadType = RoadType.Highway;
+            
             public static Parameters GetRoadPathSearchParameters() {
                 var p = new Parameters();
                 p.maxRoadElevation = float.MaxValue;
