@@ -95,19 +95,21 @@ namespace Simulation {
         private void UpdateOrCreateVehicle(VehicleInfo vehicleInfo) {
             var position = new Vector3(
                 vehicleInfo.positionX / Constants.METERS_PER_UNIT,
-                vehicleInfo.positionZ!,
+                vehicleInfo.positionZ,
                 vehicleInfo.positionY / Constants.METERS_PER_UNIT);
             var id = vehicleInfo.id;
-            if (!vehicles.TryGetValue(id, out var vehicle)) {
+            if (vehicles.TryGetValue(id, out var vehicle)) {
+                // Update Vehicle state
+                vehicle.UpdatePosition(position, Quaternion.Euler(0, vehicleInfo.rotation, 0));
+                vehicle.UpdateSignals(vehicleInfo.BlinkerRight, vehicleInfo.BlinkerLeft, vehicleInfo.BrakeLight);
+            }
+            else {
+                // Add new Vehicle
                 var prefab = SimulationOptions.GetVehiclePrefab(vehicleInfo.vehicleType);
                 vehicle = Instantiate(prefab, position, Quaternion.Euler(0, vehicleInfo.rotation, 0));
                 vehicle.ID = id;
                 vehicle.transform.parent = vehicleParent.transform;
                 vehicles.Add(id, vehicle);
-            }
-            else {
-                vehicle.UpdatePosition(position, Quaternion.Euler(0, vehicleInfo.rotation, 0));
-                vehicle.UpdateSignals(vehicleInfo.BlinkerRight, vehicleInfo.BlinkerLeft, vehicleInfo.BrakeLight);
             }
         }
 
