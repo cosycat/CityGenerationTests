@@ -15,7 +15,7 @@ namespace SUMO {
     /// </summary>
     public class SumoClient : MonoBehaviour {
         public const float TIME_STEP_SECONDS = 0.03f;
-        public const int SUMO_PORT = 4321;
+        public const int SUMO_PORT = 4339;
 
         private static readonly List<byte> VariablesToSubscribeTo = new() {
             TraCIConstants.VAR_POSITION, TraCIConstants.VAR_ANGLE, TraCIConstants.VAR_SPEED, TraCIConstants.VAR_SIGNALS, TraCIConstants.VAR_TYPE
