@@ -115,7 +115,6 @@ namespace FreeFormGraph.Agents {
                             onStoppedMethod?.Invoke();
                             onStoppedMethod = null; // to make sure it is not called again
                         }
-                    
                         else {
                             HandleNextAgent();
                         }
@@ -154,10 +153,6 @@ namespace FreeFormGraph.Agents {
                 var timeSinceLastFrame = DateTime.Now - lastFrameTime;
                 timeToWaitSeconds += (float)(TargetFrameTimeSeconds - timeSinceLastFrame.TotalSeconds); // set wait time, if the previous frame was too fast
                 lastFrameTime = DateTime.Now;
-                // Debug.Log($"Cycle {currCycleCounter} started. Waiting {timeToWaitSeconds} seconds. {agents.Count} agents to run. {TargetFrameTimeSeconds} seconds per frame.");
-            } else {
-                // no need to wait, if we are in the same frame as the last agent
-                // timeToWaitSeconds = 0; // but take the time from the last agent into account
             }
             
             // get the agent and start the work, if the agent is ready
@@ -169,31 +164,26 @@ namespace FreeFormGraph.Agents {
                 HandleNextAgent(timeToWaitSeconds);
                 return;
             }
-            agents[currAgentIndex] = (agent, 0); // reset the frame counter for the agent
+            
+            // reset the frame counter for the agent
+            agents[currAgentIndex] = (agent, 0); 
             cancellationTokenSource = new CancellationTokenSource();
-            // Debug.Log($"Starting agent {agent.GetType().Name} with frequency {agent.WorkFrequency}.");
+            
             
             // initialize the task, but let it wait if the previous frame was too fast
             var task = new Task(() => {
                 if (timeToWaitSeconds > 0) {
-                    //Debug.Log($"Waiting {timeToWaitSeconds} seconds.");
                     Thread.Sleep((int)(timeToWaitSeconds * 1000));
                 }
-
-                // Debug.Log($"Starting agent {agent.GetType().Name} with frequency {agent.WorkFrequency}.");
-
                 cancellationTokenSource.Token.ThrowIfCancellationRequested();
-                // Debug.Log($"DoWork {agent.GetType().Name} with frequency {agent.WorkFrequency}.");
                 
                 agent.DoWork(cancellationTokenSource.Token, world, context);
-                Thread.Sleep(1); // make sure the task is not too fast, not sure if needed.
-                // Debug.Log($"Finished agent {agent.GetType().Name} with frequency {agent.WorkFrequency}.");
                 
+                Thread.Sleep(1); // make sure the task is not too fast, not sure if needed.
             }, cancellationTokenSource.Token);
             
             // once the agent is done, either start the next agent or stop the manager, if requested
             task.ContinueWith(currCompletedTask => {
-                // Debug.Log($"Task completed.");
                 Monitor.Enter(completedTaskLock);
                 try {
                     if (completedTask != null) throw new Exception($"Somehow the next task was started before the previous one was handled. Tasks should always run in sequence. current: {completedTask}, new: {currCompletedTask}, status: {currCompletedTask.Status}");
