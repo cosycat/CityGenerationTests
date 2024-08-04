@@ -148,33 +148,6 @@ namespace FreeFormGraph.Agents {
             /// </summary>
             [Min(0)] public int RadiusGeneration = 100;
 
-            /// <summary>
-            /// Threshold which determines when POI-Radius-growing stops. Radius growing stops when accumulated penalty
-            /// is above this threshold.
-            /// </summary>
-            [Min(0)] public float POIRadiusFlatnessThreshold = 20.0f;
-
-            /// <summary>
-            /// Defines at which point a penalty for the slope is applied. 0.1 equals to 10% slope.
-            /// </summary>
-            [Min(0)] public float POIRadiusMinimumSlopeForPenalty = 0.06f;
-
-            /// <summary>
-            /// Defines how slopes > POIRadiusMinimumSlopeForPenalty are penalised in terms of power:
-            /// slope penalty = slope ^ POIRadiusSlopePenaltyPower
-            /// </summary>
-            [Min(0)] public int POIRadiusSlopePenaltyPower = 3;
-            
-            /// <summary>
-            /// Curve which describes how height penalty is applied to the radius. A linear curve means that
-            /// the penalty for height is linear with increasing height.
-            /// </summary>
-            [SerializeField] public AnimationCurve POIRadiusHeightPenalty = AnimationCurve.Linear(0,0,1,1);
-            
-            /// <summary>
-            /// Multiplier for the height penalty.
-            /// </summary>
-            [SerializeField] public float POIRadiusHeightPenaltyMultiplier = 3.5f;
 
             [Min(0)] public int InitialBudgetForPOI = 500;
         }
