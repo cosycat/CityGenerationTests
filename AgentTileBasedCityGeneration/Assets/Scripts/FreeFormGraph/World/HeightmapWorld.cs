@@ -73,6 +73,15 @@ namespace FreeFormGraph.World {
             var lowerY = Mathf.FloorToInt(y);
             var upperY = (int)Mathf.Min(Mathf.Ceil(y), height-1);
             
+            if (lowerX < 0 || upperX < 0 || lowerY < 0 || upperY < 0) {
+                Debug.LogWarning($"HeightmapWorld: GetHeightAt called with negative coordinates: {x}, {y}");
+                return 0;
+            }
+            if (lowerX >= width || upperX >= width || lowerY >= height || upperY >= height) {
+                Debug.LogWarning($"HeightmapWorld: GetHeightAt called with coordinates outside of heightmap: {x}, {y}");
+                return 0;
+            }
+            
             //bilinear interpolation 
 
             var h1 = heights[lowerX, lowerY];

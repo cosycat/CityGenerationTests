@@ -35,13 +35,17 @@ namespace FreeFormGraph.Agents {
 
         [SerializeField] public List<SettlementDeveloperAgent.SdaParameters> sdaParameters = new() {new(), new(), new(), new(), new()};
 
+        [SerializeField]
+        public bool PlaceSettlementDeveloper = true;
+
 
         public void DoWork(CancellationToken cancellationToken, IWorld world, AgentManager.Context context) {
             var worldPOIs = world.PointsOfInterest.PointsOfInterest;
             if(connectedPOIs.Count == 0 && worldPOIs.Count >= 1) {
                 //initial condition: first POI in world does not need to be connected
                 connectedPOIs.Add(worldPOIs[0]);
-                context.Manager.AddNewAgent(new SettlementDeveloperAgent((BudgetPointOfInterest)worldPOIs[0], world, sdaParameters));
+                if(PlaceSettlementDeveloper)
+                    context.Manager.AddNewAgent(new SettlementDeveloperAgent((BudgetPointOfInterest)worldPOIs[0], world, sdaParameters));
                 return;
             }
 
@@ -60,7 +64,8 @@ namespace FreeFormGraph.Agents {
             if(path != null) {
                 if(Pathfinding.BuildPath2(path, world.StreetGraph, world, parameters)) {
                     connectedPOIs.Add(unconnectedPoi);
-                    context.Manager.AddNewAgent(new SettlementDeveloperAgent((BudgetPointOfInterest)unconnectedPoi, world, sdaParameters));
+                    if(PlaceSettlementDeveloper)
+                        context.Manager.AddNewAgent(new SettlementDeveloperAgent((BudgetPointOfInterest)unconnectedPoi, world, sdaParameters));
                     Debug.Assert(world.StreetGraph.TryFindClosestNode(unconnectedPoi.Position, out var node));
                     world.PointsOfInterest.AddNodeRelationToPointOfInterest(node, unconnectedPoi);
                 } else {
@@ -91,7 +96,7 @@ namespace FreeFormGraph.Agents {
 
                     if(pathfinding != null) {
                         Debug.Assert(pathfinding.Current != null && pathfinding.Target != null && pathfinding.StartPosition != null);
-                        currentBestPath = pathfinding.GetShortestPath(pathfinding.StartPosition!, pathfinding.Current!);
+                        currentBestPath = pathfinding.GetShortestPath(pathfinding.StartPosition!.Value, pathfinding.Current!.Value);
                         currentTarget = pathfinding.Target!.Value;
                     } else {
                         currentBestPath.Clear();

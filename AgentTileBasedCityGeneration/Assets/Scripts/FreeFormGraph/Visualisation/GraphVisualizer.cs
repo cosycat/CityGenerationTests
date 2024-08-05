@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using FreeFormGraph.World;
+using SUMO;
 using UnityEngine;
 
 namespace FreeFormGraph.Visualisation {
@@ -15,6 +16,13 @@ namespace FreeFormGraph.Visualisation {
         private readonly object edgeLock = new();
         private IWorld world;
         private ITerrainGenerator terrainGenerator;
+        
+        private readonly Dictionary<RoadType, Color> roadTypeToColor = new() {
+            {RoadType.Primary, Color.red},
+            {RoadType.Secondary, Color.blue},
+            {RoadType.Tertiary, Color.green},
+            {RoadType.Highway, Color.black},
+        };
 
         /// <summary>
         /// Road thickness describes how thick the road in world units is.
@@ -68,7 +76,9 @@ namespace FreeFormGraph.Visualisation {
             // create a mesh for the edge
             var mesh = new Mesh();
             meshFilter.mesh = mesh;
-            meshRenderer.material = new Material(Shader.Find("Standard"));
+            meshRenderer.material = new Material(Shader.Find("Standard")) {
+                color = roadTypeToColor[edge.Type]
+            };
             edgeVisualisations[edge] = edgeGameObject;
 
             var points = edge.SplitIntoEvenlySpacedPoints(out var tangents);

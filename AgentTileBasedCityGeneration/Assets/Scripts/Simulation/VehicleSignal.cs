@@ -16,6 +16,17 @@ namespace Simulation {
         
         public void SetSignal(bool on) {
             if (isOn == on) return;
+            // if (isBlinking && meshRenderer == null) {
+            //     meshRenderer = GetComponent<MeshRenderer>();
+            //     if (meshRenderer == null) {
+            //         Debug.LogError("VehicleSignal is set to blink but has no MeshRenderer component!");
+            //         isBlinking = false;
+            //     }
+            // }
+            Debug.Assert(meshRenderer != null || !isBlinking, "VehicleSignal is set to blink but has no MeshRenderer component!");
+            if (meshRenderer == null && isBlinking) {
+                transform.parent.name = transform.parent.name + " (no MeshRenderer)";
+            }
             isOn = on;
             if (isBlinking) {
                 meshRenderer.enabled = isOn;
@@ -28,6 +39,7 @@ namespace Simulation {
 
         private void Start() {
             meshRenderer = GetComponent<MeshRenderer>();
+            Debug.Assert(meshRenderer != null || !isBlinking, "VehicleSignal is set to blink but has no MeshRenderer component!");
             if (meshRenderer == null) {
                 if (isBlinking) Debug.LogError("VehicleSignal is set to blink but has no MeshRenderer component!");
                 isBlinking = false;
