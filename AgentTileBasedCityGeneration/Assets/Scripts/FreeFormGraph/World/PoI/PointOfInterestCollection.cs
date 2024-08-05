@@ -8,8 +8,11 @@ namespace FreeFormGraph.World.PoI {
     public class PointOfInterestCollection : IPointOfInterestCollection {
         public List<IPointOfInterest> PointsOfInterest { get; } = new();
 
-        public IDictionary<IStreetNode, IPointOfInterest> NodePOIMapping = new Dictionary<IStreetNode, IPointOfInterest>();
-        public IDictionary<IPointOfInterest, List<IStreetNode>> POINodeMapping = new Dictionary<IPointOfInterest, List<IStreetNode>>();
+        public IDictionary<IStreetNode, IPointOfInterest> NodePOIMapping =
+            new Dictionary<IStreetNode, IPointOfInterest>();
+
+        public IDictionary<IPointOfInterest, List<IStreetNode>> POINodeMapping =
+            new Dictionary<IPointOfInterest, List<IStreetNode>>();
 
         public void AddPointOfInterest(IPointOfInterest pointOfInterest) {
             PointsOfInterest.Add(pointOfInterest);
@@ -47,29 +50,31 @@ namespace FreeFormGraph.World.PoI {
             PointOfInterestRemovedEvent?.Invoke(this, new PointOfInterestEventArgs(poi));
         }
 
-        public bool GetPointOfInterestFromNode(IStreetNode node, out IPointOfInterest? pointOfInterest)
-        {
+        public bool GetPointOfInterestFromNode(IStreetNode node, out IPointOfInterest? pointOfInterest) {
             pointOfInterest = null;
-            if(!NodePOIMapping.ContainsKey(node)) return false;
+            if (!NodePOIMapping.ContainsKey(node)) return false;
             pointOfInterest = NodePOIMapping[node];
             return true;
         }
 
         public IReadOnlyList<IStreetNode> GetNodesFromPointOfIntereset(IPointOfInterest pointOfInterest) {
-            return POINodeMapping.ContainsKey(pointOfInterest) ? POINodeMapping[pointOfInterest] : new();
+            return POINodeMapping.ContainsKey(pointOfInterest)
+                ? POINodeMapping[pointOfInterest]
+                : new List<IStreetNode>();
         }
 
-        public void AddNodeRelationToPointOfInterest(IStreetNode node, IPointOfInterest pointOfInterest)
-        {
+        public void AddNodeRelationToPointOfInterest(IStreetNode node, IPointOfInterest pointOfInterest) {
             NodePOIMapping[node] = pointOfInterest;
 
             List<IStreetNode> nodes;
-            if(!POINodeMapping.ContainsKey(pointOfInterest)) {
-                nodes = new();
+            if (!POINodeMapping.ContainsKey(pointOfInterest)) {
+                nodes = new List<IStreetNode>();
                 POINodeMapping[pointOfInterest] = nodes;
-            } else {
+            }
+            else {
                 nodes = POINodeMapping[pointOfInterest];
             }
+
             Debug.Assert(!nodes.Contains(node));
             nodes.Add(node);
         }

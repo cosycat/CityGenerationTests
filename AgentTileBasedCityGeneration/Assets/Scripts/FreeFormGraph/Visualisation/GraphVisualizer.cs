@@ -6,22 +6,20 @@ using SUMO;
 using UnityEngine;
 
 namespace FreeFormGraph.Visualisation {
-    
     public class GraphVisualizer : MonoBehaviour {
-        
         private readonly Dictionary<IStreetEdge, GameObject> edgeVisualisations = new();
-        
+
         private readonly List<IStreetEdge> edgesToAdd = new();
         private readonly List<IStreetEdge> edgesToRemove = new();
         private readonly object edgeLock = new();
         private IWorld world;
         private ITerrainGenerator terrainGenerator;
-        
+
         private readonly Dictionary<RoadType, Color> roadTypeToColor = new() {
-            {RoadType.Primary, Color.red},
-            {RoadType.Secondary, Color.blue},
-            {RoadType.Tertiary, Color.green},
-            {RoadType.Highway, Color.black},
+            { RoadType.Primary, Color.red },
+            { RoadType.Secondary, Color.blue },
+            { RoadType.Tertiary, Color.green },
+            { RoadType.Highway, Color.black }
         };
 
         /// <summary>
@@ -30,19 +28,19 @@ namespace FreeFormGraph.Visualisation {
         /// with a RoadThickness of 0.5f, the lowest point of the road will be at 45.5, the
         /// highest at 50.0.
         /// </summary>
-        [SerializeField]
-        public float RoadThickness = 0.5f;
-        
+        [SerializeField] public float RoadThickness = 0.5f;
+
         private void Start() {
             world = FindObjectOfType<WorldGameObject>();
             var graph = world.StreetGraph;
             terrainGenerator = FindObjectOfType<Terrain3DGameObject>() as ITerrainGenerator;
             terrainGenerator.Render(world);
-            
+
             // Initialise the visualisation
             lock (edgeLock) {
                 VisualizeWholeGraph(graph);
             }
+
             graph.EdgeAdded += OnEdgeAdded;
             graph.EdgeRemoved += OnEdgeRemoved;
         }
@@ -50,22 +48,16 @@ namespace FreeFormGraph.Visualisation {
         private void Update() {
             if (edgesToAdd.Count == 0 && edgesToRemove.Count == 0) return;
             lock (edgeLock) {
-                foreach (var edge in edgesToAdd) {
-                    AddEdgeVisualisation(edge);
-                }
+                foreach (var edge in edgesToAdd) AddEdgeVisualisation(edge);
                 edgesToAdd.Clear();
-                
-                foreach (var edge in edgesToRemove) {
-                    RemoveEdgeVisualisation(edge);
-                }
+
+                foreach (var edge in edgesToRemove) RemoveEdgeVisualisation(edge);
                 edgesToRemove.Clear();
             }
         }
 
         private void VisualizeWholeGraph(IStreetGraph graph) {
-            foreach (var edge in graph.Edges) {
-                AddEdgeVisualisation(edge);
-            }
+            foreach (var edge in graph.Edges) AddEdgeVisualisation(edge);
         }
 
         private void AddEdgeVisualisation(IStreetEdge edge) {
@@ -82,7 +74,7 @@ namespace FreeFormGraph.Visualisation {
             edgeVisualisations[edge] = edgeGameObject;
 
             var points = edge.SplitIntoEvenlySpacedPoints(out var tangents);
-            var verticesList = new Vector3[points.Length*4];
+            var verticesList = new Vector3[points.Length * 4];
 
             var firstPointHeight = world.GetHeightAt(points[0].x, points[0].y);
             var lastPointHeight = world.GetHeightAt(points[^1].x, points[^1].y);
@@ -90,19 +82,22 @@ namespace FreeFormGraph.Visualisation {
             for (var i = 0; i < points.Length; i++) {
                 var point = points[i];
                 point.z = point.y;
-                point.y = Mathf.Lerp(firstPointHeight, lastPointHeight, (float)i/(float)(points.Length-1));
+                point.y = Mathf.Lerp(firstPointHeight, lastPointHeight, (float)i / (float)(points.Length - 1));
                 var tangent = tangents[i];
                 tangent.z = tangent.y;
                 tangent.y = 0;
-                var right = Vector3.Cross(tangent, Vector3.down).normalized * (edge.StreetWidth / 2f) / Constants.METERS_PER_UNIT;
+                var right = Vector3.Cross(tangent, Vector3.down).normalized * (edge.StreetWidth / 2f) /
+                            Constants.METERS_PER_UNIT;
 
                 //vertices for top surface, "top plane"
                 verticesList[i] = point + right; //top plane right vertex
                 verticesList[points.Length * 2 - 1 - i] = point - right; //top plane left vertex
 
                 //vertices for side surfaces, "bottom plane"
-                verticesList[i + points.Length * 2] = point + right - Vector3.up * RoadThickness; //bottom plane right vertex
-                verticesList[points.Length * 4 - 1 - i] = point - right - Vector3.up * RoadThickness; //bottom plane left vertex
+                verticesList[i + points.Length * 2] =
+                    point + right - Vector3.up * RoadThickness; //bottom plane right vertex
+                verticesList[points.Length * 4 - 1 - i] =
+                    point - right - Vector3.up * RoadThickness; //bottom plane left vertex
             }
 
             /*
@@ -123,7 +118,7 @@ namespace FreeFormGraph.Visualisation {
                 var t4 = i;
                 var t5 = i + offset;
                 var t6 = i + offset - 1;
-                
+
                 triangleList[triangleIdx++] = t1;
                 triangleList[triangleIdx++] = t2;
                 triangleList[triangleIdx++] = t3;
@@ -133,16 +128,16 @@ namespace FreeFormGraph.Visualisation {
                 offset -= 2;
             }
 
-            int numTopVertices = points.Length * 2;            
+            var numTopVertices = points.Length * 2;
             //triangles for thickness surface
             offset = numTopVertices;
             for (var i = 0; i < numTopVertices; i++) {
                 var t1 = i;
-                var t2 = ((i + 1) % numTopVertices) + offset;
+                var t2 = (i + 1) % numTopVertices + offset;
                 var t3 = i + offset;
                 var t4 = i;
                 var t5 = (i + 1) % numTopVertices;
-                var t6 = ((i + 1) % numTopVertices) + offset;
+                var t6 = (i + 1) % numTopVertices + offset;
                 triangleList[triangleIdx++] = t1;
                 triangleList[triangleIdx++] = t2;
                 triangleList[triangleIdx++] = t3;
@@ -154,7 +149,6 @@ namespace FreeFormGraph.Visualisation {
             mesh.SetVertices(verticesList);
             mesh.SetTriangles(triangleList, 0);
             EmbedIntoTerrain(mesh, numTopVertices);
-            
         }
 
         /// <summary>
@@ -178,23 +172,22 @@ namespace FreeFormGraph.Visualisation {
         /// <param name="m">The mesh to be embedded into the terrain.</param>
         /// <param name="n">The first n vertices of this mesh will be used for embedding.</param>
         private void EmbedIntoTerrain(Mesh m, int n) {
-
             var updateHeights = new (float height, int x, int y)[n * 4];
 
-            for(int i = 0; i < n; i++) {
+            for (var i = 0; i < n; i++) {
                 var vertex = m.vertices[i];
                 var roundedX = Mathf.FloorToInt(vertex.x);
                 var roundedZ = Mathf.FloorToInt(vertex.z);
 
-                updateHeights[i*4] = (vertex.y - (RoadThickness + 0.1f), roundedX, roundedZ);
-                updateHeights[i*4+1] = (vertex.y - (RoadThickness + 0.1f), roundedX+1, roundedZ);
-                updateHeights[i*4+2] = (vertex.y - (RoadThickness + 0.1f), roundedX, roundedZ+1);
-                updateHeights[i*4+3] = (vertex.y - (RoadThickness + 0.1f), roundedX+1, roundedZ+1);
+                updateHeights[i * 4] = (vertex.y - (RoadThickness + 0.1f), roundedX, roundedZ);
+                updateHeights[i * 4 + 1] = (vertex.y - (RoadThickness + 0.1f), roundedX + 1, roundedZ);
+                updateHeights[i * 4 + 2] = (vertex.y - (RoadThickness + 0.1f), roundedX, roundedZ + 1);
+                updateHeights[i * 4 + 3] = (vertex.y - (RoadThickness + 0.1f), roundedX + 1, roundedZ + 1);
             }
 
             terrainGenerator.SetHeightAt(world, updateHeights);
         }
-        
+
         private void RemoveEdgeVisualisation(IStreetEdge edge) {
             if (!edgeVisualisations.TryGetValue(edge, out var edgeGameObject)) {
                 Debug.LogWarning($"Edge {edge} not found in visualisations");
@@ -204,19 +197,17 @@ namespace FreeFormGraph.Visualisation {
             Destroy(edgeGameObject);
             edgeVisualisations.Remove(edge);
         }
-        
+
         private void OnEdgeAdded(object sender, EdgeEventArgs e) {
             lock (edgeLock) {
                 edgesToAdd.Add(e.Edge);
             }
         }
-        
+
         private void OnEdgeRemoved(object sender, EdgeEventArgs e) {
             lock (edgeLock) {
                 edgesToRemove.Add(e.Edge);
             }
         }
-        
     }
-    
 }

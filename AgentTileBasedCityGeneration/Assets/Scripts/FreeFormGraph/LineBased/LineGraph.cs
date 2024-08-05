@@ -10,7 +10,6 @@ using SUMO;
 
 namespace FreeFormGraph.LineBased {
     public class LineGraph : StreetGraphGameObject {
-
         private readonly List<LineEdge> edges = new();
 
         private ISpatialPointDatastructure<IStreetNode> nodeDatastructure;
@@ -27,7 +26,10 @@ namespace FreeFormGraph.LineBased {
 
 
         [field: SerializeField] public override float SnapToExistingNodeThreshold { get; set; } = 0.2f;
-        [field: SerializeField] public override float SnapToExistingEdgeThreshold { get; set; } // TODO this is not used yet
+
+        [field: SerializeField]
+        public override float SnapToExistingEdgeThreshold { get; set; } // TODO this is not used yet
+
         [field: SerializeField] public float MinAngleBetweenNewEdgesDegree { get; set; } = 15f;
         public float MinAngleBetweenNewEdgesRad => Mathf.Deg2Rad * MinAngleBetweenNewEdgesDegree;
         [SerializeField] private float edgeWidthMeters = 5f;
@@ -38,96 +40,98 @@ namespace FreeFormGraph.LineBased {
 
         public override bool CreateEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode,
             out bool isToNodeNew, out bool isEdgeNew, bool failIfIntersection = false) {
-                // Debug.Assert(from != null, $"CreateEdge: From node is null, to position: {to}");
-                var numEdgesBefore = edges.Count();
-                var numNodesBefore = nodes.Count();
+            // Debug.Assert(from != null, $"CreateEdge: From node is null, to position: {to}");
+            var numEdgesBefore = edges.Count();
+            var numNodesBefore = nodes.Count();
 
-                IStreetEdge? lastIntersectionEdge = null;
-                //check for intersections
-                foreach(var e in edges) {
-                    //skip node we are coming from to prevent finding intersection with edge we are connected to
-                    if(e.NodeA == from || e.NodeB == from) continue;
-                    var aPosition = from.Position;
-                    var aDirection = to-aPosition;
-                    var bPosition = e.NodeA.Position;
-                    var bDirection = e.NodeB.Position - bPosition;
-                    var intersects = Intersection(aPosition, aDirection, bPosition, bDirection, out var crossPoint, out _, out _);
+            IStreetEdge? lastIntersectionEdge = null;
+            //check for intersections
+            foreach (var e in edges) {
+                //skip node we are coming from to prevent finding intersection with edge we are connected to
+                if (e.NodeA == from || e.NodeB == from) continue;
+                var aPosition = from.Position;
+                var aDirection = to - aPosition;
+                var bPosition = e.NodeA.Position;
+                var bDirection = e.NodeB.Position - bPosition;
+                var intersects = Intersection(aPosition, aDirection, bPosition, bDirection, out var crossPoint, out _,
+                    out _);
 
-                    if(intersects) {
-                        to = crossPoint;
-                        lastIntersectionEdge = e;
-                    }
+                if (intersects) {
+                    to = crossPoint;
+                    lastIntersectionEdge = e;
                 }
-
-                isToNodeNew = true;
-
-                Action undo = () => {};
-
-                if(lastIntersectionEdge != null) {
-                    if(Vector3.Distance(to, lastIntersectionEdge.NodeA.Position) < SnapToExistingNodeThreshold) {
-                        isToNodeNew = false;
-                        toNode = lastIntersectionEdge.NodeA;
-                    }
-                    else if(Vector3.Distance(to, lastIntersectionEdge.NodeB.Position) < SnapToExistingNodeThreshold) {
-                        isToNodeNew = false;
-                        toNode = lastIntersectionEdge.NodeB;
-                    }
-                    else {
-                        if(failIfIntersection) {
-                            newEdge = null!;
-                            toNode = null!;
-                            isToNodeNew = false;
-                            isEdgeNew = false;
-                            return false;
-                        }
-
-                        Debug.Assert(!TryFindClosestNode(to, out _, EPS), $"Intersection with edge, but no node found at {to}");
-                        InsertNodeOnEdge(lastIntersectionEdge, to, out toNode, out var leftEdge, out var rightEdge);
-                        var nodeUsed = toNode;
-                        undo = () => {
-                            //reverting to previous state makes things easier for pathfinding removal
-                            RemoveEdge(leftEdge);
-                            RemoveEdge(rightEdge);
-                            RemoveNode(nodeUsed);
-                            CreateEdge(lastIntersectionEdge.NodeA, lastIntersectionEdge.NodeB, out var restoredEdge, out var isNewEdge);
-                            Debug.Assert(isNewEdge);
-                        };
-                    }
-
-                } else {
-                    if (TryFindClosestNode(to, out var node, SnapToExistingNodeThreshold)) {
-                        toNode = node;
-                        isToNodeNew = false;
-                    }
-                    else {
-                        node = new LineNode(to, MinAngleBetweenNewEdgesRad);
-                        AddNode((LineNode)node);
-                        toNode = node;
-                        undo = () => {
-                            RemoveNode(node);
-                        };
-                    }
-                }
-                
-                var result = CreateEdge(from, toNode, out newEdge, out isEdgeNew);
-                //edge building might still fail due to bad angles for example. Newly created nodes/edges have then to be removed again otherwise they are dangling
-                if(!result) {
-                    undo();
-                    if(edges.Count() != numEdgesBefore) {
-                        Debug.Assert(edges.Count() == numEdgesBefore);
-                        Debug.Assert(nodes.Count() == numNodesBefore);
-                    }
-                }
-                return result;
             }
-        
+
+            isToNodeNew = true;
+
+            Action undo = () => { };
+
+            if (lastIntersectionEdge != null) {
+                if (Vector3.Distance(to, lastIntersectionEdge.NodeA.Position) < SnapToExistingNodeThreshold) {
+                    isToNodeNew = false;
+                    toNode = lastIntersectionEdge.NodeA;
+                }
+                else if (Vector3.Distance(to, lastIntersectionEdge.NodeB.Position) < SnapToExistingNodeThreshold) {
+                    isToNodeNew = false;
+                    toNode = lastIntersectionEdge.NodeB;
+                }
+                else {
+                    if (failIfIntersection) {
+                        newEdge = null!;
+                        toNode = null!;
+                        isToNodeNew = false;
+                        isEdgeNew = false;
+                        return false;
+                    }
+
+                    Debug.Assert(!TryFindClosestNode(to, out _, EPS),
+                        $"Intersection with edge, but no node found at {to}");
+                    InsertNodeOnEdge(lastIntersectionEdge, to, out toNode, out var leftEdge, out var rightEdge);
+                    var nodeUsed = toNode;
+                    undo = () => {
+                        //reverting to previous state makes things easier for pathfinding removal
+                        RemoveEdge(leftEdge);
+                        RemoveEdge(rightEdge);
+                        RemoveNode(nodeUsed);
+                        CreateEdge(lastIntersectionEdge.NodeA, lastIntersectionEdge.NodeB, out var restoredEdge,
+                            out var isNewEdge);
+                        Debug.Assert(isNewEdge);
+                    };
+                }
+            }
+            else {
+                if (TryFindClosestNode(to, out var node, SnapToExistingNodeThreshold)) {
+                    toNode = node;
+                    isToNodeNew = false;
+                }
+                else {
+                    node = new LineNode(to, MinAngleBetweenNewEdgesRad);
+                    AddNode((LineNode)node);
+                    toNode = node;
+                    undo = () => { RemoveNode(node); };
+                }
+            }
+
+            var result = CreateEdge(from, toNode, out newEdge, out isEdgeNew);
+            //edge building might still fail due to bad angles for example. Newly created nodes/edges have then to be removed again otherwise they are dangling
+            if (!result) {
+                undo();
+                if (edges.Count() != numEdgesBefore) {
+                    Debug.Assert(edges.Count() == numEdgesBefore);
+                    Debug.Assert(nodes.Count() == numNodesBefore);
+                }
+            }
+
+            return result;
+        }
+
         public override bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge, out bool isEdgeNew) {
             if (from is not LineNode fromLineNode || to is not LineNode toLineNode) { // is checks for null as well
                 newEdge = null!;
                 isEdgeNew = false;
                 return false;
             }
-            
+
             foreach (var fromEdge in from.Edges) {
                 // check if edge already exists
                 if (fromEdge.NodeA == to || fromEdge.NodeB == to) {
@@ -135,7 +139,6 @@ namespace FreeFormGraph.LineBased {
                     isEdgeNew = false;
                     return true;
                 }
-                
             }
 
             if (!IsAngleOfNewEdgePossible(toLineNode, fromLineNode)) {
@@ -145,7 +148,7 @@ namespace FreeFormGraph.LineBased {
             }
 
             // TODO check intersections here
-            
+
             var edge = new LineEdge(fromLineNode, toLineNode, edgeWidthMeters);
             fromLineNode.AddEdge(edge);
             toLineNode.AddEdge(edge);
@@ -159,9 +162,13 @@ namespace FreeFormGraph.LineBased {
             foreach (var fromEdge in fromLineNode.Edges) {
                 // check if angle to another edge is too small on the from-node
                 var newEdgeDirectionFrom = toLineNode.Position - fromLineNode.Position;
-                var existingEdgeDirectionFrom = fromEdge.NodeA == fromLineNode ? fromEdge.NodeB.Position - fromLineNode.Position : fromEdge.NodeA.Position - fromLineNode.Position;
-                if (Vector3.Angle(newEdgeDirectionFrom, existingEdgeDirectionFrom) * Mathf.Deg2Rad < fromLineNode.MinAngleBetweenEdges) {
-                    Debug.Log($"Angle between edges too small: {Vector3.Angle(newEdgeDirectionFrom, existingEdgeDirectionFrom)} < {fromLineNode.MinAngleBetweenEdges * Mathf.Rad2Deg}. On node {fromLineNode.Position}");
+                var existingEdgeDirectionFrom = fromEdge.NodeA == fromLineNode
+                    ? fromEdge.NodeB.Position - fromLineNode.Position
+                    : fromEdge.NodeA.Position - fromLineNode.Position;
+                if (Vector3.Angle(newEdgeDirectionFrom, existingEdgeDirectionFrom) * Mathf.Deg2Rad <
+                    fromLineNode.MinAngleBetweenEdges) {
+                    Debug.Log(
+                        $"Angle between edges too small: {Vector3.Angle(newEdgeDirectionFrom, existingEdgeDirectionFrom)} < {fromLineNode.MinAngleBetweenEdges * Mathf.Rad2Deg}. On node {fromLineNode.Position}");
                     return false;
                 }
             }
@@ -169,9 +176,12 @@ namespace FreeFormGraph.LineBased {
             foreach (var toEdge in toLineNode.Edges) {
                 // check if angle to another edge is too small on the to-node
                 var newEdgeDirectionTo = fromLineNode.Position - toLineNode.Position;
-                var existingEdgeDirectionTo = toEdge.NodeA == toLineNode ? toEdge.NodeB.Position - toLineNode.Position : toEdge.NodeA.Position - toLineNode.Position;
+                var existingEdgeDirectionTo = toEdge.NodeA == toLineNode
+                    ? toEdge.NodeB.Position - toLineNode.Position
+                    : toEdge.NodeA.Position - toLineNode.Position;
                 if (Vector3.Angle(newEdgeDirectionTo, existingEdgeDirectionTo) < toLineNode.MinAngleBetweenEdges) {
-                    Debug.Log($"Angle between edges too small: {Vector3.Angle(newEdgeDirectionTo, existingEdgeDirectionTo)} < {toLineNode.MinAngleBetweenEdges * Mathf.Rad2Deg}. On node {toLineNode.Position}");
+                    Debug.Log(
+                        $"Angle between edges too small: {Vector3.Angle(newEdgeDirectionTo, existingEdgeDirectionTo)} < {toLineNode.MinAngleBetweenEdges * Mathf.Rad2Deg}. On node {toLineNode.Position}");
                     return false;
                 }
             }
@@ -180,13 +190,15 @@ namespace FreeFormGraph.LineBased {
         }
 
         public override bool RemoveNode(IStreetNode node) {
-            if(node.ConnectedEdgesCount == 0) {
+            if (node.ConnectedEdgesCount == 0) {
                 nodes.Remove((LineNode)node);
                 nodeDatastructure.Remove((LineNode)node);
                 OnNodeRemoved((LineNode)node);
                 return true;
             }
-            else throw new NotImplementedException("Node not allowed to rmeove because it still has edges");
+            else {
+                throw new NotImplementedException("Node not allowed to rmeove because it still has edges");
+            }
         }
 
         public override bool CreateUnconnectedNode(Vector3 position, out IStreetNode newNode) {
@@ -227,21 +239,22 @@ namespace FreeFormGraph.LineBased {
             t = (r.y * q.x - r.x * q.y) / denominator;
             s = (r.y * p.x - r.x * p.y) / denominator;
             intersectionPoint = aPosition + t * aLineVector;
-            return (t > 0 - eps && t < 1 + eps && s > 0 - eps && s < 1 + eps);
+            return t > 0 - eps && t < 1 + eps && s > 0 - eps && s < 1 + eps;
         }
 
-        public override void InsertNodeOnEdge(IStreetEdge foundEdge, Vector3 positionOnEdge, out IStreetNode node, out IStreetEdge leftEdge, out IStreetEdge rightEdge) {
-            var e = (LineEdge) foundEdge;
+        public override void InsertNodeOnEdge(IStreetEdge foundEdge, Vector3 positionOnEdge, out IStreetNode node,
+            out IStreetEdge leftEdge, out IStreetEdge rightEdge) {
+            var e = (LineEdge)foundEdge;
             var prevStreetWidth = e.StreetWidth;
             var nodeA = e.NodeA as LineNode ?? throw new ArgumentException();
             var nodeB = e.NodeB as LineNode ?? throw new ArgumentException();
             nodeA.RemoveEdge(e);
             nodeB.RemoveEdge(e);
             RemoveEdge(e);
-            
+
             var n = new LineNode(positionOnEdge, MinAngleBetweenNewEdgesRad);
             AddNode(n);
-            
+
             var lEdge = new LineEdge(foundEdge.NodeA, n, prevStreetWidth);
             AddEdge(lEdge);
             var rEdge = new LineEdge(n, foundEdge.NodeB, prevStreetWidth);
@@ -249,7 +262,8 @@ namespace FreeFormGraph.LineBased {
 
             //if this fails, we would have an edge with length 0, which is weird and should not happen
             Debug.Assert(Vector3.Distance(lEdge.NodeA.Position, lEdge.NodeB.Position) > EPS);
-            Debug.Assert(Vector3.Distance(rEdge.NodeA.Position, rEdge.NodeB.Position) > EPS, $"Distance between {rEdge.NodeA.Position} and {rEdge.NodeB.Position} is {Vector3.Distance(rEdge.NodeA.Position, rEdge.NodeB.Position)}");
+            Debug.Assert(Vector3.Distance(rEdge.NodeA.Position, rEdge.NodeB.Position) > EPS,
+                $"Distance between {rEdge.NodeA.Position} and {rEdge.NodeB.Position} is {Vector3.Distance(rEdge.NodeA.Position, rEdge.NodeB.Position)}");
 
             nodeA.AddEdge(lEdge);
             nodeB.AddEdge(rEdge);
@@ -259,48 +273,49 @@ namespace FreeFormGraph.LineBased {
             rightEdge = rEdge;
             node = n;
         }
-        
-        public override bool TryFindClosestNode(Vector3 position, out IStreetNode foundNode, float threshold = float.MaxValue) {
-            if(nodeDatastructure == null) {
+
+        public override bool TryFindClosestNode(Vector3 position, out IStreetNode foundNode,
+            float threshold = float.MaxValue) {
+            if (nodeDatastructure == null) {
                 //logically it should not happen (init() should always be called before working with graph) but sometimes order of execution is not always quite right...
                 foundNode = null!;
                 return false;
             }
+
             foundNode = nodeDatastructure.FindNearest(position.x, position.y);
             var f1 = foundNode;
-            if(foundNode == null) return false; //no nodes yet
-            if(Vector2.Distance(foundNode.Position,position) > threshold) foundNode = null!;
+            if (foundNode == null) return false; //no nodes yet
+            if (Vector2.Distance(foundNode.Position, position) > threshold) foundNode = null!;
             return foundNode != null;
         }
 
         public override IStreetEdge[] FindAllEdgesWithinRange(Vector2 position, float radius) {
-            if(radius == 0) return new List<IStreetEdge>().ToArray();
+            if (radius == 0) return new List<IStreetEdge>().ToArray();
             var closeEdges = new List<IStreetEdge>();
             var bvhHits = nodeDatastructure.FindRegion(
-                new Vector2(position.x-radius, position.y-radius),
-                new Vector2(position.x+radius, position.y+radius)
+                new Vector2(position.x - radius, position.y - radius),
+                new Vector2(position.x + radius, position.y + radius)
             );
 
-            foreach(var g in bvhHits) {
-                foreach(var edge in g.Edges) {
-                    if(closeEdges.Contains(edge)) continue;
+            foreach (var g in bvhHits) {
+                foreach (var edge in g.Edges) {
+                    if (closeEdges.Contains(edge)) continue;
                     var distance = edge.GetDistanceEdgeToPosition(position, out _);
-                    if (distance < radius) {
-                        closeEdges.Add(edge);
-                    }
+                    if (distance < radius) closeEdges.Add(edge);
                 }
             }
+
             return closeEdges.ToArray();
         }
 
-        public override bool RemoveEdge(IStreetEdge edge)
-        {
-            if(edge is LineEdge lineEdge) {
+        public override bool RemoveEdge(IStreetEdge edge) {
+            if (edge is LineEdge lineEdge) {
                 ((LineNode)lineEdge.NodeA).RemoveEdge(lineEdge);
                 ((LineNode)lineEdge.NodeB).RemoveEdge(lineEdge);
                 OnEdgeRemoved(lineEdge);
                 return edges.Remove(lineEdge);
             }
+
             return false;
         }
 
@@ -308,7 +323,7 @@ namespace FreeFormGraph.LineBased {
             edges.Add(edge);
             OnEdgeAdded(edge);
         }
-        
+
         private void AddNode(LineNode n) {
             nodes.Add(n);
             nodeDatastructure.Insert(n);
@@ -316,10 +331,9 @@ namespace FreeFormGraph.LineBased {
         }
     }
 
-    public class LineNode: IStreetNode {
-        
+    public class LineNode : IStreetNode {
         public Vector3 Position { get; set; }
-        
+
         private readonly List<LineEdge> edges = new();
 
         public LineNode(Vector3 position, float minAngleBetweenEdges = Mathf.Deg2Rad * 30f, int maxConnectedEdges = 6) {
@@ -329,11 +343,11 @@ namespace FreeFormGraph.LineBased {
         }
 
         public IEnumerable<IStreetEdge> Edges => edges;
-        
+
         public int ConnectedEdgesCount => edges.Count;
-        
+
         public int MaxConnectedEdges { get; set; }
-        
+
         public float MinAngleBetweenEdges { get; }
 
         public bool IsMaxConnectedEdgesReached => ConnectedEdgesCount >= MaxConnectedEdges;
@@ -343,28 +357,25 @@ namespace FreeFormGraph.LineBased {
         }
 
         public void AddEdge(LineEdge e) {
-            if(!edges.Contains(e)) {
-                edges.Add(e);
-            }
+            if (!edges.Contains(e)) edges.Add(e);
         }
 
         public void RemoveEdge(LineEdge e) {
             edges.Remove(e);
         }
-
     }
 
-    public class LineEdge: IStreetEdge {
+    public class LineEdge : IStreetEdge {
         public Vector3 PositionNodeA => NodeA.Position;
         public Vector3 PositionNodeB => NodeB.Position;
 
-        public Vector3 Position => PositionNodeA + (PositionNodeB-PositionNodeA)/2.0f;
+        public Vector3 Position => PositionNodeA + (PositionNodeB - PositionNodeA) / 2.0f;
         public float Radius => Vector3.Distance(PositionNodeB, PositionNodeA) / 2.0f;
-        
+
         public IStreetNode NodeA { get; }
         public IStreetNode NodeB { get; }
-        public float StreetWidth { get; set;}
-        
+        public float StreetWidth { get; set; }
+
         public virtual RoadType Type { get; set; } = RoadType.Primary;
 
         public LineEdge(IStreetNode nodeA, IStreetNode nodeB, float streetWidth) {
@@ -379,15 +390,11 @@ namespace FreeFormGraph.LineBased {
             var distance = direction.magnitude;
             var steps = Mathf.CeilToInt(distance / stepSize);
             var step = direction / steps;
-            for (var i = 0; i < steps; i++) {
-                points.Add(NodeA.Position + i * step);
-            }
+            for (var i = 0; i < steps; i++) points.Add(NodeA.Position + i * step);
             points.Add(NodeB.Position);
             tangents = new Vector3[points.Count];
             var directionNormalized = direction.normalized;
-            for (var i = 0; i < points.Count; i++) {
-                tangents[i] = directionNormalized;
-            }
+            for (var i = 0; i < points.Count; i++) tangents[i] = directionNormalized;
             return points.ToArray();
         }
 

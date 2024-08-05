@@ -4,12 +4,10 @@ using System.Linq;
 using UnityEngine;
 
 namespace FreeFormGraph.World.PoI {
-    
-    public class BudgetPointOfInterest: IPointOfInterest {
-        
+    public class BudgetPointOfInterest : IPointOfInterest {
         public Vector2 Position { get; }
 
-        public float Budget {get; set;}
+        public float Budget { get; set; }
 
         public ICollection<IStreetNode> Nodes = new List<IStreetNode>();
 
@@ -26,15 +24,14 @@ namespace FreeFormGraph.World.PoI {
 
         public void DebugVisualize(IWorld world) {
             var nodes = world.PointsOfInterest.GetNodesFromPointOfIntereset(this);
-            if(nodes.Count == 0) return;
+            if (nodes.Count == 0) return;
 
-            if(gizmoColor == null) gizmoColor = new Color(Random.Range(0,1f), Random.Range(0,1f), Random.Range(0,1f), 1f);
+            if (gizmoColor == null)
+                gizmoColor = new Color(Random.Range(0, 1f), Random.Range(0, 1f), Random.Range(0, 1f), 1f);
             Gizmos.color = (Color)gizmoColor;
             var distanceMax = nodes.Max(n => Vector2.Distance(n.Position, Position));
             Gizmos.DrawWireSphere(Position, distanceMax);
-            for(int i = 0; i < nodes.Count; i++) {
-                Gizmos.DrawSphere(nodes[i].Position, 1f);
-            }
+            for (var i = 0; i < nodes.Count; i++) Gizmos.DrawSphere(nodes[i].Position, 1f);
         }
     }
 }

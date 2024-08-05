@@ -23,6 +23,7 @@ namespace FreeFormGraph.World {
 
         public override IPointOfInterestCollection PointsOfInterest => new PointOfInterestCollection();
 
-        public override IStreetGraph StreetGraph => FindObjectOfType<StreetGraphGameObject>() ?? LineGraphTestCreator.GenerateHShapedGraph();
+        public override IStreetGraph StreetGraph =>
+            FindObjectOfType<StreetGraphGameObject>() ?? LineGraphTestCreator.GenerateHShapedGraph();
     }
 }

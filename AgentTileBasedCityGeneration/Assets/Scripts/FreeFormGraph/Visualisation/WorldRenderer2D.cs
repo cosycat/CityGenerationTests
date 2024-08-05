@@ -4,14 +4,13 @@ using FreeFormGraph.World;
 namespace FreeFormGraph.Visualisation {
     public class WorldRenderer2D : MonoBehaviour {
         public IWorld World;
-        [SerializeField]
-        public Material material;
+        [SerializeField] public Material material;
 
         [SerializeField] private Color[] colors = {
             Color.blue,
             Color.green,
             Color.red,
-            Color.white,
+            Color.white
         };
 
         private Gradient colorGradient;
@@ -24,10 +23,10 @@ namespace FreeFormGraph.Visualisation {
                 colors[0] = Color.white;
                 colors[1] = Color.red;
             }
+
             var colorGradients = new GradientColorKey[colors.Length];
-            for (int i = 0; i < colors.Length; i++) {
+            for (var i = 0; i < colors.Length; i++)
                 colorGradients[i] = new GradientColorKey(colors[i], (float)i / (colors.Length - 1));
-            }
             var alphas = new GradientAlphaKey[2];
             alphas[0] = new GradientAlphaKey(1.0f, 0.0f);
             alphas[1] = new GradientAlphaKey(1.0f, 1.0f);
@@ -47,13 +46,14 @@ namespace FreeFormGraph.Visualisation {
             var minHeight = World.MinHeight;
             var maxHeight = World.MaxHeight;
 
-            for (int y = 0; y < height; y++) {
-                for (int x = 0; x < width; x++) {
-                    float heightValue = Mathf.InverseLerp(minHeight, maxHeight, World.GetHeightAt(x, y));
-                    Color color = colorGradient.Evaluate(heightValue);
+            for (var y = 0; y < height; y++) {
+                for (var x = 0; x < width; x++) {
+                    var heightValue = Mathf.InverseLerp(minHeight, maxHeight, World.GetHeightAt(x, y));
+                    var color = colorGradient.Evaluate(heightValue);
                     texture.SetPixel(x, y, color);
                 }
             }
+
             texture.Apply();
 
             var quad = GameObject.CreatePrimitive(PrimitiveType.Quad);

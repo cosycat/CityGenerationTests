@@ -6,12 +6,11 @@ using FreeFormGraph.World;
 
 namespace FreeFormGraph {
     public interface IStreetGraph {
-        
         /// <summary>
         /// All nodes of the street graph.
         /// </summary>
         public IEnumerable<IStreetNode> Nodes { get; }
-        
+
         /// <summary>
         /// All edges of the street graph.
         /// </summary>
@@ -19,9 +18,9 @@ namespace FreeFormGraph {
 
         public int NodeCount { get; }
         public int EdgeCount { get; }
-        
+
         // public float MinEdgeLength { get; } // TODO implement this
-        
+
         /// <summary>
         /// The threshold for snapping the to position to an existing node when adding a new edge.
         ///
@@ -30,13 +29,13 @@ namespace FreeFormGraph {
         /// the to position will still be snapped to the existing node.
         /// </summary>
         public float SnapToExistingNodeThreshold { get; set; }
-        
+
         /// <summary>
         /// The threshold for snapping the to position to a new Node of an existing edge when adding a new edge.
         /// </summary>
         public float SnapToExistingEdgeThreshold { get; set; }
 
-        public void Init(IWorld world) {}
+        public void Init(IWorld world) { }
 
         /// <summary>
         /// Adds a new edge to the street graph.
@@ -62,21 +61,18 @@ namespace FreeFormGraph {
                 isToNodeNew = false;
                 return false;
             }
+
             // try to create the edge
             var success = CreateEdge(fromNode, to, out newEdge, out toNode, out isToNodeNew, out _);
-            if (success) {
-                return true;
-            }
+            if (success) return true;
             // if the edge creation failed, remove the node if it was newly created
-            if (isFromNodeNew) {
-                RemoveNode(fromNode);
-            }
+            if (isFromNodeNew) RemoveNode(fromNode);
             return false;
         }
 
         public bool CreateEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode,
             out bool isToNodeNew, out bool isEdgeNew, bool failIfIntersection = false);
-        
+
         public bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge, out bool isEdgeNew);
 
         bool RemoveNode(IStreetNode node);
@@ -90,10 +86,12 @@ namespace FreeFormGraph {
         /// <param name="foundNode"> The closest node to the position, if it is within the threshold, null otherwise. </param>
         /// <param name="threshold"> The maximum distance to consider a node as the closest. </param>
         /// <returns> True if a node was found, false otherwise. </returns>
-        public bool TryFindClosestNode(Vector3 position, out IStreetNode foundNode, float threshold = float.MaxValue) =>
-            TryFindClosestNode(Nodes, position, out foundNode, threshold);
+        public bool TryFindClosestNode(Vector3 position, out IStreetNode foundNode, float threshold = float.MaxValue) {
+            return TryFindClosestNode(Nodes, position, out foundNode, threshold);
+        }
 
-        public bool TryFindClosestNode(IEnumerable<IStreetNode> nodes, Vector3 position, out IStreetNode foundNode, float threshold = float.MaxValue);
+        public bool TryFindClosestNode(IEnumerable<IStreetNode> nodes, Vector3 position, out IStreetNode foundNode,
+            float threshold = float.MaxValue);
 
         /// <summary>
         /// Finds the closest edge to the given position, if it is within the given threshold.
@@ -103,10 +101,13 @@ namespace FreeFormGraph {
         /// <param name="positionOnEdge"> The position on the edge that is closest to the given position. </param>
         /// <param name="threshold"> The maximum distance to consider an edge as the closest. </param>
         /// <returns> True if an edge was found, false otherwise. </returns>
-        public bool TryFindClosestEdge(Vector3 position, out IStreetEdge foundEdge, out Vector3 positionOnEdge, float threshold = float.MaxValue) =>
-            TryFindClosestEdge(Edges, position, out foundEdge, out positionOnEdge, threshold);
+        public bool TryFindClosestEdge(Vector3 position, out IStreetEdge foundEdge, out Vector3 positionOnEdge,
+            float threshold = float.MaxValue) {
+            return TryFindClosestEdge(Edges, position, out foundEdge, out positionOnEdge, threshold);
+        }
 
-        public bool TryFindClosestEdge(IEnumerable<IStreetEdge> edges, Vector3 position, out IStreetEdge foundEdge, out Vector3 positionOnEdge, float threshold = float.MaxValue);
+        public bool TryFindClosestEdge(IEnumerable<IStreetEdge> edges, Vector3 position, out IStreetEdge foundEdge,
+            out Vector3 positionOnEdge, float threshold = float.MaxValue);
 
         /// <summary>
         /// Creates a new node at the given position without connecting it to any edges.
@@ -132,28 +133,28 @@ namespace FreeFormGraph {
         /// <param name="node"> The closest node to the position, or the newly created node. </param>
         /// <param name="isNewlyCreatedNode"> Whether the node was newly created or not. </param>
         /// <returns> True if a node was found or created, false otherwise. </returns>
-        public bool GetOrCreateNode(Vector3 position, float threshold, out IStreetNode node, out bool isNewlyCreatedNode);
+        public bool GetOrCreateNode(Vector3 position, float threshold, out IStreetNode node,
+            out bool isNewlyCreatedNode);
 
-        void InsertNodeOnEdge(IStreetEdge edge, Vector3 positionOnEdge, out IStreetNode node, out IStreetEdge leftEdge, out IStreetEdge rightEdge);
+        void InsertNodeOnEdge(IStreetEdge edge, Vector3 positionOnEdge, out IStreetNode node, out IStreetEdge leftEdge,
+            out IStreetEdge rightEdge);
+
         IStreetNode[] FindAllNodesWithinRange(Vector2 position, float radius);
         IStreetEdge[] FindAllEdgesWithinRange(Vector2 position, float radius);
 
         #region Events
-        
+
         public event EventHandler<NodeEventArgs> NodeAdded;
-        
+
         public event EventHandler<NodeEventArgs> NodeRemoved;
-        
+
         public event EventHandler<EdgeEventArgs> EdgeAdded;
-        
+
         public event EventHandler<EdgeEventArgs> EdgeRemoved;
-        
-        
-        
+
         #endregion
-        
     }
-    
+
     public class NodeEventArgs : EventArgs {
         public IStreetNode Node { get; }
 
@@ -161,7 +162,7 @@ namespace FreeFormGraph {
             Node = node;
         }
     }
-    
+
     public class EdgeEventArgs : EventArgs {
         public IStreetEdge Edge { get; }
 
@@ -169,6 +170,4 @@ namespace FreeFormGraph {
             Edge = edge;
         }
     }
-    
-    
 }

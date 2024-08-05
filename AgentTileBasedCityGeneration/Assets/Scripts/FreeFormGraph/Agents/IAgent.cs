@@ -1,8 +1,7 @@
 using System.Threading;
 using FreeFormGraph.World;
 
-namespace FreeFormGraph.Agents {
-    
+namespace FreeFormGraph.Agents { 
     public interface IAgent {
         /// <summary>
         /// The agent will be called every <see cref="WorkFrequency"/> frame by the <see cref="AgentManager"/>.

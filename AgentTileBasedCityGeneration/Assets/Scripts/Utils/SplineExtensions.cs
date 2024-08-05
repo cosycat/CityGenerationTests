@@ -30,18 +30,20 @@ namespace Utils {
 
                 while (dstSinceLastEvenPoint >= spacing) {
                     var overshootDst = dstSinceLastEvenPoint - spacing;
-                    var newEvenlySpacedPoint = pointOnSpline + (prevPoint - pointOnSpline).normalized * overshootDst; // TODO is this the right way around?
+                    var newEvenlySpacedPoint =
+                        pointOnSpline +
+                        (prevPoint - pointOnSpline).normalized * overshootDst; // TODO is this the right way around?
                     evenlySpacedPoints.Add(newEvenlySpacedPoint);
                     dstSinceLastEvenPoint = overshootDst;
                     prevPoint = newEvenlySpacedPoint;
                 }
-                
+
                 prevPoint = pointOnSpline;
             }
-            
+
             return evenlySpacedPoints.ToArray();
         }
-        
+
         /// <summary>
         /// Calculates evenly spaced points on the curve, with a given spacing between the points.
         ///
@@ -54,12 +56,15 @@ namespace Utils {
         /// <param name="resolution"> The resolution with which to sample the actual points on the curve (steps of t). </param>
         /// <param name="useLengthApproximation"> Whether to use the approximate length of the curve to calculate the points, or calculate the length more accurately with the given resolution. </param>
         /// <returns> An array of evenly spaced points on the curve. </returns>
-        public static Vector3[] CalculateEvenlySpacedPoints(this BezierCurve curve, float spacing, int resolution = 10, bool useLengthApproximation = true) {
+        public static Vector3[] CalculateEvenlySpacedPoints(this BezierCurve curve, float spacing, int resolution = 10,
+            bool useLengthApproximation = true) {
             var evenlySpacedPoints = new List<Vector3> { curve.P0 };
             var prevPoint = (Vector3)curve.P0;
             var dstSinceLastEvenPoint = 0f;
 
-            var divisions = Mathf.CeilToInt(useLengthApproximation ? CurveUtility.ApproximateLength(curve) : CurveUtility.CalculateLength(curve, resolution) * resolution);
+            var divisions = Mathf.CeilToInt(useLengthApproximation
+                ? CurveUtility.ApproximateLength(curve)
+                : CurveUtility.CalculateLength(curve, resolution) * resolution);
             var tStep = 1f / divisions;
 
             float t = 0;
@@ -70,17 +75,18 @@ namespace Utils {
 
                 while (dstSinceLastEvenPoint >= spacing) {
                     var overshootDst = dstSinceLastEvenPoint - spacing;
-                    var newEvenlySpacedPoint = pointOnSpline + (prevPoint - pointOnSpline).normalized * overshootDst; // TODO is this the right way around?
+                    var newEvenlySpacedPoint =
+                        pointOnSpline +
+                        (prevPoint - pointOnSpline).normalized * overshootDst; // TODO is this the right way around?
                     evenlySpacedPoints.Add(newEvenlySpacedPoint);
                     dstSinceLastEvenPoint = overshootDst;
                     prevPoint = newEvenlySpacedPoint;
                 }
-                
+
                 prevPoint = pointOnSpline;
             }
-            
+
             return evenlySpacedPoints.ToArray();
         }
     }
-    
 }

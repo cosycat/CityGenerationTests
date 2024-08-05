@@ -2,11 +2,11 @@ using UnityEngine;
 
 namespace FreeFormGraph {
     public interface IStreetEdge {
-        
         /// <summary>
         /// The position of the first node of the street.
         /// </summary>
         public Vector3 PositionNodeA => NodeA.Position;
+
         /// <summary>
         /// The position of the second node of the street.
         /// </summary>
@@ -52,7 +52,7 @@ namespace FreeFormGraph {
         /// <param name="stepSize"> The distance between the points. </param>
         /// <returns> The evenly spaced points. </returns>
         Vector3[] SplitIntoEvenlySpacedPoints(out Vector3[] tangents, float stepSize = 0.1f);
-        
+
         /// <summary>
         /// Returns the distance from the given position to the edge.
         /// </summary>

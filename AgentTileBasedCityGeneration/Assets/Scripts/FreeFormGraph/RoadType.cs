@@ -1,7 +1,6 @@
 using System;
 
 namespace FreeFormGraph {
-    
     /// <summary>
     /// The different types of roads that can be represented in the graph.
     /// </summary>
@@ -10,7 +9,6 @@ namespace FreeFormGraph {
         Primary,
         Secondary,
         Tertiary,
-        Highway,
+        Highway
     }
-    
 }

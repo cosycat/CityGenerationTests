@@ -9,16 +9,15 @@ using UnityEngine;
 namespace SUMO {
     [RequireComponent(typeof(SumoNetworkConverter))]
     public class SumoUIHandler : MonoBehaviour {
-        
         [SerializeField] private bool runSimulationAfterGeneration = false;
         [SerializeField] private bool openFolderAfterGeneration = true;
         [SerializeField] private bool openSumoGUIAfterGeneration = false;
-        
+
         private SumoNetworkConverter networkConverter = null!;
         private IStreetGraph graph = null!;
         private IWorld world = null!;
         private SimulationManager simulationManager = null!;
-        
+
         private void Awake() {
             networkConverter = GetComponent<SumoNetworkConverter>();
             graph = FindObjectOfType<StreetGraphGameObject>();
@@ -28,20 +27,19 @@ namespace SUMO {
 
         private void OnGUI() {
             GUILayout.BeginArea(new Rect(10, 500, 150, 100));
-            if (GUILayout.Button("Convert to Sumo")) {
+            if (GUILayout.Button("Convert to Sumo"))
                 AgentManager.Instance.RequestStopAgents(() => {
                     networkConverter.GenerateNetwork(graph, world,
-                        convertToSumoNetwork: false,
-                        runSimulationAfterGeneration: runSimulationAfterGeneration, 
-                        openFolderAfterGeneration: openFolderAfterGeneration, 
-                        openSumoGUIAfterGeneration: openSumoGUIAfterGeneration,
-                        onDone: () => {
+                        false,
+                        runSimulationAfterGeneration,
+                        openFolderAfterGeneration,
+                        openSumoGUIAfterGeneration,
+                        () => {
                             Debug.Log("Done generating SUMO network.");
                             simulationManager.StartSimulation();
                             // AgentManager.Instance.RestartAgents();
                         });
                 });
-            }
 
             if (!networkConverter.IsNetworkGenerated) {
                 GUILayout.EndArea();
@@ -50,14 +48,10 @@ namespace SUMO {
 
             if (networkConverter.IsSimulationRunning) {
                 if (simulationManager.IsPaused) {
-                    if (GUILayout.Button("Resume Simulation")) {
-                        simulationManager.ResumeSimulation();
-                    }
+                    if (GUILayout.Button("Resume Simulation")) simulationManager.ResumeSimulation();
                 }
                 else {
-                    if (GUILayout.Button("Pause Simulation")) {
-                        simulationManager.PauseSimulation();
-                    }
+                    if (GUILayout.Button("Pause Simulation")) simulationManager.PauseSimulation();
                 }
             }
 

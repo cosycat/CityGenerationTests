@@ -19,10 +19,10 @@ namespace SUMO {
         private void Start() {
             sumoNetworkConverter.GenerateNetwork(LineGraphTestCreator.GenerateHShapedGraph(),
                 FindObjectOfType<WorldGameObject>(),
-                convertToSumoNetwork: false, 
-                runSimulationAfterGeneration: false, 
-                openFolderAfterGeneration: openFolderAfterGeneration,
-                openSumoGUIAfterGeneration: openSumoGUIAfterGeneration);
+                false,
+                false,
+                openFolderAfterGeneration,
+                openSumoGUIAfterGeneration);
         }
     }
 }

@@ -5,12 +5,10 @@ using UnityEditor;
 using UnityEngine;
 
 namespace FreeFormGraph.World.PoI {
-    
     public class PointOfInterestDebugVisualizer : MonoBehaviour {
-
         [SerializeField] private bool showBoundaries = false;
         [SerializeField] private bool showLabel = false;
-        
+
         private IWorld world;
         private IPointOfInterestCollection pointsOfInterest;
 
@@ -23,25 +21,24 @@ namespace FreeFormGraph.World.PoI {
         private void OnDrawGizmos() {
             if (pointsOfInterest == null)
                 return;
-            
+
             //handle concurrency issues
             List<IPointOfInterest> POIs;
             try {
                 POIs = pointsOfInterest.PointsOfInterest.ToList();
-            } catch (Exception) {
+            }
+            catch (Exception) {
                 return;
             }
-            
+
             foreach (var pointOfInterest in POIs) {
-                if (showBoundaries) {
-                    pointOfInterest.DebugVisualize(world);
-                }
+                if (showBoundaries) pointOfInterest.DebugVisualize(world);
 
                 if (showLabel) {
                     Handles.Label(pointOfInterest.Position, $"{pointOfInterest}");
-                    Handles.Label(new Vector3(pointOfInterest.Position.x, 
-                        world.GetHeightAt(pointOfInterest.Position.x, pointOfInterest.Position.y)+10f,
-                        pointOfInterest.Position.y), $"{pointOfInterest}");
+                    Handles.Label(new Vector3(pointOfInterest.Position.x,
+                            world.GetHeightAt(pointOfInterest.Position.x, pointOfInterest.Position.y) + 10f,
+                            pointOfInterest.Position.y), $"{pointOfInterest}");
                 }
             }
         }

@@ -8,24 +8,26 @@ using UnityEngine;
 using Debug = UnityEngine.Debug;
 
 namespace SUMO {
-    
     /// <summary>
     /// Generates a SUMO network from a given graph.
     /// </summary>
     public class SumoNetworkConverter : MonoBehaviour {
-        private const string NETCONVERT_PATH_HOMEBREW = "/opt/homebrew/bin/netconvert"; // TODO Add more systems and installations. This only works on macOS with Homebrew installation of SUMO. alternatives: "/usr/local/bin/netconvert"
+        private const string
+            NETCONVERT_PATH_HOMEBREW =
+                "/opt/homebrew/bin/netconvert"; // TODO Add more systems and installations. This only works on macOS with Homebrew installation of SUMO. alternatives: "/usr/local/bin/netconvert"
+
         private const string SUMO_GUI_PATH_HOMEBREW = "/opt/homebrew/bin/sumo-gui";
         private const string SUMO_EXECUTION_PATH_HOMEBREW = "/opt/homebrew/bin/sumo";
         private const string PYTHON_PATH = "/opt/homebrew/bin/python3";
 
         private const string SUMO_PYTHON_SIMULATION_SCRIPT_PATH = "Resources/Sumo/traciConnector.py";
         private const string SUMO_FILES_TO_COPY_PATH = "Resources/Sumo";
-        
+
         [field: SerializeField] public SumoSimulationOptions SimulationOptions { get; private set; } = new();
 
         private string SumoGeneratedFilesPath { get; set; } = null!;
         private string SumoPythonSimulationScriptPath { get; set; } = null!;
-        
+
         private SumoFileGenerator? sumoFileGenerator;
         private SumoClient sumoClient = null!;
 
@@ -33,21 +35,24 @@ namespace SUMO {
         public bool IsSimulationRunning => sumoClient.IsConnected;
         private bool SimulationStopRequested { get; set; }
 
-        private string NetconvertCommand => sumoFileGenerator == null ? "netconvert" :
-            $"netconvert " +
-            $"--node-files=\"{sumoFileGenerator.NodesFilePath}\" " +
-            $"--edge-files=\"{sumoFileGenerator.EdgesFilePath}\" " +
-            $"--type-files=\"{sumoFileGenerator.EdgesTypesFilePath}\" " +
-            $"--output-file=\"{sumoFileGenerator.OutputNetFilePath}\" " +
-            $"--offset.disable-normalization=\"true\"\n";
+        private string NetconvertCommand => sumoFileGenerator == null
+            ? "netconvert"
+            : $"netconvert " +
+              $"--node-files=\"{sumoFileGenerator.NodesFilePath}\" " +
+              $"--edge-files=\"{sumoFileGenerator.EdgesFilePath}\" " +
+              $"--type-files=\"{sumoFileGenerator.EdgesTypesFilePath}\" " +
+              $"--output-file=\"{sumoFileGenerator.OutputNetFilePath}\" " +
+              $"--offset.disable-normalization=\"true\"\n";
 
-        private string SumoExecutionCommand => sumoFileGenerator == null ? "sumo" :
-            $"sumo -c \"{sumoFileGenerator.ConfigurationFilePath}\" --remote-port {SumoClient.SUMO_PORT}\n";
+        private string SumoExecutionCommand => sumoFileGenerator == null
+            ? "sumo"
+            : $"sumo -c \"{sumoFileGenerator.ConfigurationFilePath}\" --remote-port {SumoClient.SUMO_PORT}\n";
 
         private void Awake() {
             SumoGeneratedFilesPath = $"{Application.persistentDataPath}/SUMO";
             SumoPythonSimulationScriptPath = $"{Application.dataPath}/{SUMO_PYTHON_SIMULATION_SCRIPT_PATH}";
-            sumoClient = FindObjectOfType<SumoClient>() ?? new GameObject("SumoClient"){transform = { parent = this.transform }}.AddComponent<SumoClient>();
+            sumoClient = FindObjectOfType<SumoClient>() ??
+                         new GameObject("SumoClient") { transform = { parent = transform } }.AddComponent<SumoClient>();
         }
 
         /// <summary>
@@ -60,23 +65,26 @@ namespace SUMO {
         /// <param name="openFolderAfterGeneration"> Whether to open the SUMO folder where the files have been generated in, after the network has been generated. </param>
         /// <param name="openSumoGUIAfterGeneration"> Whether to open the SUMO GUI after the network has been generated. </param>
         /// <param name="onDone"> An action to be executed after all tasks have been completed. </param>
-        public void GenerateNetwork(IStreetGraph graph, IWorld world, bool convertToSumoNetwork = true, bool runSimulationAfterGeneration = true, bool openFolderAfterGeneration = false, bool openSumoGUIAfterGeneration = false, Action? onDone = null) {
-            Debug.Log($"Generating SUMO network from graph with {graph.NodeCount} nodes and {graph.EdgeCount} edges in {SumoGeneratedFilesPath}..");
+        public void GenerateNetwork(IStreetGraph graph, IWorld world, bool convertToSumoNetwork = true,
+            bool runSimulationAfterGeneration = true, bool openFolderAfterGeneration = false,
+            bool openSumoGUIAfterGeneration = false, Action? onDone = null) {
+            Debug.Log(
+                $"Generating SUMO network from graph with {graph.NodeCount} nodes and {graph.EdgeCount} edges in {SumoGeneratedFilesPath}..");
             sumoFileGenerator = SumoFileGenerator.Create(SumoGeneratedFilesPath, graph, SimulationOptions, world);
             CopyFilesToFolder();
-            StartCoroutine(DoBackgroundTasks(convertToSumoNetwork, runSimulationAfterGeneration, openFolderAfterGeneration, openSumoGUIAfterGeneration, onDone));
+            StartCoroutine(DoBackgroundTasks(convertToSumoNetwork, runSimulationAfterGeneration,
+                openFolderAfterGeneration, openSumoGUIAfterGeneration, onDone));
         }
-        
+
         private void CopyFilesToFolder() {
             var files = System.IO.Directory.GetFiles($"{Application.dataPath}/{SUMO_FILES_TO_COPY_PATH}");
             foreach (var file in files) {
                 if (file.EndsWith(".meta")) continue;
                 var destinationPath = $"{SumoGeneratedFilesPath}/{System.IO.Path.GetFileName(file)}";
-                if (System.IO.File.Exists(destinationPath)) {
-                    System.IO.File.Delete(destinationPath);
-                }
+                if (System.IO.File.Exists(destinationPath)) System.IO.File.Delete(destinationPath);
                 System.IO.File.Copy(file, destinationPath);
             }
+
             CreateShellScript();
         }
 
@@ -85,6 +93,7 @@ namespace SUMO {
                 Debug.LogError("No SumoFileGenerator found. Did you call GenerateNetwork first?");
                 return;
             }
+
             var scriptPath = $"{SumoGeneratedFilesPath}/run_sumo.sh";
             var script =
                 $"#!/bin/bash\n" +
@@ -112,19 +121,14 @@ namespace SUMO {
         /// <param name="openSumoGUIAfterGeneration"> Whether to call <see cref="OpenSumoGUI"/> afterwards </param>
         /// <param name="onDone"> An action to be executed after all tasks have been completed. </param>
         /// <returns> An enumerator for the coroutine. </returns>
-        private IEnumerator DoBackgroundTasks(bool convertToSumoNetwork, bool runSimulationAfterGeneration, bool openFolderAfterGeneration, bool openSumoGUIAfterGeneration, Action? onDone) {
-            if (convertToSumoNetwork) {
-                yield return ConvertToSumoNetwork();
-            }
+        private IEnumerator DoBackgroundTasks(bool convertToSumoNetwork, bool runSimulationAfterGeneration,
+            bool openFolderAfterGeneration, bool openSumoGUIAfterGeneration, Action? onDone) {
+            if (convertToSumoNetwork) yield return ConvertToSumoNetwork();
 
-            if (openFolderAfterGeneration) {
-                yield return OpenSUMOFolder();
-            }
+            if (openFolderAfterGeneration) yield return OpenSUMOFolder();
 
-            if (openSumoGUIAfterGeneration) {
-                yield return OpenSumoGUI();
-            }
-            
+            if (openSumoGUIAfterGeneration) yield return OpenSumoGUI();
+
             onDone?.Invoke();
         }
 
@@ -137,7 +141,7 @@ namespace SUMO {
             Debug.Log("Converting to SUMO network not implemented, use manual command in README.");
             yield return null;
         }
-        
+
         public void RequestStopSimulation() {
             SimulationStopRequested = true;
         }
@@ -149,18 +153,14 @@ namespace SUMO {
 
             process.Start();
 
-            while (!process.HasExited) {
-                yield return null;
-            }
-                    
-            if (process.ExitCode != 0) {
+            while (!process.HasExited) yield return null;
+
+            if (process.ExitCode != 0)
                 Debug.LogError($"Failed to open folder with exit code {process.ExitCode}");
-            }
-            else {
+            else
                 Debug.Log($"Opened folder {SumoGeneratedFilesPath}.");
-            }
         }
-        
+
         /// <summary>
         /// Opens the SUMO GUI with the generated configuration file.
         /// Currently not used, as it only works on macOS with Homebrew installation of SUMO.
@@ -170,6 +170,5 @@ namespace SUMO {
             Debug.Log("Opening SUMO GUI not implemented.");
             yield return null;
         }
-        
     }
 }
