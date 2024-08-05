@@ -89,7 +89,7 @@ namespace Graph.LineBased {
                         //reverting to previous state makes things easier for pathfinding removal
                         RemoveEdge(leftEdge);
                         RemoveEdge(rightEdge);
-                        RemoveNode(nodeUsed);
+                        TryRemoveNode(nodeUsed);
                         CreateEdge(lastIntersectionEdge.NodeA, lastIntersectionEdge.NodeB, out var restoredEdge,
                             out var isNewEdge);
                         Debug.Assert(isNewEdge);
@@ -105,7 +105,7 @@ namespace Graph.LineBased {
                     node = new LineNode(to, MinAngleBetweenNewEdgesRad);
                     AddNode((LineNode)node);
                     toNode = node;
-                    undo = () => { RemoveNode(node); };
+                    undo = () => { TryRemoveNode(node); };
                 }
             }
 
@@ -186,15 +186,17 @@ namespace Graph.LineBased {
             return true;
         }
 
-        public override bool RemoveNode(IStreetNode node) {
-            if (node.ConnectedEdgesCount == 0) {
-                nodes.Remove((LineNode)node);
-                nodeDatastructure.Remove((LineNode)node);
-                OnNodeRemoved((LineNode)node);
-                return true;
+        public override bool TryRemoveNode(IStreetNode node) {
+            if (node.ConnectedEdgesCount != 0) {
+                Debug.LogWarning($"Node {node} still has {node.ConnectedEdgesCount} edges connected - can't remove");
+                return false;
             }
+            
+            nodes.Remove((LineNode)node);
+            nodeDatastructure.Remove((LineNode)node);
+            OnNodeRemoved((LineNode)node);
+            return true;
 
-            throw new NotImplementedException("Node not allowed to remove because it still has edges");
         }
 
         public override bool CreateUnconnectedNode(Vector3 position, out IStreetNode newNode) {
@@ -316,8 +318,9 @@ namespace Graph.LineBased {
             if (edge is LineEdge lineEdge) {
                 ((LineNode)lineEdge.NodeA).RemoveEdge(lineEdge);
                 ((LineNode)lineEdge.NodeB).RemoveEdge(lineEdge);
+                var success = edges.Remove(lineEdge);
                 OnEdgeRemoved(lineEdge);
-                return edges.Remove(lineEdge);
+                return success;
             }
 
             return false;

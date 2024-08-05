@@ -34,13 +34,13 @@ namespace Graph {
             if (success) return true;
 
             // if the edge creation failed, remove the node if it was newly created
-            if (isToNodeNew) RemoveNode(toNode);
+            if (isToNodeNew) TryRemoveNode(toNode);
 
             return false;
         }
 
         public abstract bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge, out bool isEdgeNew);
-        public abstract bool RemoveNode(IStreetNode node);
+        public abstract bool TryRemoveNode(IStreetNode node);
         public abstract bool RemoveEdge(IStreetEdge edge);
 
         public virtual bool TryFindClosestNode(IEnumerable<IStreetNode> nodes, Vector3 position,

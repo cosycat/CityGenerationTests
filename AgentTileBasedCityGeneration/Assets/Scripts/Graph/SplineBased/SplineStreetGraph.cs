@@ -51,7 +51,7 @@ namespace FreeFormGraph.SplineBased {
             return res;
         }
 
-        public override bool RemoveNode(IStreetNode node) {
+        public override bool TryRemoveNode(IStreetNode node) {
             Debug.Assert(node is SplineStreetNode);
             var splineNode = (SplineStreetNode)node;
             if (node.ConnectedEdgesCount == 0) {

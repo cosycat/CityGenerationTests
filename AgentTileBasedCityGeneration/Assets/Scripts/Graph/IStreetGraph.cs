@@ -69,7 +69,7 @@ namespace Graph {
             var success = CreateEdge(fromNode, to, out newEdge, out toNode, out isToNodeNew, out _);
             if (success) return true;
             // if the edge creation failed, remove the node if it was newly created
-            if (isFromNodeNew) RemoveNode(fromNode);
+            if (isFromNodeNew) TryRemoveNode(fromNode);
             return false;
         }
 
@@ -78,8 +78,20 @@ namespace Graph {
 
         public bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge, out bool isEdgeNew);
 
-        bool RemoveNode(IStreetNode node);
+        /// <summary>
+        ///    Removes the given node from the street graph.
+        ///
+        ///   If the node is connected to any edges, this will fail.
+        /// </summary>
+        /// <param name="node"> The node to remove. </param>
+        /// <returns> True if the node was removed, false otherwise. </returns>
+        bool TryRemoveNode(IStreetNode node);
 
+        /// <summary>
+        ///    Removes the given edge from the street graph and all connected nodes.
+        /// </summary>
+        /// <param name="edge"> The edge to remove. </param>
+        /// <returns> True if the edge was removed, false otherwise. </returns>
         bool RemoveEdge(IStreetEdge edge);
 
         /// <summary>

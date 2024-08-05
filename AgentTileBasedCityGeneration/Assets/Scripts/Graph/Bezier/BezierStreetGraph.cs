@@ -90,7 +90,7 @@ namespace Graph.Bezier {
             throw new NotImplementedException();
         }
 
-        public override bool RemoveNode(IStreetNode node) {
+        public override bool TryRemoveNode(IStreetNode node) {
             Debug.Assert(node is BezierStreetNode);
             var bezierNode = (BezierStreetNode)node;
             if (!nodes.Remove(bezierNode)) return false;

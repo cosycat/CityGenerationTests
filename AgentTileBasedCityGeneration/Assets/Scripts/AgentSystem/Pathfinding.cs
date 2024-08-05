@@ -228,9 +228,9 @@ namespace AgentSystem {
 
             if (removeRoad) {
                 foreach (var e in removeEdges) streetGraph.RemoveEdge(e);
-                Debug.Assert(streetGraph.EdgeCount == numEdgesBefore);
-                foreach (var n in removeNodes) streetGraph.RemoveNode(n);
-                Debug.Assert(streetGraph.NodeCount == numNodesBefore);
+                Debug.Assert(streetGraph.EdgeCount == numEdgesBefore, "Edge count is not the same after removing edges");
+                foreach (var n in removeNodes) streetGraph.TryRemoveNode(n);
+                Debug.Assert(streetGraph.NodeCount == numNodesBefore, "Node count is not the same after removing nodes");
                 return false;
             }
 
