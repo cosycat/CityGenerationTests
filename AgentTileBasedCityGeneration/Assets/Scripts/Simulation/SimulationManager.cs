@@ -2,26 +2,28 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using FreeFormGraph;
-using FreeFormGraph.World;
+using Graph;
+using Graph.World;
 using SUMO;
 using UnityEngine;
-using UnityEngine.Serialization;
+using Random = UnityEngine.Random;
 
 namespace Simulation {
     public class SimulationManager : MonoBehaviour {
+        // Lock to prevent multiple updates interfering with each other.
+        private readonly object sumoStepLock = new();
         private readonly Dictionary<string, Vehicle> vehicles = new();
-        private GameObject vehicleParent = null!;
-
-        public Vehicle? PlayerVehicle { get; private set; }
-
-        private IWorld? world;
-
-        private SumoClient? sumoClient;
-        public bool IsPaused => sumoClient?.IsPaused ?? false;
 
         // Eventually this could be moved to a general options object, but for now, they just share the options.
         private SumoSimulationOptions? simulationOptions;
+
+        private SumoClient? sumoClient;
+        private GameObject vehicleParent = null!;
+
+        private IWorld? world;
+
+        public Vehicle? PlayerVehicle { get; private set; }
+        public bool IsPaused => sumoClient?.IsPaused ?? false;
 
         public SumoSimulationOptions SimulationOptions => simulationOptions ??
                                                           FindObjectOfType<SumoNetworkConverter>()?.SimulationOptions ??
@@ -46,7 +48,7 @@ namespace Simulation {
             if (Input.GetKeyDown(KeyCode.V)) {
                 if (vehicles.Count == 0) return;
                 // get random vehicle
-                var vehicle = vehicles.ElementAt(UnityEngine.Random.Range(0, vehicles.Count)).Value;
+                var vehicle = vehicles.ElementAt(Random.Range(0, vehicles.Count)).Value;
                 SetPlayerVehicle(vehicle);
             }
         }
@@ -61,9 +63,6 @@ namespace Simulation {
             sumoClient.SimulationAdvancedOneStep += OnSimulationAdvancedOneStep;
             sumoClient.StartClient(this);
         }
-
-        // Lock to prevent multiple updates interfering with each other.
-        private readonly object sumoStepLock = new();
 
         private void OnSimulationAdvancedOneStep(object sender, VehicleEventArgs e) {
             if (!CheckSimulationValidity()) return;
@@ -111,7 +110,7 @@ namespace Simulation {
         private bool CheckSimulationValidity() {
             if (world != null) return true;
 
-            Debug.LogError($"World not found or vehicle prefab not set. Aborting...");
+            Debug.LogError("World not found or vehicle prefab not set. Aborting...");
             StopSimulation();
             return false;
         }
@@ -152,12 +151,12 @@ namespace Simulation {
     }
 
     public class PlayerVehicleChangedEventArgs : EventArgs {
-        public Vehicle? OldPlayerVehicle { get; }
-        public Vehicle? NewPlayerVehicle { get; }
-
         public PlayerVehicleChangedEventArgs(Vehicle? oldPlayerVehicle, Vehicle? newPlayerVehicle) {
             OldPlayerVehicle = oldPlayerVehicle;
             NewPlayerVehicle = newPlayerVehicle;
         }
+
+        public Vehicle? OldPlayerVehicle { get; }
+        public Vehicle? NewPlayerVehicle { get; }
     }
 }

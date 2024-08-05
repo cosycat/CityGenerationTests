@@ -1,7 +1,7 @@
-using FreeFormGraph.World;
-using FreeFormGraph;
 using System.Collections.Generic;
 using System.Linq;
+using Graph;
+using Graph.World;
 using UnityEngine;
 
 namespace DebugUtils {

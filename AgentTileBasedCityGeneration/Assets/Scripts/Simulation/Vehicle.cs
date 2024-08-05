@@ -1,9 +1,6 @@
 #nullable enable
 using System;
-using System.Collections.Generic;
-using FreeFormGraph;
 using UnityEngine;
-using UnityEngine.Serialization;
 using Utils;
 
 namespace Simulation {
@@ -13,8 +10,6 @@ namespace Simulation {
         [SerializeField] private VehicleSignal brakeLight = null!;
 
         private string id = null!;
-
-        private SelectableCamera[] vehicleCameras = Array.Empty<SelectableCamera>();
 
         public string VehicleType { get; set; } = "car";
 
@@ -33,7 +28,7 @@ namespace Simulation {
 
         public bool IsPlayerVehicle { get; private set; }
 
-        public SelectableCamera[] VehicleCameras => vehicleCameras;
+        public SelectableCamera[] VehicleCameras { get; private set; } = Array.Empty<SelectableCamera>();
 
         private void Awake() {
             if (!Settings.UseVehicleSignals) {
@@ -50,7 +45,7 @@ namespace Simulation {
 
         private void Start() {
             if (ID is null or "") Debug.LogError($"Vehicle ID not set: {ID ?? "null"}");
-            vehicleCameras = GetComponentsInChildren<SelectableCamera>(true);
+            VehicleCameras = GetComponentsInChildren<SelectableCamera>(true);
         }
 
         public void UpdatePosition(Vector3 position, Quaternion rotation) {

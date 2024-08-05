@@ -1,5 +1,12 @@
 #nullable enable
 
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
+
 // namespace System.Collections.Generic {
 namespace Utils {
 // Licensed to the .NET Foundation under one or more agreements.
@@ -7,27 +14,9 @@ namespace Utils {
 
 // ported from:
 // https://github.com/dotnet/runtime/blob/main/src/libraries/System.Collections/src/System/Collections/Generic/PriorityQueue.cs
-
-    using System;
-    using System.Collections;
-    using System.Collections.Generic;
-    using System.Diagnostics;
-    using System.Diagnostics.CodeAnalysis;
-    using System.Runtime.CompilerServices;
-
     internal sealed class PriorityQueueDebugView<TElement, TPriority> {
         private readonly PriorityQueue<TElement, TPriority> _queue;
         private readonly bool _sort;
-
-        [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
-        public (TElement Element, TPriority Priority)[] Items {
-            get {
-                List<(TElement Element, TPriority Priority)> list = new(_queue.UnorderedItems);
-                if (_sort) list.Sort((i1, i2) => _queue.Comparer.Compare(i1.Priority, i2.Priority));
-
-                return list.ToArray();
-            }
-        }
 
         public PriorityQueueDebugView(PriorityQueue<TElement, TPriority> queue) {
             ArgumentNullException.ThrowIfNull(queue);
@@ -38,6 +27,16 @@ namespace Utils {
 
         public PriorityQueueDebugView(PriorityQueue<TElement, TPriority>.UnorderedItemsCollection collection) {
             _queue = collection?._queue ?? throw new System.ArgumentNullException(nameof(collection));
+        }
+
+        [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
+        public (TElement Element, TPriority Priority)[] Items {
+            get {
+                List<(TElement Element, TPriority Priority)> list = new(_queue.UnorderedItems);
+                if (_sort) list.Sort((i1, i2) => _queue.Comparer.Compare(i1.Priority, i2.Priority));
+
+                return list.ToArray();
+            }
         }
     }
 
@@ -85,17 +84,17 @@ namespace Utils {
                     // exception from overrunning the array (if the size went up) or we could end up not filling as many
                     // items as 'count' suggests (if the size went down).  This is only an issue for concurrent collections
                     // that implement ICollection<T>, which as of .NET 4.6 is just ConcurrentDictionary<TKey, TValue>.
-                    T[] arr = new T[count];
+                    var arr = new T[count];
                     ic.CopyTo(arr, 0);
                     length = count;
                     return arr;
                 }
             }
             else {
-                using (IEnumerator<T> en = source.GetEnumerator()) {
+                using (var en = source.GetEnumerator()) {
                     if (en.MoveNext()) {
                         const int DefaultCapacity = 4;
-                        T[] arr = new T[DefaultCapacity];
+                        var arr = new T[DefaultCapacity];
                         arr[0] = en.Current;
                         var count = 1;
 
@@ -152,19 +151,14 @@ namespace Utils {
         private const int Log2Arity = 2;
 
         /// <summary>
-        ///     Represents an implicit heap-ordered complete d-ary tree, stored as an array.
-        /// </summary>
-        private (TElement Element, TPriority Priority)[] _nodes;
-
-        /// <summary>
         ///     Custom comparer used to order the heap.
         /// </summary>
         private readonly IComparer<TPriority>? _comparer;
 
         /// <summary>
-        ///     Lazily-initialized collection used to expose the contents of the queue.
+        ///     Represents an implicit heap-ordered complete d-ary tree, stored as an array.
         /// </summary>
-        private UnorderedItemsCollection? _unorderedItems;
+        private (TElement Element, TPriority Priority)[] _nodes;
 
         /// <summary>
         ///     The number of nodes in the heap.
@@ -172,28 +166,14 @@ namespace Utils {
         private int _size;
 
         /// <summary>
+        ///     Lazily-initialized collection used to expose the contents of the queue.
+        /// </summary>
+        private UnorderedItemsCollection? _unorderedItems;
+
+        /// <summary>
         ///     Version updated on mutation to help validate enumerators operate on a consistent state.
         /// </summary>
         private int _version;
-
-        /// <summary>
-        ///     Gets the number of elements contained in the <see cref="PriorityQueue{TElement, TPriority}" />.
-        /// </summary>
-        public int Count => _size;
-
-        /// <summary>
-        ///     Gets the priority comparer used by the <see cref="PriorityQueue{TElement, TPriority}" />.
-        /// </summary>
-        public IComparer<TPriority> Comparer => _comparer ?? Comparer<TPriority>.Default;
-
-        /// <summary>
-        ///     Gets a collection that enumerates the elements of the queue in an unordered manner.
-        /// </summary>
-        /// <remarks>
-        ///     The enumeration does not order items by priority, since that would require N * log(N) time and N space.
-        ///     Items are instead enumerated following the internal array heap layout.
-        /// </remarks>
-        public UnorderedItemsCollection UnorderedItems => _unorderedItems ??= new UnorderedItemsCollection(this);
 
 #if DEBUG
         static PriorityQueue() {
@@ -295,6 +275,25 @@ namespace Utils {
 
             if (_size > 1) Heapify();
         }
+
+        /// <summary>
+        ///     Gets the number of elements contained in the <see cref="PriorityQueue{TElement, TPriority}" />.
+        /// </summary>
+        public int Count => _size;
+
+        /// <summary>
+        ///     Gets the priority comparer used by the <see cref="PriorityQueue{TElement, TPriority}" />.
+        /// </summary>
+        public IComparer<TPriority> Comparer => _comparer ?? Comparer<TPriority>.Default;
+
+        /// <summary>
+        ///     Gets a collection that enumerates the elements of the queue in an unordered manner.
+        /// </summary>
+        /// <remarks>
+        ///     The enumeration does not order items by priority, since that would require N * log(N) time and N space.
+        ///     Items are instead enumerated following the internal array heap layout.
+        /// </remarks>
+        public UnorderedItemsCollection UnorderedItems => _unorderedItems ??= new UnorderedItemsCollection(this);
 
         /// <summary>
         ///     Adds the specified element with associated priority to the <see cref="PriorityQueue{TElement, TPriority}" />.
@@ -404,7 +403,7 @@ namespace Utils {
         /// </remarks>
         public TElement EnqueueDequeue(TElement element, TPriority priority) {
             if (_size != 0) {
-                (TElement Element, TPriority Priority) root = _nodes[0];
+                var root = _nodes[0];
 
                 if (_comparer == null) {
                     if (Comparer<TPriority>.Default.Compare(priority, root.Priority) > 0) {
@@ -436,7 +435,7 @@ namespace Utils {
             ArgumentNullException.ThrowIfNull(items);
 
             var count = 0;
-            ICollection<(TElement Element, TPriority Priority)>? collection =
+            var collection =
                 items as ICollection<(TElement Element, TPriority Priority)>;
             if (collection is not null && (count = collection.Count) > _nodes.Length - _size) Grow(_size + count);
 
@@ -450,7 +449,7 @@ namespace Utils {
                 else {
                     var i = 0;
                     (TElement, TPriority)[] nodes = _nodes;
-                    foreach ((var element, var priority) in items) {
+                    foreach (var (element, priority) in items) {
                         if (nodes.Length == i) {
                             Grow(i + 1);
                             nodes = _nodes;
@@ -467,7 +466,7 @@ namespace Utils {
                 if (_size > 1) Heapify();
             }
             else {
-                foreach ((var element, var priority) in items) Enqueue(element, priority);
+                foreach (var (element, priority) in items) Enqueue(element, priority);
             }
         }
 
@@ -594,7 +593,7 @@ namespace Utils {
             _version++;
 
             if (lastNodeIndex > 0) {
-                (TElement Element, TPriority Priority) lastNode = _nodes[lastNodeIndex];
+                var lastNode = _nodes[lastNodeIndex];
                 if (_comparer == null)
                     MoveDownDefaultComparer(lastNode, 0);
                 else
@@ -628,7 +627,7 @@ namespace Utils {
             // only for higher nodes, starting from the first node that has children.
             // It is the parent of the very last element in the array.
 
-            (TElement Element, TPriority Priority)[] nodes = _nodes;
+            var nodes = _nodes;
             var lastParentWithChildren = GetParentIndex(_size - 1);
 
             if (_comparer == null)
@@ -649,11 +648,11 @@ namespace Utils {
             Debug.Assert(_comparer is null);
             Debug.Assert(0 <= nodeIndex && nodeIndex < _size);
 
-            (TElement Element, TPriority Priority)[] nodes = _nodes;
+            var nodes = _nodes;
 
             while (nodeIndex > 0) {
                 var parentIndex = GetParentIndex(nodeIndex);
-                (TElement Element, TPriority Priority) parent = nodes[parentIndex];
+                var parent = nodes[parentIndex];
 
                 if (Comparer<TPriority>.Default.Compare(node.Priority, parent.Priority) < 0) {
                     nodes[nodeIndex] = parent;
@@ -677,12 +676,12 @@ namespace Utils {
             Debug.Assert(_comparer is not null);
             Debug.Assert(0 <= nodeIndex && nodeIndex < _size);
 
-            IComparer<TPriority> comparer = _comparer;
-            (TElement Element, TPriority Priority)[] nodes = _nodes;
+            var comparer = _comparer;
+            var nodes = _nodes;
 
             while (nodeIndex > 0) {
                 var parentIndex = GetParentIndex(nodeIndex);
-                (TElement Element, TPriority Priority) parent = nodes[parentIndex];
+                var parent = nodes[parentIndex];
 
                 if (comparer.Compare(node.Priority, parent.Priority) < 0) {
                     nodes[nodeIndex] = parent;
@@ -707,18 +706,18 @@ namespace Utils {
             Debug.Assert(_comparer is null);
             Debug.Assert(0 <= nodeIndex && nodeIndex < _size);
 
-            (TElement Element, TPriority Priority)[] nodes = _nodes;
+            var nodes = _nodes;
             var size = _size;
 
             int i;
             while ((i = GetFirstChildIndex(nodeIndex)) < size) {
                 // Find the child node with the minimal priority
-                (TElement Element, TPriority Priority) minChild = nodes[i];
+                var minChild = nodes[i];
                 var minChildIndex = i;
 
                 var childIndexUpperBound = Math.Min(i + Arity, size);
                 while (++i < childIndexUpperBound) {
-                    (TElement Element, TPriority Priority) nextChild = nodes[i];
+                    var nextChild = nodes[i];
                     if (Comparer<TPriority>.Default.Compare(nextChild.Priority, minChild.Priority) < 0) {
                         minChild = nextChild;
                         minChildIndex = i;
@@ -748,19 +747,19 @@ namespace Utils {
             Debug.Assert(_comparer is not null);
             Debug.Assert(0 <= nodeIndex && nodeIndex < _size);
 
-            IComparer<TPriority> comparer = _comparer;
-            (TElement Element, TPriority Priority)[] nodes = _nodes;
+            var comparer = _comparer;
+            var nodes = _nodes;
             var size = _size;
 
             int i;
             while ((i = GetFirstChildIndex(nodeIndex)) < size) {
                 // Find the child node with the minimal priority
-                (TElement Element, TPriority Priority) minChild = nodes[i];
+                var minChild = nodes[i];
                 var minChildIndex = i;
 
                 var childIndexUpperBound = Math.Min(i + Arity, size);
                 while (++i < childIndexUpperBound) {
-                    (TElement Element, TPriority Priority) nextChild = nodes[i];
+                    var nextChild = nodes[i];
                     if (comparer.Compare(nextChild.Priority, minChild.Priority) < 0) {
                         minChild = nextChild;
                         minChildIndex = i;
@@ -790,12 +789,11 @@ namespace Utils {
 
                 return comparer;
             }
-            else {
-                // Currently the JIT doesn't optimize direct Comparer<T>.Default.Compare
-                // calls for reference types, so we want to cache the comparer instance instead.
-                // TODO https://github.com/dotnet/runtime/issues/10050: Update if this changes in the future.
-                return comparer ?? Comparer<TPriority>.Default;
-            }
+
+            // Currently the JIT doesn't optimize direct Comparer<T>.Default.Compare
+            // calls for reference types, so we want to cache the comparer instance instead.
+            // TODO https://github.com/dotnet/runtime/issues/10050: Update if this changes in the future.
+            return comparer ?? Comparer<TPriority>.Default;
         }
 
         /// <summary>
@@ -809,14 +807,6 @@ namespace Utils {
 
             internal UnorderedItemsCollection(PriorityQueue<TElement, TPriority> queue) {
                 _queue = queue;
-            }
-
-            /// <summary>
-            ///     Returns an enumerator that iterates through the <see cref="UnorderedItems" />.
-            /// </summary>
-            /// <returns>An <see cref="Enumerator" /> for the <see cref="UnorderedItems" />.</returns>
-            public Enumerator GetEnumerator() {
-                return new Enumerator(_queue);
             }
 
             object ICollection.SyncRoot => this;
@@ -855,6 +845,14 @@ namespace Utils {
             }
 
             /// <summary>
+            ///     Returns an enumerator that iterates through the <see cref="UnorderedItems" />.
+            /// </summary>
+            /// <returns>An <see cref="Enumerator" /> for the <see cref="UnorderedItems" />.</returns>
+            public Enumerator GetEnumerator() {
+                return new Enumerator(_queue);
+            }
+
+            /// <summary>
             ///     Enumerates the element and priority pairs of a <see cref="PriorityQueue{TElement, TPriority}" />,
             ///     without any ordering guarantees.
             /// </summary>
@@ -883,7 +881,7 @@ namespace Utils {
                 ///     <see langword="false" /> if the enumerator has passed the end of the collection.
                 /// </returns>
                 public bool MoveNext() {
-                    PriorityQueue<TElement, TPriority> localQueue = _queue;
+                    var localQueue = _queue;
 
                     if (_version == localQueue._version && (uint)_index < (uint)localQueue._size) {
                         Current = localQueue._nodes[_index];

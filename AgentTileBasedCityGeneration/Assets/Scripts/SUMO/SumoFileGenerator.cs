@@ -1,10 +1,10 @@
 #nullable enable
 using System;
-using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Xml.Linq;
-using FreeFormGraph;
-using FreeFormGraph.World;
+using Graph;
+using Graph.World;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -17,6 +17,16 @@ namespace SUMO {
         private const string OUTPUT_NET_FILE_NAME = "output.net.xml";
         private const string CONFIGURATION_FILE_NAME = "configuration.sumocfg";
         private const string EDGES_TYPES_FILE_NAME = "edges.typ.xml";
+
+        private SumoFileGenerator(string sumoFilesPath, IStreetGraph graph, SumoSimulationOptions simulationOptions,
+            IWorld world) {
+            Graph = graph;
+            World = world;
+            SimulationOptions = simulationOptions;
+            SumoFilesPath = sumoFilesPath;
+            InitializeDirectory(sumoFilesPath);
+            CreateNetworkFiles();
+        }
 
         private IStreetGraph Graph { get; }
         private IWorld World { get; }
@@ -31,28 +41,18 @@ namespace SUMO {
         public string ConfigurationFilePath => $"{SumoFilesPath}/{CONFIGURATION_FILE_NAME}";
         public string EdgesTypesFilePath => $"{SumoFilesPath}/{EDGES_TYPES_FILE_NAME}";
 
-        private SumoFileGenerator(string sumoFilesPath, IStreetGraph graph, SumoSimulationOptions simulationOptions,
-            IWorld world) {
-            Graph = graph;
-            World = world;
-            SimulationOptions = simulationOptions;
-            SumoFilesPath = sumoFilesPath;
-            InitializeDirectory(sumoFilesPath);
-            CreateNetworkFiles();
-        }
-
         internal static SumoFileGenerator Create(string sumoFilesPath, IStreetGraph graph,
             SumoSimulationOptions simulationOptions, IWorld world) {
             return new SumoFileGenerator(sumoFilesPath, graph, simulationOptions, world);
         }
 
         private static void InitializeDirectory(string sumoPath) {
-            if (!System.IO.Directory.Exists(sumoPath)) {
-                System.IO.Directory.CreateDirectory(sumoPath);
+            if (!Directory.Exists(sumoPath)) {
+                Directory.CreateDirectory(sumoPath);
                 return;
             }
 
-            var directoryInfo = new System.IO.DirectoryInfo(sumoPath);
+            var directoryInfo = new DirectoryInfo(sumoPath);
             foreach (var file in directoryInfo.GetFiles()) file.Delete();
 
             foreach (var dir in directoryInfo.GetDirectories()) dir.Delete(true);

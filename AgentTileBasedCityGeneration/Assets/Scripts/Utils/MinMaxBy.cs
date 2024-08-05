@@ -1,8 +1,6 @@
-using System;
-
 namespace System.Collections.Generic {
     /// <summary>
-    /// Source: https://gist.github.com/shoffing/9a4fb8fe6ffbe0afd2173faab22419fd
+    ///     Source: https://gist.github.com/shoffing/9a4fb8fe6ffbe0afd2173faab22419fd
     /// </summary>
     public static class MinMaxBy {
         public static T MinBy<T>(this IEnumerable<T> list, Func<T, IComparable> selector) {

@@ -4,11 +4,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace DataStructures {
+namespace Utils.DataStructures {
     #region · Types ·
 
     /// <summary>
-    /// Interface for data class to be stored in the QuadTree
+    ///     Interface for data class to be stored in the QuadTree
     /// </summary>
     public interface IQuadTreeData {
         /// <summary>Gets X coordinate of the point to be stored in the quadtree</summary>
@@ -19,7 +19,8 @@ namespace DataStructures {
     }
 
     /// <summary>
-    /// Class for storing rectangular (AABB) region. The region is stored as the center point and half size (width and height). The region must have the same width and height.
+    ///     Class for storing rectangular (AABB) region. The region is stored as the center point and half size (width and
+    ///     height). The region must have the same width and height.
     /// </summary>
     public class QuadTreeFloatPointRegion {
         /// <summary>X coordinate of the center point of the region</summary>
@@ -32,7 +33,7 @@ namespace DataStructures {
         public float HalfSize;
 
         /// <summary>
-        /// Constructor from float values
+        ///     Constructor from float values
         /// </summary>
         /// <param name="in_center_x">X coordinate of the center point of the region</param>
         /// <param name="in_center_y">Y coordinate of the center point of the region</param>
@@ -44,7 +45,7 @@ namespace DataStructures {
         }
 
         /// <summary>
-        /// Checks if the given quadtree data (point) is inside the region.
+        ///     Checks if the given quadtree data (point) is inside the region.
         /// </summary>
         /// <param name="in_point">Quadtree data containing the coordinates to check</param>
         /// <returns>True if point is inside the region</returns>
@@ -53,7 +54,7 @@ namespace DataStructures {
         }
 
         /// <summary>
-        /// Checks if two regions are overlapping
+        ///     Checks if two regions are overlapping
         /// </summary>
         /// <param name="in_region">Other region to check</param>
         /// <returns>True if regions are overlapping</returns>
@@ -63,7 +64,7 @@ namespace DataStructures {
         }
 
         /// <summary>
-        /// Checks if two regions are overlapping. The other region is defined using it's left, top, width, height parameters
+        ///     Checks if two regions are overlapping. The other region is defined using it's left, top, width, height parameters
         /// </summary>
         /// <param name="in_left">Left X coordinate of the region</param>
         /// <param name="in_top">Top Y coordinate of the region</param>
@@ -78,14 +79,13 @@ namespace DataStructures {
         }
 
         /// <summary>
-        /// Gets index of the quadrant where the given tree data (point) is located
-        /// 
-        /// The quadrant numbering:
-        /// ---------
-        /// | 0 | 1 |
-        /// ---------
-        /// | 2 | 3 |
-        /// ---------
+        ///     Gets index of the quadrant where the given tree data (point) is located
+        ///     The quadrant numbering:
+        ///     ---------
+        ///     | 0 | 1 |
+        ///     ---------
+        ///     | 2 | 3 |
+        ///     ---------
         /// </summary>
         /// <param name="in_point">Tree data (point) to check</param>
         /// <returns>Index of the quadrant [0..3]</returns>
@@ -102,7 +102,7 @@ namespace DataStructures {
         }
 
         /// <summary>
-        /// Gets the square of the Euclidean distance of the specified point from the center of the region
+        ///     Gets the square of the Euclidean distance of the specified point from the center of the region
         /// </summary>
         /// <param name="in_x">Point X coordinate</param>
         /// <param name="in_y">Point Y coordinate</param>
@@ -115,14 +115,137 @@ namespace DataStructures {
     #endregion
 
     /// <summary>
-    /// Point Quad Tree class flor float type coordinates
+    ///     Point Quad Tree class flor float type coordinates
     /// </summary>
     /// <typeparam name="T">Interface for the elements stored in the quadtee</typeparam>
     public class QuadTreeFloatPoint<T> : IEnumerable<T> where T : IQuadTreeData {
+        #region · Nearest neighbour search ·
+
+        public List<T> QueryNeighbours(float in_x, float in_y, int in_neighbours_count) {
+            var neighbour_region = new QuadTreeFloatPointRegion(in_x, in_y, 0);
+            var stack = new Stack<QuadTreeNode>();
+            QuadTreeNode current;
+
+            var neighbours = new List<T>();
+            var neighbour_distances = new double[in_neighbours_count];
+            double neighbours_worst_distance = 0;
+            var neighbours_worst_index = 0;
+
+            // set root node as current
+            current = m_root;
+
+            while (current != null) {
+                // move downwards if this node has child nodes
+                if (current.Children != null) {
+                    // store regions in the stack and continue with the closest region
+                    double closest_region_distance;
+                    int closest_region_index;
+
+                    // find closest region
+                    closest_region_index = 0;
+                    closest_region_distance = current.Children[0].Bounds.GetSquaredDistanceOfCenter(in_x, in_y);
+
+                    for (var i = 0; i < 4; i++) {
+                        var distance = current.Children[i].Bounds.GetSquaredDistanceOfCenter(in_x, in_y);
+                        if (distance < closest_region_distance) {
+                            closest_region_distance = distance;
+                            closest_region_index = i;
+                        }
+                    }
+
+                    // store regions
+                    for (var i = 0; i < 4; i++) {
+                        if (i == closest_region_index)
+                            continue;
+
+                        // if the neighbor region is defined then store only the overlapping regions, otherwise store all regions
+                        if (neighbour_region.HalfSize == 0 ||
+                            current.Children[i].Bounds.IsOverlapping(neighbour_region))
+                            stack.Push(current.Children[i]);
+                    }
+
+                    // continue processing with the closest	region
+                    current = current.Children[closest_region_index];
+                }
+                else {
+                    // process data points
+                    var current_leaf_entry = current.Data;
+
+                    while (current_leaf_entry != null) {
+                        // calculate distance (squared)
+                        var squared_distance = current_leaf_entry.GetSquaredDistance(in_x, in_y);
+
+                        if (current.Data != null) {
+                            // simply store data point if the list is not full
+                            if (neighbours.Count < in_neighbours_count) {
+                                if (neighbours.Count == 0) {
+                                    neighbours_worst_distance = squared_distance;
+                                    neighbours_worst_index = 0;
+                                }
+                                else {
+                                    if (squared_distance > neighbours_worst_distance) {
+                                        neighbours_worst_distance = squared_distance;
+                                        neighbours_worst_index = neighbours.Count;
+                                    }
+                                }
+
+                                // add this item to the neighbours list
+                                neighbour_distances[neighbours.Count] = squared_distance;
+                                neighbours.Add(current_leaf_entry.Data);
+
+                                // if the required number of neighbour is found store the worst distance in the region
+                                if (neighbours.Count == in_neighbours_count)
+                                    neighbour_region.HalfSize = (float)Math.Sqrt(neighbours_worst_distance);
+                            }
+                            else {
+                                // list is full, store only when this item is closer than the worst item (largest distance) in the list
+                                if (squared_distance < neighbours_worst_distance) {
+                                    // replace worst element
+                                    neighbour_distances[neighbours_worst_index] = squared_distance;
+                                    neighbours[neighbours_worst_index] = current_leaf_entry.Data;
+
+                                    // find the current worst element
+                                    neighbours_worst_index = 0;
+                                    neighbours_worst_distance = neighbour_distances[0];
+                                    for (var i = 1; i < in_neighbours_count; i++) {
+                                        if (neighbour_distances[i] > neighbours_worst_distance) {
+                                            neighbours_worst_distance = neighbour_distances[i];
+                                            neighbours_worst_index = i;
+                                        }
+                                    }
+
+                                    neighbour_region.HalfSize = (float)Math.Sqrt(neighbours_worst_distance);
+                                }
+                            }
+                        }
+
+                        current_leaf_entry = current_leaf_entry.Next;
+                    }
+
+                    // get new element from the stack or exit if no more element to investigate
+                    do {
+                        if (stack.Count > 0) {
+                            current = stack.Pop();
+                        }
+                        else {
+                            current = null;
+                            break;
+                        }
+
+                        // if the neighbour region is know skip all elements with a non-overlapping region
+                    } while (neighbour_region.HalfSize > 0 && !current.Bounds.IsOverlapping(neighbour_region));
+                }
+            }
+
+            return neighbours;
+        }
+
+        #endregion
+
         #region · Types ·
 
         /// <summary>
-        /// Leaf node in the quadtree. Contains items at the leaf in a linked list.
+        ///     Leaf node in the quadtree. Contains items at the leaf in a linked list.
         /// </summary>
         private class QuadTreeLeaf {
             public T Data;
@@ -139,10 +262,11 @@ namespace DataStructures {
         }
 
         /// <summary>
-        /// Node of the quadtree. If it is an internal node in the tree it contans bounding box and four quadrants childen, if it is 
+        ///     Node of the quadtree. If it is an internal node in the tree it contans bounding box and four quadrants childen, if
+        ///     it is
         /// </summary>
         private class QuadTreeNode {
-            public QuadTreeFloatPointRegion Bounds;
+            public readonly QuadTreeFloatPointRegion Bounds;
             public QuadTreeNode[] Children;
             public QuadTreeLeaf Data;
 
@@ -157,8 +281,8 @@ namespace DataStructures {
 
         #region · Data members ·
 
-        private QuadTreeNode m_root;
-        private int m_bucket_capacity;
+        private readonly QuadTreeNode m_root;
+        private readonly int m_bucket_capacity;
         private int m_node_count;
 
         #endregion
@@ -166,9 +290,9 @@ namespace DataStructures {
         #region · Constructor ·
 
         /// <summary>
-        /// Construct QuadTree for the given region with the sepcified bucket capacity
+        ///     Construct QuadTree for the given region with the sepcified bucket capacity
         /// </summary>
-        /// <param name="in_region">Coordinate region used for stored points</param>																					 
+        /// <param name="in_region">Coordinate region used for stored points</param>
         /// <param name="in_bucket_capacity">Number of points stored in one bucket</param>
         public QuadTreeFloatPoint(QuadTreeFloatPointRegion in_region, int in_bucket_capacity) {
             m_root = new QuadTreeNode(in_region);
@@ -177,14 +301,14 @@ namespace DataStructures {
         }
 
         /// <summary>
-        /// Creates QuadTree for the specified region with bucket capacity set to one.
+        ///     Creates QuadTree for the specified region with bucket capacity set to one.
         /// </summary>
         /// <param name="in_region">Region  used for the stored point</param>
         public QuadTreeFloatPoint(QuadTreeFloatPointRegion in_region) : this(in_region, 1) { }
 
 
         /// <summary>
-        /// Creates QuadTree from the given region specified by it's center and half width
+        ///     Creates QuadTree from the given region specified by it's center and half width
         /// </summary>
         /// <param name="in_center_x">Center of the region (X coordinate)</param>
         /// <param name="in_center_y">Center of the region (Y coordinate)</param>
@@ -193,7 +317,7 @@ namespace DataStructures {
             new QuadTreeFloatPointRegion(in_center_x, in_center_y, in_half_size)) { }
 
         /// <summary>
-        /// Creates QuadTree from the given region specified by it's center and half width using the soecified bucket capacity
+        ///     Creates QuadTree from the given region specified by it's center and half width using the soecified bucket capacity
         /// </summary>
         /// <param name="in_center_x"></param>
         /// <param name="in_center_y"></param>
@@ -207,7 +331,7 @@ namespace DataStructures {
         #region · Tree building and maintenance ·
 
         /// <summary>
-        /// Clears content of the quadtree
+        ///     Clears content of the quadtree
         /// </summary>
         public void Clear() {
             m_root.Children = null;
@@ -215,7 +339,7 @@ namespace DataStructures {
         }
 
         /// <summary>
-        /// Inserts a new node
+        ///     Inserts a new node
         /// </summary>
         /// <param name="in_data"></param>
         public void Insert(T in_data) {
@@ -225,7 +349,7 @@ namespace DataStructures {
         }
 
         /// <summary>
-        /// Internal recursive insert function
+        ///     Internal recursive insert function
         /// </summary>
         /// <param name="in_current_node"></param>
         /// <param name="in_node_to_insert"></param>
@@ -246,38 +370,37 @@ namespace DataStructures {
 
                     return;
                 }
-                else {
-                    var item_count = 0;
 
-                    // add to the end of list of data
-                    node = in_current_node.Data;
-                    while (true) {
-                        if (Math.Abs(in_node_to_insert.Data.X - node.Data.X) <= float.Epsilon &&
-                            Math.Abs(in_node_to_insert.Data.Y - node.Data.Y) <= float.Epsilon)
-                            throw new ArgumentException("Key already exists");
+                var item_count = 0;
 
-                        item_count++;
+                // add to the end of list of data
+                node = in_current_node.Data;
+                while (true) {
+                    if (Math.Abs(in_node_to_insert.Data.X - node.Data.X) <= float.Epsilon &&
+                        Math.Abs(in_node_to_insert.Data.Y - node.Data.Y) <= float.Epsilon)
+                        throw new ArgumentException("Key already exists");
 
-                        if (node.Next != null)
-                            node = node.Next;
-                        else
-                            break;
-                    }
+                    item_count++;
 
-                    // there is room for this item
-                    if (item_count < m_bucket_capacity) {
-                        // add node to the list of data
-                        node.Next = in_node_to_insert;
-
-                        return;
-                    }
-
-                    // current node needs to be splitted
-                    nodes_to_insert = (QuadTreeLeaf)in_current_node.Data;
-
-                    // remove data
-                    in_current_node.Data = null;
+                    if (node.Next != null)
+                        node = node.Next;
+                    else
+                        break;
                 }
+
+                // there is room for this item
+                if (item_count < m_bucket_capacity) {
+                    // add node to the list of data
+                    node.Next = in_node_to_insert;
+
+                    return;
+                }
+
+                // current node needs to be splitted
+                nodes_to_insert = in_current_node.Data;
+
+                // remove data
+                in_current_node.Data = null;
             }
             else {
                 // move downward on the tree following the apropriate quadrant
@@ -435,129 +558,6 @@ namespace DataStructures {
 
         IEnumerator IEnumerable.GetEnumerator() {
             return GetEnumerator();
-        }
-
-        #endregion
-
-        #region · Nearest neighbour search ·
-
-        public List<T> QueryNeighbours(float in_x, float in_y, int in_neighbours_count) {
-            var neighbour_region = new QuadTreeFloatPointRegion(in_x, in_y, 0);
-            var stack = new Stack<QuadTreeNode>();
-            QuadTreeNode current;
-
-            var neighbours = new List<T>();
-            var neighbour_distances = new double[in_neighbours_count];
-            double neighbours_worst_distance = 0;
-            var neighbours_worst_index = 0;
-
-            // set root node as current
-            current = m_root;
-
-            while (current != null) {
-                // move downwards if this node has child nodes
-                if (current.Children != null) {
-                    // store regions in the stack and continue with the closest region
-                    double closest_region_distance;
-                    int closest_region_index;
-
-                    // find closest region
-                    closest_region_index = 0;
-                    closest_region_distance = current.Children[0].Bounds.GetSquaredDistanceOfCenter(in_x, in_y);
-
-                    for (var i = 0; i < 4; i++) {
-                        var distance = current.Children[i].Bounds.GetSquaredDistanceOfCenter(in_x, in_y);
-                        if (distance < closest_region_distance) {
-                            closest_region_distance = distance;
-                            closest_region_index = i;
-                        }
-                    }
-
-                    // store regions
-                    for (var i = 0; i < 4; i++) {
-                        if (i == closest_region_index)
-                            continue;
-
-                        // if the neighbor region is defined then store only the overlapping regions, otherwise store all regions
-                        if (neighbour_region.HalfSize == 0 ||
-                            current.Children[i].Bounds.IsOverlapping(neighbour_region))
-                            stack.Push(current.Children[i]);
-                    }
-
-                    // continue processing with the closest	region
-                    current = current.Children[closest_region_index];
-                }
-                else {
-                    // process data points
-                    var current_leaf_entry = current.Data;
-
-                    while (current_leaf_entry != null) {
-                        // calculate distance (squared)
-                        var squared_distance = current_leaf_entry.GetSquaredDistance(in_x, in_y);
-
-                        if (current.Data != null) {
-                            // simply store data point if the list is not full
-                            if (neighbours.Count < in_neighbours_count) {
-                                if (neighbours.Count == 0) {
-                                    neighbours_worst_distance = squared_distance;
-                                    neighbours_worst_index = 0;
-                                }
-                                else {
-                                    if (squared_distance > neighbours_worst_distance) {
-                                        neighbours_worst_distance = squared_distance;
-                                        neighbours_worst_index = neighbours.Count;
-                                    }
-                                }
-
-                                // add this item to the neighbours list
-                                neighbour_distances[neighbours.Count] = squared_distance;
-                                neighbours.Add(current_leaf_entry.Data);
-
-                                // if the required number of neighbour is found store the worst distance in the region
-                                if (neighbours.Count == in_neighbours_count)
-                                    neighbour_region.HalfSize = (float)Math.Sqrt(neighbours_worst_distance);
-                            }
-                            else {
-                                // list is full, store only when this item is closer than the worst item (largest distance) in the list
-                                if (squared_distance < neighbours_worst_distance) {
-                                    // replace worst element
-                                    neighbour_distances[neighbours_worst_index] = squared_distance;
-                                    neighbours[neighbours_worst_index] = current_leaf_entry.Data;
-
-                                    // find the current worst element
-                                    neighbours_worst_index = 0;
-                                    neighbours_worst_distance = neighbour_distances[0];
-                                    for (var i = 1; i < in_neighbours_count; i++) {
-                                        if (neighbour_distances[i] > neighbours_worst_distance) {
-                                            neighbours_worst_distance = neighbour_distances[i];
-                                            neighbours_worst_index = i;
-                                        }
-                                    }
-
-                                    neighbour_region.HalfSize = (float)Math.Sqrt(neighbours_worst_distance);
-                                }
-                            }
-                        }
-
-                        current_leaf_entry = current_leaf_entry.Next;
-                    }
-
-                    // get new element from the stack or exit if no more element to investigate
-                    do {
-                        if (stack.Count > 0) {
-                            current = stack.Pop();
-                        }
-                        else {
-                            current = null;
-                            break;
-                        }
-
-                        // if the neighbour region is know skip all elements with a non-overlapping region
-                    } while (neighbour_region.HalfSize > 0 && !current.Bounds.IsOverlapping(neighbour_region));
-                }
-            }
-
-            return neighbours;
         }
 
         #endregion

@@ -2,14 +2,15 @@
 using System;
 using System.Collections;
 using System.Diagnostics;
-using FreeFormGraph;
-using FreeFormGraph.World;
+using System.IO;
+using Graph;
+using Graph.World;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
 namespace SUMO {
     /// <summary>
-    /// Generates a SUMO network from a given graph.
+    ///     Generates a SUMO network from a given graph.
     /// </summary>
     public class SumoNetworkConverter : MonoBehaviour {
         private const string
@@ -24,12 +25,12 @@ namespace SUMO {
         private const string SUMO_FILES_TO_COPY_PATH = "Resources/Sumo";
 
         [field: SerializeField] public SumoSimulationOptions SimulationOptions { get; private set; } = new();
+        private SumoClient sumoClient = null!;
+
+        private SumoFileGenerator? sumoFileGenerator;
 
         private string SumoGeneratedFilesPath { get; set; } = null!;
         private string SumoPythonSimulationScriptPath { get; set; } = null!;
-
-        private SumoFileGenerator? sumoFileGenerator;
-        private SumoClient sumoClient = null!;
 
         public bool IsNetworkGenerated => sumoFileGenerator != null;
         public bool IsSimulationRunning => sumoClient.IsConnected;
@@ -37,12 +38,12 @@ namespace SUMO {
 
         private string NetconvertCommand => sumoFileGenerator == null
             ? "netconvert"
-            : $"netconvert " +
+            : "netconvert " +
               $"--node-files=\"{sumoFileGenerator.NodesFilePath}\" " +
               $"--edge-files=\"{sumoFileGenerator.EdgesFilePath}\" " +
               $"--type-files=\"{sumoFileGenerator.EdgesTypesFilePath}\" " +
               $"--output-file=\"{sumoFileGenerator.OutputNetFilePath}\" " +
-              $"--offset.disable-normalization=\"true\"\n";
+              "--offset.disable-normalization=\"true\"\n";
 
         private string SumoExecutionCommand => sumoFileGenerator == null
             ? "sumo"
@@ -56,13 +57,22 @@ namespace SUMO {
         }
 
         /// <summary>
-        /// Generates a SUMO network from a given graph.
+        ///     Generates a SUMO network from a given graph.
         /// </summary>
         /// <param name="graph"> The graph to generate the network from. </param>
         /// <param name="world"> The world to generate the network in. </param>
-        /// <param name="convertToSumoNetwork"> Whether to convert the generated plain xml files to a SUMO network with netconvert. see https://sumo.dlr.de/docs/Networks/PlainXML.html for more info. </param>
-        /// <param name="runSimulationAfterGeneration"> Whether to run the simulation via the python script after the network has been generated. </param>
-        /// <param name="openFolderAfterGeneration"> Whether to open the SUMO folder where the files have been generated in, after the network has been generated. </param>
+        /// <param name="convertToSumoNetwork">
+        ///     Whether to convert the generated plain xml files to a SUMO network with netconvert.
+        ///     see https://sumo.dlr.de/docs/Networks/PlainXML.html for more info.
+        /// </param>
+        /// <param name="runSimulationAfterGeneration">
+        ///     Whether to run the simulation via the python script after the network has
+        ///     been generated.
+        /// </param>
+        /// <param name="openFolderAfterGeneration">
+        ///     Whether to open the SUMO folder where the files have been generated in, after
+        ///     the network has been generated.
+        /// </param>
         /// <param name="openSumoGUIAfterGeneration"> Whether to open the SUMO GUI after the network has been generated. </param>
         /// <param name="onDone"> An action to be executed after all tasks have been completed. </param>
         public void GenerateNetwork(IStreetGraph graph, IWorld world, bool convertToSumoNetwork = true,
@@ -77,12 +87,12 @@ namespace SUMO {
         }
 
         private void CopyFilesToFolder() {
-            var files = System.IO.Directory.GetFiles($"{Application.dataPath}/{SUMO_FILES_TO_COPY_PATH}");
+            var files = Directory.GetFiles($"{Application.dataPath}/{SUMO_FILES_TO_COPY_PATH}");
             foreach (var file in files) {
                 if (file.EndsWith(".meta")) continue;
-                var destinationPath = $"{SumoGeneratedFilesPath}/{System.IO.Path.GetFileName(file)}";
-                if (System.IO.File.Exists(destinationPath)) System.IO.File.Delete(destinationPath);
-                System.IO.File.Copy(file, destinationPath);
+                var destinationPath = $"{SumoGeneratedFilesPath}/{Path.GetFileName(file)}";
+                if (File.Exists(destinationPath)) File.Delete(destinationPath);
+                File.Copy(file, destinationPath);
             }
 
             CreateShellScript();
@@ -96,29 +106,29 @@ namespace SUMO {
 
             var scriptPath = $"{SumoGeneratedFilesPath}/run_sumo.sh";
             var script =
-                $"#!/bin/bash\n" +
-                $"\n" +
-                $"# Run this script to generate the SUMO network and run the simulation.\n" +
-                $"# Alternatively, you can copy the following commands and run them in your terminal.\n" +
-                $"# Make sure to have sumo and netconvert installed.\n" +
-                $"#\n" +
-                $"# run with:" +
-                $"# chmod u+x run_sumo.sh && ./run_sumo.sh\n" +
-                $"\n" +
-                $"# Convert the graph to a SUMO network\n" +
+                "#!/bin/bash\n" +
+                "\n" +
+                "# Run this script to generate the SUMO network and run the simulation.\n" +
+                "# Alternatively, you can copy the following commands and run them in your terminal.\n" +
+                "# Make sure to have sumo and netconvert installed.\n" +
+                "#\n" +
+                "# run with:" +
+                "# chmod u+x run_sumo.sh && ./run_sumo.sh\n" +
+                "\n" +
+                "# Convert the graph to a SUMO network\n" +
                 NetconvertCommand +
-                $"# Run the simulation\n" +
+                "# Run the simulation\n" +
                 SumoExecutionCommand;
-            System.IO.File.WriteAllText(scriptPath, script);
+            File.WriteAllText(scriptPath, script);
         }
 
         /// <summary>
-        /// Sequential tasks to be executed in the background.
+        ///     Sequential tasks to be executed in the background.
         /// </summary>
-        /// <param name="convertToSumoNetwork"> Whether to call <see cref="ConvertToSumoNetwork"/> afterwards </param>
+        /// <param name="convertToSumoNetwork"> Whether to call <see cref="ConvertToSumoNetwork" /> afterwards </param>
         /// <param name="runSimulationAfterGeneration"> Whether to call the python script to run the simulation afterwards </param>
-        /// <param name="openFolderAfterGeneration"> Whether to call <see cref="OpenSUMOFolder"/> afterwards </param>
-        /// <param name="openSumoGUIAfterGeneration"> Whether to call <see cref="OpenSumoGUI"/> afterwards </param>
+        /// <param name="openFolderAfterGeneration"> Whether to call <see cref="OpenSUMOFolder" /> afterwards </param>
+        /// <param name="openSumoGUIAfterGeneration"> Whether to call <see cref="OpenSumoGUI" /> afterwards </param>
         /// <param name="onDone"> An action to be executed after all tasks have been completed. </param>
         /// <returns> An enumerator for the coroutine. </returns>
         private IEnumerator DoBackgroundTasks(bool convertToSumoNetwork, bool runSimulationAfterGeneration,
@@ -133,8 +143,8 @@ namespace SUMO {
         }
 
         /// <summary>
-        /// Converts the generated plain xml files to a SUMO network with netconvert.
-        /// Currently not used, as it only works on macOS with Homebrew installation of SUMO.
+        ///     Converts the generated plain xml files to a SUMO network with netconvert.
+        ///     Currently not used, as it only works on macOS with Homebrew installation of SUMO.
         /// </summary>
         /// <returns> An enumerator for the coroutine. </returns>
         private IEnumerator ConvertToSumoNetwork() {
@@ -162,8 +172,8 @@ namespace SUMO {
         }
 
         /// <summary>
-        /// Opens the SUMO GUI with the generated configuration file.
-        /// Currently not used, as it only works on macOS with Homebrew installation of SUMO.
+        ///     Opens the SUMO GUI with the generated configuration file.
+        ///     Currently not used, as it only works on macOS with Homebrew installation of SUMO.
         /// </summary>
         /// <returns> An enumerator for the coroutine. </returns>
         private IEnumerator OpenSumoGUI() {

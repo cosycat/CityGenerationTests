@@ -5,8 +5,8 @@ namespace Utils {
     [RequireComponent(typeof(Camera))]
     [RequireComponent(typeof(AudioListener))]
     public class SelectableCamera : MonoBehaviour {
-        private Camera cam = null!;
         private AudioListener audioListener = null!;
+        private Camera cam = null!;
 
         private void Awake() {
             cam = GetComponent<Camera>();

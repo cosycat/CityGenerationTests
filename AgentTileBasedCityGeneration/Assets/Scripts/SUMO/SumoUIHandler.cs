@@ -1,22 +1,21 @@
 #nullable enable
-using System;
-using FreeFormGraph;
-using FreeFormGraph.Agents;
-using FreeFormGraph.World;
+using AgentSystem;
+using Graph;
+using Graph.World;
 using Simulation;
 using UnityEngine;
 
 namespace SUMO {
     [RequireComponent(typeof(SumoNetworkConverter))]
     public class SumoUIHandler : MonoBehaviour {
-        [SerializeField] private bool runSimulationAfterGeneration = false;
+        [SerializeField] private bool runSimulationAfterGeneration;
         [SerializeField] private bool openFolderAfterGeneration = true;
-        [SerializeField] private bool openSumoGUIAfterGeneration = false;
+        [SerializeField] private bool openSumoGUIAfterGeneration;
+        private IStreetGraph graph = null!;
 
         private SumoNetworkConverter networkConverter = null!;
-        private IStreetGraph graph = null!;
-        private IWorld world = null!;
         private SimulationManager simulationManager = null!;
+        private IWorld world = null!;
 
         private void Awake() {
             networkConverter = GetComponent<SumoNetworkConverter>();

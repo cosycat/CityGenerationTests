@@ -2,20 +2,16 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using JetBrains.Annotations;
 using Simulation;
-using Unity.VisualScripting;
 using UnityEngine;
 
 namespace Utils {
     public class CameraHandler : MonoBehaviour {
-        private SimulationManager simulationManager = null!;
+        private readonly List<SelectableCamera> allCameras = new();
+        private int currentCameraIndex;
 
         private FlyCamera flyCamera = null!;
-
-        private readonly List<SelectableCamera> allCameras = new();
-        private int currentCameraIndex = 0;
+        private SimulationManager simulationManager = null!;
 
         private void Start() {
             flyCamera = FindObjectOfType<FlyCamera>() ?? throw new Exception("No FlyCamera found in scene.");
@@ -26,6 +22,10 @@ namespace Utils {
 
             simulationManager.PlayerVehicleChanged += (sender, args) => OnPlayerVehicleChanged(args.NewPlayerVehicle);
             OnPlayerVehicleChanged(simulationManager.PlayerVehicle);
+        }
+
+        private void Update() {
+            if (Input.GetKeyDown(KeyCode.C)) NextCamera();
         }
 
         private void OnPlayerVehicleChanged(Vehicle? newPlayerVehicle) {
@@ -50,10 +50,6 @@ namespace Utils {
             allCameras[currentCameraIndex].SetActive(false);
             currentCameraIndex = (currentCameraIndex + 1) % allCameras.Count;
             allCameras[currentCameraIndex].SetActive(true);
-        }
-
-        private void Update() {
-            if (Input.GetKeyDown(KeyCode.C)) NextCamera();
         }
     }
 }

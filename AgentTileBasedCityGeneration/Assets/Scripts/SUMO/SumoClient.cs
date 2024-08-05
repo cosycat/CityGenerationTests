@@ -7,10 +7,9 @@ using CodingConnected.TraCI.NET.Types;
 using Simulation;
 using UnityEngine;
 
-
 namespace SUMO {
     /// <summary>
-    /// Starts a connection to a SUMO server and forwards the simulation.
+    ///     Starts a connection to a SUMO server and forwards the simulation.
     /// </summary>
     public class SumoClient : MonoBehaviour {
         public const float TIME_STEP_SECONDS = 0.03f;
@@ -21,19 +20,32 @@ namespace SUMO {
             TraCIConstants.VAR_SIGNALS, TraCIConstants.VAR_TYPE
         };
 
-        private Task? connectionTask = null;
+        private readonly List<VehicleInfo> updatedVehicleInfoList = new();
+
+        private readonly object updatedVehicleInfoListLock = new();
         private TraCIClient client = new();
-        private float totalSimulationTime = 0f;
-        private float timeSinceLastUpdate = 0f;
-        private int step = 0;
+
+        private Task? connectionTask;
 
         private SimulationManager simulationManager = null!;
+        private int step;
+        private float timeSinceLastUpdate;
+        private float totalSimulationTime;
 
         public bool IsConnected => connectionTask is { IsCompletedSuccessfully: true };
 
         public bool IsPaused { get; private set; }
 
         private bool StopRequested { get; set; }
+
+
+        private void Update() {
+            UpdateTraCI();
+        }
+
+        private void OnDestroy() {
+            Cleanup();
+        }
 
         public void StartClient(SimulationManager correspondingSimulationManager) {
             simulationManager = correspondingSimulationManager;
@@ -45,9 +57,6 @@ namespace SUMO {
             });
             client.VehicleSubscription += OnVehicleChangedSubscription;
         }
-
-        private readonly object updatedVehicleInfoListLock = new();
-        private readonly List<VehicleInfo> updatedVehicleInfoList = new();
 
         private void OnVehicleChangedSubscription(object sender, SubscriptionEventArgs args) {
             // var vehicleInfo = new VehicleInfo(args.ObjectId);
@@ -165,17 +174,8 @@ namespace SUMO {
         }
 
 
-        private void Update() {
-            UpdateTraCI();
-        }
-
-
         private void Cleanup() {
             client.Dispose();
-        }
-
-        private void OnDestroy() {
-            Cleanup();
         }
 
         public event EventHandler<VehicleEventArgs>? SimulationAdvancedOneStep;
@@ -198,10 +198,10 @@ namespace SUMO {
     }
 
     public class VehicleEventArgs : EventArgs {
-        public VehicleInfo[] VehicleInfo { get; }
-
         public VehicleEventArgs(VehicleInfo[] vehicleInfo) {
             VehicleInfo = vehicleInfo;
         }
+
+        public VehicleInfo[] VehicleInfo { get; }
     }
 }

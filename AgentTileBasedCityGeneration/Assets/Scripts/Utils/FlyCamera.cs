@@ -1,11 +1,20 @@
 //https://gist.github.com/gunderson/d7f096bd07874f31671306318019d996
 
-using System;
 using UnityEngine;
 
 namespace Utils {
     [RequireComponent(typeof(Camera))]
     public class FlyCamera : MonoBehaviour {
+        private readonly float camSens = 0.25f; //How sensitive it with mouse
+
+        private Vector3
+            lastMouse = new(255, 255, 255); //kind of in the middle of the screen, rather than at the top (play)
+
+        private readonly float mainSpeed = 100.0f; //regular speed
+        private readonly float maxShift = 1000.0f; //Maximum speed when holdin gshift
+        private readonly float shiftAdd = 250.0f; //multiplied by how long shift is held.  Basically running
+
+        private float totalRun = 1.0f;
         /*
     Writen by Windexglow 11-13-10.  Use it, edit it, steal it I don't care.
     Converted to C# 27-02-13 - no credit wanted.
@@ -16,16 +25,6 @@ namespace Utils {
     space : Moves camera on X and Z axis only.  So camera doesn't gain any height*/
 
         private bool MouseLookEnabled { get; set; } = true;
-
-        private float mainSpeed = 100.0f; //regular speed
-        private float shiftAdd = 250.0f; //multiplied by how long shift is held.  Basically running
-        private float maxShift = 1000.0f; //Maximum speed when holdin gshift
-        private float camSens = 0.25f; //How sensitive it with mouse
-
-        private Vector3
-            lastMouse = new(255, 255, 255); //kind of in the middle of the screen, rather than at the top (play)
-
-        private float totalRun = 1.0f;
 
         public SelectableCamera Cam { get; private set; } = null!;
 

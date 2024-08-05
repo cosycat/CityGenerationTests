@@ -14,7 +14,7 @@ namespace Utils {
 
         private static BackgroundTask ScheduleLongMethod(bool throwException = false) {
             var sum = 0L;
-            return BackgroundCodeExecutor.ExecuteInBackground((cancelToken) => {
+            return BackgroundCodeExecutor.ExecuteInBackground(cancelToken => {
                 Debug.Log("Task started");
                 sum = 0L;
                 for (long i = 0; i < 10_000_000_000; i++) {

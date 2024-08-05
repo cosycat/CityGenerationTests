@@ -1,10 +1,8 @@
-using System;
-using FreeFormGraph.World;
+using Graph.World;
 using UnityEngine;
 
 namespace Utils {
     public class CameraController : MonoBehaviour {
-        private Camera Camera { get; set; }
         [field: SerializeField] private float CameraSpeed { get; set; } = 10f;
         [field: SerializeField] private float ZoomSpeed { get; set; } = 5f;
         [field: SerializeField] private float ZoomSpeedMultiplicator { get; set; } = 10f;
@@ -16,9 +14,10 @@ namespace Utils {
 
         [field: SerializeField] private float AllowedBounds { get; set; } = 2f;
         [field: SerializeField] private bool StartInWorldCenter { get; set; } = true;
-        [field: SerializeField] private bool AllowMovementOutOfBounds { get; set; } = false;
+        [field: SerializeField] private bool AllowMovementOutOfBounds { get; set; }
 
         private WorldGameObject world;
+        private Camera Camera { get; set; }
 
         private void Awake() {
             Camera = GetComponent<Camera>();
@@ -27,14 +26,6 @@ namespace Utils {
 
         private void Start() {
             SetCameraWorldCenter();
-        }
-
-        private void SetCameraWorldCenter() {
-            if (!StartInWorldCenter) return;
-            var position = transform.position;
-            position.x = world.Width / 2f;
-            position.y = world.Height / 2f;
-            transform.position = position;
         }
 
         private void Update() {
@@ -61,6 +52,14 @@ namespace Utils {
                 world.Height - minY < minY ? minY : world.Height - minY;
             position.x = Mathf.Clamp(position.x, minX, maxX);
             position.y = Mathf.Clamp(position.y, minY, maxY);
+            transform.position = position;
+        }
+
+        private void SetCameraWorldCenter() {
+            if (!StartInWorldCenter) return;
+            var position = transform.position;
+            position.x = world.Width / 2f;
+            position.y = world.Height / 2f;
             transform.position = position;
         }
 

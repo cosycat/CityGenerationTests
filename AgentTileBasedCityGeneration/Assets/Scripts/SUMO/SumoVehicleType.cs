@@ -7,10 +7,10 @@ namespace SUMO {
     [Serializable]
     public class SumoVehicleType {
         /// <summary>
-        /// The ID, i.e. the name of the vehicle type.
+        ///     The ID, i.e. the name of the vehicle type.
         /// </summary>
         [field: SerializeField]
-        public string Id { get; private set; }
+        public string Id { get; private set; } = null!;
 
         [field: SerializeField] public float MaxSpeed { get; private set; }
         [field: SerializeField] public float Length { get; private set; }
