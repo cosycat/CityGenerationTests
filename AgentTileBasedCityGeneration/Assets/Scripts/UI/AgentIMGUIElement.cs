@@ -1,5 +1,6 @@
 using System;
-using FreeFormGraph.Agents;
+using AgentSystem;
+using AgentSystem.Agents;
 using UnityEditor;
 using UnityEngine;
 

@@ -1,21 +1,15 @@
 #nullable enable
 using System;
-using System.Collections.Generic;
-using FreeFormGraph;
 using UnityEngine;
-using UnityEngine.Serialization;
 using Utils;
 
 namespace Simulation {
     public class Vehicle : MonoBehaviour {
-        
         [SerializeField] private VehicleSignal blinkerRight = null!;
         [SerializeField] private VehicleSignal blinkerLeft = null!;
         [SerializeField] private VehicleSignal brakeLight = null!;
-        
-        private string id = null!;
 
-        private SelectableCamera[] vehicleCameras = Array.Empty<SelectableCamera>();
+        private string id = null!;
 
         public string VehicleType { get; set; } = "car";
 
@@ -26,14 +20,15 @@ namespace Simulation {
                     Debug.LogError($"Vehicle ID already set: {id}");
                     return;
                 }
+
                 id = value;
                 name = $"Vehicle_{id}";
             }
         }
 
         public bool IsPlayerVehicle { get; private set; }
-        
-        public SelectableCamera[] VehicleCameras => vehicleCameras;
+
+        public SelectableCamera[] VehicleCameras { get; private set; } = Array.Empty<SelectableCamera>();
 
         private void Awake() {
             if (!Settings.UseVehicleSignals) {
@@ -42,17 +37,15 @@ namespace Simulation {
                 if (brakeLight != null) Destroy(brakeLight.gameObject);
             }
             else {
-                if (blinkerRight == null || blinkerLeft == null || brakeLight == null) {
-                    Debug.LogError($"Vehicle is set to use signals but has missing signal GameObjects: {blinkerRight}, {blinkerLeft}, {brakeLight}");
-                }
+                if (blinkerRight == null || blinkerLeft == null || brakeLight == null)
+                    Debug.LogError(
+                        $"Vehicle is set to use signals but has missing signal GameObjects: {blinkerRight}, {blinkerLeft}, {brakeLight}");
             }
         }
 
         private void Start() {
-            if (ID is null or "") {
-                Debug.LogError($"Vehicle ID not set: {ID ?? "null"}");
-            }
-            vehicleCameras = GetComponentsInChildren<SelectableCamera>(true);
+            if (ID is null or "") Debug.LogError($"Vehicle ID not set: {ID ?? "null"}");
+            VehicleCameras = GetComponentsInChildren<SelectableCamera>(true);
         }
 
         public void UpdatePosition(Vector3 position, Quaternion rotation) {
@@ -72,7 +65,7 @@ namespace Simulation {
         public void SetPlayerVehicle(bool isPlayerVehicle) {
             // if (IsPlayerVehicle == isPlayerVehicle) return;
             UpdateSignals(false, false, false);
-            
+
             IsPlayerVehicle = isPlayerVehicle;
         }
     }

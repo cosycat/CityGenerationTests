@@ -267,7 +267,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3950316600548098775, guid: e87f31d4faaab46c69c46cdba82278b3, type: 3}
       propertyPath: m_Name
-      value: AgentManagerStartStop
+      value: AgentManagerDebugger
+      objectReference: {fileID: 0}
+    - target: {fileID: 3950316600548098775, guid: e87f31d4faaab46c69c46cdba82278b3, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -285,6 +289,14 @@ PrefabInstance:
     - target: {fileID: 369847435512667189, guid: ff5a2fb049189417cb2c167220e497f9, type: 3}
       propertyPath: m_Name
       value: SumoManager
+      objectReference: {fileID: 0}
+    - target: {fileID: 638975536412610055, guid: ff5a2fb049189417cb2c167220e497f9, type: 3}
+      propertyPath: <SimulationOptions>k__BackingField.<RandomFlowCount>k__BackingField
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 638975536412610055, guid: ff5a2fb049189417cb2c167220e497f9, type: 3}
+      propertyPath: <SimulationOptions>k__BackingField.<RandomTripCount>k__BackingField
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 1731860193232760171, guid: ff5a2fb049189417cb2c167220e497f9, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1009,6 +1021,14 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 814742543712103620, guid: e77a622ae003447748ba18d541cd5e3d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2413731996329675132, guid: e77a622ae003447748ba18d541cd5e3d, type: 3}
+      propertyPath: seed
+      value: 333591908
+      objectReference: {fileID: 0}
+    - target: {fileID: 2413731996329675132, guid: e77a622ae003447748ba18d541cd5e3d, type: 3}
+      propertyPath: useRandomSeed
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2413731996329675132, guid: e77a622ae003447748ba18d541cd5e3d, type: 3}

@@ -3,7 +3,6 @@ using UnityEngine;
 
 namespace Utils {
     public class BackgroundCodeExecutorTester : MonoBehaviour {
-
         private void Start() {
             // Testing the BackgroundCodeExecutor
             Debug.Log("Start");
@@ -15,7 +14,7 @@ namespace Utils {
 
         private static BackgroundTask ScheduleLongMethod(bool throwException = false) {
             var sum = 0L;
-            return BackgroundCodeExecutor.ExecuteInBackground((cancelToken) => {
+            return BackgroundCodeExecutor.ExecuteInBackground(cancelToken => {
                 Debug.Log("Task started");
                 sum = 0L;
                 for (long i = 0; i < 10_000_000_000; i++) {
@@ -25,20 +24,16 @@ namespace Utils {
                         Debug.Log("Task is being canceled");
                         cancelToken.ThrowIfCancellationRequested();
                     }
-                    if (throwException && i == 5_000_000_000) {
-                        throw new Exception("Exception in task");
-                    }
+
+                    if (throwException && i == 5_000_000_000) throw new Exception("Exception in task");
                 }
+
                 Debug.Log("Task done: " + sum);
             }, () => {
                 // ReSharper disable once ObjectCreationAsStatement
                 new GameObject("Finished BackgroundCodeExecutor Task");
                 Debug.Log("OnComplete: " + sum);
-            }, exception => {
-                Debug.Log("OnError: " + exception);
-            }, () => {
-                Debug.Log("OnCancel: " + sum);
-            });
+            }, exception => { Debug.Log("OnError: " + exception); }, () => { Debug.Log("OnCancel: " + sum); });
         }
     }
 }

@@ -6,19 +6,21 @@ using UnityEngine;
 namespace SUMO {
     [Serializable]
     public class SumoVehicleType {
-
         /// <summary>
-        /// The ID, i.e. the name of the vehicle type.
+        ///     The ID, i.e. the name of the vehicle type.
         /// </summary>
-        [field:SerializeField] public string Id { get; private set; }
-        [field:SerializeField] public float MaxSpeed { get; private set; }
-        [field:SerializeField] public float Length { get; private set; }
-        [field:SerializeField] public float Accel { get; private set; }
-        [field:SerializeField] public float Decel { get; private set; }
+        [field: SerializeField]
+        public string Id { get; private set; } = null!;
+
+        [field: SerializeField] public float MaxSpeed { get; private set; }
+        [field: SerializeField] public float Length { get; private set; }
+        [field: SerializeField] public float Accel { get; private set; }
+        [field: SerializeField] public float Decel { get; private set; }
 
         [field: SerializeField] public SumoVehicleClass VehicleClass { get; private set; } = SumoVehicleClass.Passenger;
 
         [SerializeField] private Vehicle? prefab;
+
         public Vehicle? Prefab {
             get => prefab;
             private set => prefab = value;
@@ -33,7 +35,7 @@ namespace SUMO {
         //     Prefab = prefab;
         // }
     }
-    
+
     public enum SumoVehicleClass {
         Passenger,
         Bus,
@@ -42,6 +44,6 @@ namespace SUMO {
         Taxi,
         Bicycle,
         Pedestrian,
-        Motorcycle,
+        Motorcycle
     }
 }

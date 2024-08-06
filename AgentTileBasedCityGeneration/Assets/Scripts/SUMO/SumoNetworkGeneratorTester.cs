@@ -1,12 +1,12 @@
-using FreeFormGraph.LineBased;
-using FreeFormGraph.World;
+using Graph.LineBased;
+using Graph.World;
 using UnityEngine;
 
 namespace SUMO {
     public class SumoNetworkGeneratorTester : MonoBehaviour {
-        private SumoNetworkConverter sumoNetworkConverter;
         [SerializeField] private bool openFolderAfterGeneration = true;
         [SerializeField] private bool openSumoGUIAfterGeneration = true;
+        private SumoNetworkConverter sumoNetworkConverter;
 
         private void Awake() {
             sumoNetworkConverter = FindObjectOfType<SumoNetworkConverter>();
@@ -19,10 +19,10 @@ namespace SUMO {
         private void Start() {
             sumoNetworkConverter.GenerateNetwork(LineGraphTestCreator.GenerateHShapedGraph(),
                 FindObjectOfType<WorldGameObject>(),
-                convertToSumoNetwork: false, 
-                runSimulationAfterGeneration: false, 
-                openFolderAfterGeneration: openFolderAfterGeneration,
-                openSumoGUIAfterGeneration: openSumoGUIAfterGeneration);
+                false,
+                false,
+                openFolderAfterGeneration,
+                openSumoGUIAfterGeneration);
         }
     }
 }

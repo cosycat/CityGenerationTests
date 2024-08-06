@@ -1,24 +1,22 @@
 #nullable enable
-using System;
-using FreeFormGraph;
-using FreeFormGraph.Agents;
-using FreeFormGraph.World;
+using AgentSystem;
+using Graph;
+using Graph.World;
 using Simulation;
 using UnityEngine;
 
 namespace SUMO {
     [RequireComponent(typeof(SumoNetworkConverter))]
     public class SumoUIHandler : MonoBehaviour {
-        
-        [SerializeField] private bool runSimulationAfterGeneration = false;
+        [SerializeField] private bool runSimulationAfterGeneration;
         [SerializeField] private bool openFolderAfterGeneration = true;
-        [SerializeField] private bool openSumoGUIAfterGeneration = false;
-        
-        private SumoNetworkConverter networkConverter = null!;
+        [SerializeField] private bool openSumoGUIAfterGeneration;
         private IStreetGraph graph = null!;
-        private IWorld world = null!;
+
+        private SumoNetworkConverter networkConverter = null!;
         private SimulationManager simulationManager = null!;
-        
+        private IWorld world = null!;
+
         private void Awake() {
             networkConverter = GetComponent<SumoNetworkConverter>();
             graph = FindObjectOfType<StreetGraphGameObject>();
@@ -45,14 +43,10 @@ namespace SUMO {
 
             if (networkConverter.IsSimulationRunning) {
                 if (simulationManager.IsPaused) {
-                    if (GUILayout.Button("Resume Simulation")) {
-                        simulationManager.ResumeSimulation();
-                    }
+                    if (GUILayout.Button("Resume Simulation")) simulationManager.ResumeSimulation();
                 }
                 else {
-                    if (GUILayout.Button("Pause Simulation")) {
-                        simulationManager.PauseSimulation();
-                    }
+                    if (GUILayout.Button("Pause Simulation")) simulationManager.PauseSimulation();
                 }
             }
 
