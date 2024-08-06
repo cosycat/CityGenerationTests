@@ -28,8 +28,9 @@ namespace FreeFormGraph.Agents {
         public SettlementDeveloperAgent(BudgetPointOfInterest pointOfInterest, IWorld world, List<SdaParameters> parameters) {
             Debug.Assert(pointOfInterest != null);
             this.pointOfInterest = pointOfInterest!;
-            this.allParameters = (parameters != null && parameters.Count > 0)
-                ? parameters
+            this.allParameters = parameters is { Count: > 0 }
+                // copy each SdaParameters to avoid changing the original list
+                ? parameters.Select(p => new SdaParameters(p)).ToList()
                 : new List<SdaParameters> { new() };
             CreateStartNode(world, GetCurrentParamaterSet());
         }
