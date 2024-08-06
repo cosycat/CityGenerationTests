@@ -243,7 +243,10 @@ namespace FreeFormGraph.Agents {
 
         public void RequestStopAgents(Action onStopped) {
             lock (stopRequestLock) {
-                if (!IsAgentRunning) return;
+                if (!IsAgentRunning) {
+                    onStopped();
+                    return;
+                }
                 stopRequested = true;
                 cancellationTokenSource!.Cancel();
                 onStoppedMethod = onStopped;

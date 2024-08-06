@@ -26,21 +26,16 @@ namespace SUMO {
             simulationManager = FindObjectOfType<SimulationManager>();
         }
 
+        private void Update() {
+            if (Input.GetKeyDown(KeyCode.Return)) {
+                ConvertToSumo();
+            }
+        }
+
         private void OnGUI() {
             GUILayout.BeginArea(new Rect(10, 500, 150, 100));
             if (GUILayout.Button("Convert to Sumo")) {
-                AgentManager.Instance.RequestStopAgents(() => {
-                    networkConverter.GenerateNetwork(graph, world,
-                        convertToSumoNetwork: false,
-                        runSimulationAfterGeneration: runSimulationAfterGeneration, 
-                        openFolderAfterGeneration: openFolderAfterGeneration, 
-                        openSumoGUIAfterGeneration: openSumoGUIAfterGeneration,
-                        onDone: () => {
-                            Debug.Log("Done generating SUMO network.");
-                            simulationManager.StartSimulation();
-                            // AgentManager.Instance.RestartAgents();
-                        });
-                });
+                ConvertToSumo();
             }
 
             if (!networkConverter.IsNetworkGenerated) {
@@ -62,6 +57,21 @@ namespace SUMO {
             }
 
             GUILayout.EndArea();
+        }
+
+        private void ConvertToSumo() {
+            AgentManager.Instance.RequestStopAgents(() => {
+                networkConverter.GenerateNetwork(graph, world,
+                    convertToSumoNetwork: false,
+                    runSimulationAfterGeneration: runSimulationAfterGeneration, 
+                    openFolderAfterGeneration: openFolderAfterGeneration, 
+                    openSumoGUIAfterGeneration: openSumoGUIAfterGeneration,
+                    onDone: () => {
+                        Debug.Log("Done generating SUMO network.");
+                        simulationManager.StartSimulation();
+                        // AgentManager.Instance.RestartAgents();
+                    });
+            });
         }
     }
 }
