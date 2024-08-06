@@ -12,11 +12,15 @@ namespace FreeFormGraph.Agents {
     
     [Serializable]
     public abstract class AgentVariable<T> : IAgentVariable {
+        [SerializeField] private T value;
         
-        [field: SerializeField] public virtual T Value { get; set; }
+        public virtual T Value {
+            get => value;
+            set => this.value = value;
+        }
 
         protected AgentVariable(string name, T value, string? description = null) {
-            Value = value;
+            this.value = value;
             Description = description;
             Name = name;
         }
