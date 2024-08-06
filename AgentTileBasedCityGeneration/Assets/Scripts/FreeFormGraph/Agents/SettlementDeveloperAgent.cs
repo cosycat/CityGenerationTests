@@ -93,7 +93,7 @@ namespace FreeFormGraph.Agents {
             var combinedAngle = inStreetAngle + angleOffset + angleRandom;
             var length = (float)random.NextDouble() * (parameters.MaxStreetLength - parameters.MinStreetLength) + parameters.MinStreetLength; //UnityEngine.Random.Range(minStreetLength, maxStreetLength);
             var newPointPosition = new Vector2(node.Position.x + Mathf.Cos(combinedAngle) * length, node.Position.y + Mathf.Sin(combinedAngle) * length);
-            var newPoint = parameters.SnapToGrid ? new Vector2(Mathf.Round(newPointPosition.x), Mathf.Round(newPointPosition.y)) : newPointPosition;
+            var newPoint = newPointPosition;
             
             // TODO check for steepness with parameter
             // TODO check if the new angle is in a legal range for every edge
@@ -102,19 +102,20 @@ namespace FreeFormGraph.Agents {
                 return false;
             }
             if(!IsRoadWithinBudget(world, node.Position, newPoint, parameters)) {
-                //Debug.Log($"PoIDeveloperAgent: New point {newPoint} is too expensive.");
+                // Debug.Log($"PoIDeveloperAgent: New point {newPoint} is too expensive.");
                 return false;
             }
             if(world.StreetGraph.TryFindClosestNode(newPoint, out _, length)) {
-                //Debug.Log($"PoIDeveloperAgent: New point {newPoint} is too close to an existing node: ");
+                // Debug.Log($"PoIDeveloperAgent: New point {newPoint} is too close to an existing node: ");
+                // Debug.Log($"MinStreetLength: {parameters.MinStreetLength.Value}, MaxStreetLength: {parameters.MaxStreetLength.Value}, MinNodeEdgeDistance: {parameters.MinNodeEdgeDistance.Value}, AngleOffset: {parameters.AngleOffset.Value}, AngleRandomMax: {parameters.AngleRandomMax.Value}, MaxConnectionDistance: {parameters.MaxConnectionDistance.Value}, ConnectCulDeSacs: {parameters.ConnectCulDeSacs.Value}, ConnectCulDeSacWithNonCulDeSac: {parameters.ConnectCulDeSacWithNonCulDeSac.Value}, AngleInBothDirections: {parameters.AngleInBothDirections.Value}, GrowRoadType: {parameters.GrowRoadType}, ConnectRoadType: {parameters.ConnectRoadType}, GrowRadiusAddition: {parameters.GrowRadiusAddition}, MaxSlope: {parameters.MaxSlope}");
                 return false;
             }
             if (world.StreetGraph.TryFindClosestEdge(newPoint, out _, out _, parameters.MinNodeEdgeDistance)) {
-                //Debug.Log($"PoIDeveloperAgent: New point {newPoint} is too close to an existing edge: ");
+                // Debug.Log($"PoIDeveloperAgent: New point {newPoint} is too close to an existing edge: ");
                 return false;
             }
             if (!world.StreetGraph.CreateEdge(node, newPoint, out var newEdge, out var newNode, out _, out _, failIfIntersection: true)) {
-                //Debug.LogWarning($"Could not create a new node for the PoIDeveloperAgent at {newPoint} from {node.Position} {newNode.Position} edge: ({newEdge == null}).");
+                // Debug.LogWarning($"Could not create a new node for the PoIDeveloperAgent at {newPoint} from {node.Position} {newNode.Position} edge: ({newEdge == null}).");
                 return false;
             }
             newEdge.Type = parameters.GrowRoadType;
@@ -146,7 +147,7 @@ namespace FreeFormGraph.Agents {
                 Vector2 startPos, 
                 Vector2 endPos, 
                 SdaParameters parameters) {
-            Debug.Assert(startPos != endPos);
+            Debug.Assert(startPos != endPos, "PoIDeveloperAgent::CostForRoad - Start and end position are the same.");
             var poiDistanceCost = Vector2.Distance(pointOfInterest.Position, endPos);
             var roadLength = Vector2.Distance(startPos, endPos);
             var elevationStart = world.GetHeightAt(startPos.x, startPos.y);
@@ -250,21 +251,20 @@ namespace FreeFormGraph.Agents {
         [Serializable]
         public class SdaParameters {
             [field: SerializeField] public int time = -1;
-            [field: SerializeField] public AgentVariableFloat MinStreetLength { get; set; } = new("Min Street Length", 2f, 0.5f, 20f);
-            [field: SerializeField] public AgentVariableFloat MaxStreetLength { get; set; } = new("Max Street Length", 5f, 1, 50f);
+            [field: SerializeField] public AgentVariableFloat MinStreetLength { get; } = new("Min Street Length", 2f, 0.5f, 20f);
+            [field: SerializeField] public AgentVariableFloat MaxStreetLength { get; } = new("Max Street Length", 5f, 1, 50f);
             [Tooltip("Minimum distance a new node has to have to an edge.")]
-            [field: SerializeField] public AgentVariableFloat MinNodeEdgeDistance { get; set; } = new("Min Distance Node Edge", 0.7f, 0.1f, 10f);
-            [field: SerializeField] public AgentVariableFloat AngleOffset { get; set; } = new("Angle Offset", Mathf.Deg2Rad * 90f, -(Mathf.Deg2Rad * 180f), Mathf.Deg2Rad * 180f);
-            [field: SerializeField] public AgentVariableFloat AngleRandomMax { get; set; } = new("Ange Randomness", Mathf.Deg2Rad * 0f, 0, Mathf.Deg2Rad * 180f);
+            [field: SerializeField] public AgentVariableFloat MinNodeEdgeDistance { get; } = new("Min Distance Node Edge", 0.7f, 0.1f, 10f);
+            [field: SerializeField] public AgentVariableFloat AngleOffset { get; } = new("Angle Offset", Mathf.Deg2Rad * 90f, -(Mathf.Deg2Rad * 180f), Mathf.Deg2Rad * 180f);
+            [field: SerializeField] public AgentVariableFloat AngleRandomMax { get; } = new("Ange Randomness", Mathf.Deg2Rad * 0f, 0, Mathf.Deg2Rad * 180f);
             [Tooltip("Maximum connection distance for cul-de-sacs to be connected.")]
-            [field: SerializeField] public AgentVariableFloat MaxConnectionDistance { get; set; } = new("Max Connection Distance", 3.5f, 0.5f, 20f);
-            [field: SerializeField] public AgentVariableBool SnapToGrid { get; set; } = new("Snap to Grid", false);
-            [field: SerializeField] public AgentVariableEnum<ConnectionHandling> ConnectCulDeSacs { get; set; } = new("Cul de Sacs Connection Version", ConnectionHandling.ConnectSlowly);
-            [field: SerializeField] public AgentVariableBool ConnectCulDeSacWithNonCulDeSac { get; set; } = new("Connect Cul de Sacs with non-Cul de sacs", true);
-            [field: SerializeField] public AgentVariableBool AngleInBothDirections { get; set; } = new("Angle in Both Directions", true);
+            [field: SerializeField] public AgentVariableFloat MaxConnectionDistance { get; } = new("Max Connection Distance", 3.5f, 0.5f, 20f);
+            [field: SerializeField] public AgentVariableEnum<ConnectionHandling> ConnectCulDeSacs { get; } = new("Cul de Sacs Connection Version", ConnectionHandling.ConnectSlowly);
+            [field: SerializeField] public AgentVariableBool ConnectCulDeSacWithNonCulDeSac { get; } = new("Connect Cul de Sacs with non-Cul de sacs", true);
+            [field: SerializeField] public AgentVariableBool AngleInBothDirections { get; } = new("Angle in Both Directions", true);
             
             public List<IAgentVariable> AllVariables => new() {
-                MinStreetLength, MaxStreetLength, MinNodeEdgeDistance, AngleOffset, AngleRandomMax, MaxConnectionDistance, SnapToGrid, ConnectCulDeSacs, ConnectCulDeSacWithNonCulDeSac, AngleInBothDirections
+                MinStreetLength, MaxStreetLength, MinNodeEdgeDistance, AngleOffset, AngleRandomMax, MaxConnectionDistance, ConnectCulDeSacs, ConnectCulDeSacWithNonCulDeSac, AngleInBothDirections
             };
             
             /// <summary>
@@ -304,7 +304,6 @@ namespace FreeFormGraph.Agents {
                 AngleOffset.Value = other.AngleOffset;
                 AngleRandomMax.Value = other.AngleRandomMax;
                 MaxConnectionDistance.Value = other.MaxConnectionDistance;
-                SnapToGrid.Value = other.SnapToGrid;
                 ConnectCulDeSacs.Value = other.ConnectCulDeSacs;
                 ConnectCulDeSacWithNonCulDeSac.Value = other.ConnectCulDeSacWithNonCulDeSac;
                 AngleInBothDirections.Value = other.AngleInBothDirections;
@@ -321,7 +320,6 @@ namespace FreeFormGraph.Agents {
                 AngleOffset.Value = angleOffset;
                 AngleRandomMax.Value = angleRandomMax;
                 MaxConnectionDistance.Value = maxConnectionDistance;
-                SnapToGrid.Value = snapToGrid;
                 ConnectCulDeSacs.Value = connectCulDeSacs;
                 ConnectCulDeSacWithNonCulDeSac.Value = connectCulDeSacWithNonCulDeSac;
                 AngleInBothDirections.Value = angleInBothDirections;

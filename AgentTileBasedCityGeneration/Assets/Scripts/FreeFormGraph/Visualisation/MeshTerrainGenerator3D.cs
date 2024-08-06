@@ -155,12 +155,12 @@ namespace FreeFormGraph.Visualisation {
             var step = forestStepSize;
 
             void placeObjectAt(int x, int y, List<GameObject> prefabs, float elevation, string name) {
+                if (prefabs.Count == 0) return;
                 if(objectDetailMap.ContainsKey((x,y))) return;
                 var treeIndex = (x*y) % prefabs.Count;
-                var g = Instantiate(prefabs[treeIndex]);
+                var g = Instantiate(prefabs[treeIndex], this.transform, true);
                 g.transform.position = new Vector3(x,elevation,y);
                 g.transform.Rotate(new Vector3(0, x*y, 0));
-                g.transform.SetParent(this.transform);
                 objectDetailMap[(x,y)] = g;
             }
 
