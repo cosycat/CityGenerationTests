@@ -2,6 +2,10 @@
 using UnityEngine;
 
 namespace Utils {
+    /// <summary>
+    ///    A camera that can be selected to be active or inactive.
+    ///    Used to cycle through different cameras of a vehicle.
+    /// </summary>
     [RequireComponent(typeof(Camera))]
     [RequireComponent(typeof(AudioListener))]
     public class SelectableCamera : MonoBehaviour {

@@ -1,6 +1,6 @@
 using System;
 
-namespace UI {
+namespace AgentSystem.UI {
     [Serializable]
     public class IMGUISettings {
         public int width = 200;

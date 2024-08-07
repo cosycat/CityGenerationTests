@@ -1,10 +1,9 @@
 using System;
-using AgentSystem;
 using AgentSystem.Agents;
 using UnityEditor;
 using UnityEngine;
 
-namespace UI {
+namespace AgentSystem.UI {
     /// <summary>
     /// This class is responsible for displaying one agent in the IMGUI.
     /// </summary>

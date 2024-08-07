@@ -1,8 +1,7 @@
 using System.Collections.Generic;
-using AgentSystem;
 using UnityEngine;
 
-namespace UI {
+namespace AgentSystem.UI {
     /// <summary>
     /// This class is responsible for managing the IMGUI for all the agents.
     /// </summary>
