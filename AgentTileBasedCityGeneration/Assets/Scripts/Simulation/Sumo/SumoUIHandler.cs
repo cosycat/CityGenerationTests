@@ -2,10 +2,9 @@
 using AgentSystem;
 using Graph;
 using Graph.World;
-using Simulation;
 using UnityEngine;
 
-namespace SUMO {
+namespace Simulation.Sumo {
     [RequireComponent(typeof(SumoNetworkConverter))]
     public class SumoUIHandler : MonoBehaviour {
         [SerializeField] private bool runSimulationAfterGeneration;

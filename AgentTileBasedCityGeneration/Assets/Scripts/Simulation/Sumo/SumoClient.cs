@@ -4,10 +4,9 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using CodingConnected.TraCI.NET;
 using CodingConnected.TraCI.NET.Types;
-using Simulation;
 using UnityEngine;
 
-namespace SUMO {
+namespace Simulation.Sumo {
     /// <summary>
     ///     Starts a connection to a SUMO server and forwards the simulation.
     /// </summary>
@@ -20,7 +19,7 @@ namespace SUMO {
             TraCIConstants.VAR_SIGNALS, TraCIConstants.VAR_TYPE
         };
 
-        private readonly List<VehicleInfo> updatedVehicleInfoList = new();
+        private readonly List<SumoVehicleInfo> updatedVehicleInfoList = new();
 
         private readonly object updatedVehicleInfoListLock = new();
         private TraCIClient client = new();
@@ -106,7 +105,7 @@ namespace SUMO {
 
             Debug.Assert(position3D != null && angle != null && speed != null && signals != null && vehicleType != null,
                 $"Some values are null: {position3D}, {angle}, {speed}, {signals}, {vehicleType}");
-            var vehicleInfo = new VehicleInfo(id, (float)position3D!.X, (float)position3D.Y, (float)position3D.Z,
+            var vehicleInfo = new SumoVehicleInfo(id, (float)position3D!.X, (float)position3D.Y, (float)position3D.Z,
                 angle!.Value, signals!.Value, speed!.Value, vehicleType!);
             lock (updatedVehicleInfoListLock) {
                 updatedVehicleInfoList.Add(vehicleInfo);
@@ -159,7 +158,7 @@ namespace SUMO {
             foreach (var id in departedIDList.Content) client.Vehicle.Subscribe(id, 0, 100_000, VariablesToSubscribeTo);
 
             // Inform about all vehicles that have been updated
-            var vehicleInfoList = new List<VehicleInfo>();
+            var vehicleInfoList = new List<SumoVehicleInfo>();
             lock (updatedVehicleInfoListLock) {
                 vehicleInfoList.AddRange(updatedVehicleInfoList);
                 updatedVehicleInfoList.Clear();
@@ -180,7 +179,7 @@ namespace SUMO {
 
         public event EventHandler<VehicleEventArgs>? SimulationAdvancedOneStep;
 
-        protected virtual void OnSimulationAdvancedOneStep(VehicleInfo[] vehicleInfo) {
+        protected virtual void OnSimulationAdvancedOneStep(SumoVehicleInfo[] vehicleInfo) {
             SimulationAdvancedOneStep?.Invoke(this, new VehicleEventArgs(vehicleInfo));
         }
 
@@ -198,10 +197,10 @@ namespace SUMO {
     }
 
     public class VehicleEventArgs : EventArgs {
-        public VehicleEventArgs(VehicleInfo[] vehicleInfo) {
+        public VehicleEventArgs(SumoVehicleInfo[] vehicleInfo) {
             VehicleInfo = vehicleInfo;
         }
 
-        public VehicleInfo[] VehicleInfo { get; }
+        public SumoVehicleInfo[] VehicleInfo { get; }
     }
 }

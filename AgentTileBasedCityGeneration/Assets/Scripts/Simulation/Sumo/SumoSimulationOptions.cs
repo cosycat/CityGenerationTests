@@ -3,10 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Graph;
-using Simulation;
 using UnityEngine;
 
-namespace SUMO {
+namespace Simulation.Sumo {
     [Serializable]
     public class SumoSimulationOptions {
         [field: Tooltip("The length of each simulation step in seconds.")]

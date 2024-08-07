@@ -2,7 +2,7 @@ using Graph.LineBased;
 using Graph.World;
 using UnityEngine;
 
-namespace SUMO {
+namespace Simulation.Sumo {
     public class SumoNetworkGeneratorTester : MonoBehaviour {
         [SerializeField] private bool openFolderAfterGeneration = true;
         [SerializeField] private bool openSumoGUIAfterGeneration = true;

@@ -8,7 +8,7 @@ using Graph.World;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-namespace SUMO {
+namespace Simulation.Sumo {
     internal class SumoFileGenerator {
         private const string EDGES_FILE_NAME = "edges.edg.xml";
         private const string NODES_FILE_NAME = "nodes.nod.xml";

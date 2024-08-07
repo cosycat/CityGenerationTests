@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Graph;
 using Graph.World;
-using SUMO;
+using Simulation.Sumo;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -86,21 +86,21 @@ namespace Simulation {
             }
         }
 
-        private void UpdateOrCreateVehicle(VehicleInfo vehicleInfo) {
+        private void UpdateOrCreateVehicle(SumoVehicleInfo sumoVehicleInfo) {
             var position = new Vector3(
-                vehicleInfo.positionX / Constants.METERS_PER_UNIT,
-                vehicleInfo.positionZ,
-                vehicleInfo.positionY / Constants.METERS_PER_UNIT);
-            var id = vehicleInfo.id;
+                sumoVehicleInfo.positionX / Constants.METERS_PER_UNIT,
+                sumoVehicleInfo.positionZ,
+                sumoVehicleInfo.positionY / Constants.METERS_PER_UNIT);
+            var id = sumoVehicleInfo.id;
             if (vehicles.TryGetValue(id, out var vehicle)) {
                 // Update Vehicle state
-                vehicle.UpdatePosition(position, Quaternion.Euler(0, vehicleInfo.rotation, 0));
-                vehicle.UpdateSignals(vehicleInfo.BlinkerRight, vehicleInfo.BlinkerLeft, vehicleInfo.BrakeLight);
+                vehicle.UpdatePosition(position, Quaternion.Euler(0, sumoVehicleInfo.rotation, 0));
+                vehicle.UpdateSignals(sumoVehicleInfo.BlinkerRight, sumoVehicleInfo.BlinkerLeft, sumoVehicleInfo.BrakeLight);
             }
             else {
                 // Add new Vehicle
-                var prefab = SimulationOptions.GetVehiclePrefab(vehicleInfo.vehicleType);
-                vehicle = Instantiate(prefab, position, Quaternion.Euler(0, vehicleInfo.rotation, 0));
+                var prefab = SimulationOptions.GetVehiclePrefab(sumoVehicleInfo.vehicleType);
+                vehicle = Instantiate(prefab, position, Quaternion.Euler(0, sumoVehicleInfo.rotation, 0));
                 vehicle.ID = id;
                 vehicle.transform.parent = vehicleParent.transform;
                 vehicles.Add(id, vehicle);
@@ -130,9 +130,9 @@ namespace Simulation {
             sumoClient?.ResumeClient();
         }
 
-        public VehicleInfo? GetPlayerVehicleInfo() {
+        public SumoVehicleInfo? GetPlayerVehicleInfo() {
             if (PlayerVehicle == null) return null;
-            return new VehicleInfo(PlayerVehicle.ID, PlayerVehicle.transform.position.x / Constants.METERS_PER_UNIT,
+            return new SumoVehicleInfo(PlayerVehicle.ID, PlayerVehicle.transform.position.x / Constants.METERS_PER_UNIT,
                 PlayerVehicle.transform.position.z / Constants.METERS_PER_UNIT, PlayerVehicle.transform.position.y,
                 PlayerVehicle.transform.rotation.eulerAngles.y, 0, 0,
                 PlayerVehicle.VehicleType);

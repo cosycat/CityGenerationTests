@@ -1,9 +1,8 @@
 #nullable enable
 using System;
-using Simulation;
 using UnityEngine;
 
-namespace SUMO {
+namespace Simulation.Sumo {
     [Serializable]
     public class SumoVehicleType {
         /// <summary>

@@ -1,7 +1,7 @@
 #nullable enable
 using System;
 
-namespace SUMO {
+namespace Simulation.Sumo {
     /// <summary>
     ///     Class defining edge types for SUMO.
     ///     Descriptions directly taken from https://sumo.dlr.de/docs/SUMO_edge_type_file.html

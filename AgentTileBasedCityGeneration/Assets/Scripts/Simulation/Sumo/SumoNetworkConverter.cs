@@ -8,7 +8,7 @@ using Graph.World;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
-namespace SUMO {
+namespace Simulation.Sumo {
     /// <summary>
     ///     Generates a SUMO network from a given graph.
     /// </summary>

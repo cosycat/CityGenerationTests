@@ -1,9 +1,9 @@
 #nullable enable
 using System;
 
-namespace SUMO {
+namespace Simulation.Sumo {
     [Serializable]
-    public class VehicleInfo {
+    public class SumoVehicleInfo {
         public string id;
         public float positionX;
         public float positionY;
@@ -23,7 +23,7 @@ namespace SUMO {
         public float speed;
         public string vehicleType;
 
-        public VehicleInfo(string id, float positionX, float positionY, float positionZ, float rotation, int signals,
+        public SumoVehicleInfo(string id, float positionX, float positionY, float positionZ, float rotation, int signals,
             float speed, string vehicleType) {
             this.id = id;
             this.positionX = positionX;
