@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Graph.World;
 using UnityEngine;
 
-namespace Graph.Visualisation {
+namespace Graph.Visualization {
     public class GraphVisualizer : MonoBehaviour {
         /// <summary>
         ///     Road thickness describes how thick the road in world units is.

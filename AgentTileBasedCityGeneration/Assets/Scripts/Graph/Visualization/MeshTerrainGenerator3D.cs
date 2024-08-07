@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using Graph.World;
 using UnityEngine;
 
-namespace Graph.Visualisation {
+namespace Graph.Visualization {
     public class MeshTerrainGenerator3D : Terrain3DGameObject {
         [SerializeField] public Material material;
 

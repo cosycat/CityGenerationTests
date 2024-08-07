@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Graph.World;
 
-namespace Graph.Visualisation {
+namespace Graph.Visualization {
     public interface ITerrainGenerator {
         /// <summary>
         ///     Setting a certain height in the world based on world units (see Constants.METERS_PER_UNIT).

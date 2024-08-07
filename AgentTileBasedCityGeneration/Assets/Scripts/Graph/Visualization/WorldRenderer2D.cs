@@ -1,7 +1,7 @@
 using Graph.World;
 using UnityEngine;
 
-namespace Graph.Visualisation {
+namespace Graph.Visualization {
     public class WorldRenderer2D : MonoBehaviour {
         [SerializeField] public Material material;
 
