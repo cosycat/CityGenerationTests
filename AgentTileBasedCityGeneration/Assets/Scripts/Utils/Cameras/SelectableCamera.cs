@@ -1,7 +1,7 @@
 #nullable enable
 using UnityEngine;
 
-namespace Utils {
+namespace Utils.Cameras {
     /// <summary>
     ///    A camera that can be selected to be active or inactive.
     ///    Used to cycle through different cameras of a vehicle.

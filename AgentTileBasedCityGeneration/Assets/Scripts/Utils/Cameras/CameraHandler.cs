@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using Simulation;
 using UnityEngine;
 
-namespace Utils {
+namespace Utils.Cameras {
     public class CameraHandler : MonoBehaviour {
         private readonly List<SelectableCamera> allCameras = new();
         private int currentCameraIndex;

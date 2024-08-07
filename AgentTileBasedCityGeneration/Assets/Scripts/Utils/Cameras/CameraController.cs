@@ -1,7 +1,7 @@
 using Graph.World;
 using UnityEngine;
 
-namespace Utils {
+namespace Utils.Cameras {
     public class CameraController : MonoBehaviour {
         [field: SerializeField] private float CameraSpeed { get; set; } = 10f;
         [field: SerializeField] private float ZoomSpeed { get; set; } = 5f;
@@ -17,10 +17,10 @@ namespace Utils {
         [field: SerializeField] private bool AllowMovementOutOfBounds { get; set; }
 
         private WorldGameObject world;
-        private Camera Camera { get; set; }
+        private UnityEngine.Camera Camera { get; set; }
 
         private void Awake() {
-            Camera = GetComponent<Camera>();
+            Camera = GetComponent<UnityEngine.Camera>();
             world = FindObjectOfType<WorldGameObject>();
         }
 

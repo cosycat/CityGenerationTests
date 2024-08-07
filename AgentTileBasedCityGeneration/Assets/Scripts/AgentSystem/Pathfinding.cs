@@ -8,6 +8,7 @@ using Graph;
 using Graph.World;
 using UnityEngine;
 using Utils;
+using Utils.DataStructures;
 using Debug = UnityEngine.Debug;
 
 namespace AgentSystem {

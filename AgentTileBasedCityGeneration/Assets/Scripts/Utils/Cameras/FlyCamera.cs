@@ -2,8 +2,8 @@
 
 using UnityEngine;
 
-namespace Utils {
-    [RequireComponent(typeof(Camera))]
+namespace Utils.Cameras {
+    [RequireComponent(typeof(UnityEngine.Camera))]
     public class FlyCamera : MonoBehaviour {
         private readonly float camSens = 0.25f; //How sensitive it with mouse
 
