@@ -974,6 +974,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7595262672846381649, guid: 7c9b223ce116e4765911d4e7e4bca2df, type: 3}
+      propertyPath: width
+      value: 1000
+      objectReference: {fileID: 0}
+    - target: {fileID: 7595262672846381649, guid: 7c9b223ce116e4765911d4e7e4bca2df, type: 3}
+      propertyPath: height
+      value: 1000
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1048,17 +1056,21 @@ PrefabInstance:
       propertyPath: m_Name
       value: HeightmapWorld
       objectReference: {fileID: 0}
+    - target: {fileID: 6042725161561252537, guid: 4267c19cb78594f9fbe2905bc5fcde75, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6060914589439895588, guid: 4267c19cb78594f9fbe2905bc5fcde75, type: 3}
       propertyPath: heightmap
       value: 
-      objectReference: {fileID: 2800000, guid: c5c3724e294a95e69b72fa2f5192b061, type: 3}
+      objectReference: {fileID: 2800000, guid: 0767ea96691c845919362f80b51a6a20, type: 3}
     - target: {fileID: 6060914589439895588, guid: 4267c19cb78594f9fbe2905bc5fcde75, type: 3}
       propertyPath: maxHeightMeters
-      value: 921
+      value: 900
       objectReference: {fileID: 0}
     - target: {fileID: 6060914589439895588, guid: 4267c19cb78594f9fbe2905bc5fcde75, type: 3}
       propertyPath: minHeightMeters
-      value: 266.6667
+      value: 200
       objectReference: {fileID: 0}
     - target: {fileID: 8159897452030711806, guid: 4267c19cb78594f9fbe2905bc5fcde75, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
