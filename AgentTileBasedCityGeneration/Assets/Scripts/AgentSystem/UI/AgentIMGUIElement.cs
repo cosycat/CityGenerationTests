@@ -9,7 +9,7 @@ namespace AgentSystem.UI {
     /// </summary>
     public class AgentIMGUIElement {
         
-        private IAgent agent;
+        private readonly IAgent agent;
         private bool isFoldout = false;
         
         public AgentIMGUIElement(IAgent agent) {
@@ -17,11 +17,10 @@ namespace AgentSystem.UI {
         }
         
         public void AgentEntryGUI() {
-            GUILayout.BeginHorizontal();
             isFoldout = GUILayout.Toggle(isFoldout, agent.GetType().Name);
-            GUILayout.EndHorizontal();
 
             if (!isFoldout) return;
+            
             GUILayout.BeginVertical();
             foreach (var variable in agent.AgentVariables) {
                 variable.OnGui();

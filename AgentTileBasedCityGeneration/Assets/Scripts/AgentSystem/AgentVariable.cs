@@ -1,6 +1,5 @@
 #nullable enable
 using System;
-using UnityEditor;
 using UnityEngine;
 
 namespace AgentSystem {
@@ -72,7 +71,7 @@ namespace AgentSystem {
             GUILayout.Label(Name);
             GUILayout.BeginVertical();
             var newValueSlider = Mathf.RoundToInt(GUILayout.HorizontalSlider(Value, Min, Max));
-            var newValueField = EditorGUILayout.IntField(Value);
+            var newValueField = int.TryParse(GUILayout.TextField(Value.ToString()), out var newValue) ? newValue : Value;
             Value = newValueSlider != Value ? newValueSlider : newValueField;
             GUILayout.EndVertical();
             GUILayout.EndHorizontal();
@@ -88,7 +87,7 @@ namespace AgentSystem {
             GUILayout.Label(Name);
             GUILayout.BeginVertical();
             var newValueSlider = GUILayout.HorizontalSlider(Value, Min, Max);
-            var newValueField = EditorGUILayout.FloatField(Value);
+            var newValueField = float.TryParse(GUILayout.TextField(Value.ToString()), out var newValue) ? newValue : Value;
             Value = !Mathf.Approximately(newValueSlider, Value) ? newValueSlider : newValueField;
             GUILayout.EndVertical();
             GUILayout.EndHorizontal();
@@ -111,9 +110,10 @@ namespace AgentSystem {
         public AgentVariableEnum(string name, T value, string? description = null) : base(name, value, description) { }
 
         public override void OnGui() {
-            GUILayout.BeginHorizontal();
-            Value = (T) EditorGUILayout.EnumPopup(Name, Value);
-            GUILayout.EndHorizontal();
+            GUILayout.BeginVertical();
+            var selectionIndex = GUILayout.Toolbar((int) (object) Value, Enum.GetNames(typeof(T)));
+            Value = (T) (object) selectionIndex;
+            GUILayout.EndVertical();
         }
     }
 
