@@ -51,6 +51,10 @@ namespace Graph.World {
         }
 
         public override float GetHeightAt(float x, float y) {
+            if (x < 0 || x >= Width || y < 0 || y >= Height) {
+                Debug.LogWarning($"Requested height at {x}, {y} outside of world bounds.");
+                return 0;
+            }
             return heights[(int)x, (int)y];
         }
     }

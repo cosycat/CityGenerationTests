@@ -1,3 +1,4 @@
+using System.Linq;
 using Graph.World.PoI;
 using UnityEngine;
 
@@ -57,12 +58,13 @@ namespace Graph.World {
                     }
                 }
 
-                for (var y = 0; y < Height; y++) {
-                    for (var x = 0; x < Width; x++) {
-                        Debug.Assert(heights[x, y] <= MaxHeight);
-                        Debug.Assert(heights[x, y] >= MinHeight);
-                    }
-                }
+                // for (var y = 0; y < Height; y++) {
+                //     for (var x = 0; x < Width; x++) {
+                //         Debug.Assert(heights[x, y] <= MaxHeight);
+                //         Debug.Assert(heights[x, y] >= MinHeight);
+                //     }
+                // }
+                Debug.Assert(heights.Cast<float>().All(h => h <= MaxHeight && h >= MinHeight), "HeightmapWorld: Heights are not within the expected range");
             }
         }
 
