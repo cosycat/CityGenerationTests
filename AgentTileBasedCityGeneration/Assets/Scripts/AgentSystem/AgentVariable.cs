@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using UnityEditor;
 using UnityEngine;
 
 namespace AgentSystem {
@@ -7,6 +8,7 @@ namespace AgentSystem {
     public interface IAgentVariable {
         public string Name { get; }
         public string? Description { get; }
+        public void OnGui();
     }
     
     [Serializable]
@@ -24,10 +26,16 @@ namespace AgentSystem {
             Name = name;
         }
         
+        public abstract void OnGui();
+        
         public static implicit operator T(AgentVariable<T> av) => av.Value;
 
         public string Name { get; }
         public string? Description { get; }
+        
+        public override string ToString() {
+            return $"{Name}: {Value}";
+        }
     }
     
     public abstract class AgentVariableRange<T> : AgentVariable<T> where T : IComparable<T> {
@@ -58,25 +66,55 @@ namespace AgentSystem {
     public class AgentVariableInt : AgentVariableRange<int> {
         
         public AgentVariableInt(string name, int value, int min, int max, string? description = null) : base(name, value, min, max, description) { }
-        
+
+        public override void OnGui() {
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(Name);
+            GUILayout.BeginVertical();
+            var newValueSlider = Mathf.RoundToInt(GUILayout.HorizontalSlider(Value, Min, Max));
+            var newValueField = EditorGUILayout.IntField(Value);
+            Value = newValueSlider != Value ? newValueSlider : newValueField;
+            GUILayout.EndVertical();
+            GUILayout.EndHorizontal();
+        }
     }
     
     public class AgentVariableFloat : AgentVariableRange<float> {
         
         public AgentVariableFloat(string name, float value, float min, float max, string? description = null) : base(name, value, min, max, description) { }
-        
+
+        public override void OnGui() {
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(Name);
+            GUILayout.BeginVertical();
+            var newValueSlider = GUILayout.HorizontalSlider(Value, Min, Max);
+            var newValueField = EditorGUILayout.FloatField(Value);
+            Value = !Mathf.Approximately(newValueSlider, Value) ? newValueSlider : newValueField;
+            GUILayout.EndVertical();
+            GUILayout.EndHorizontal();
+        }
     }
     
     public class AgentVariableBool : AgentVariable<bool> {
         
         public AgentVariableBool(string name, bool value, string? description = null) : base(name, value, description) { }
-        
+
+        public override void OnGui() {
+            GUILayout.BeginHorizontal();
+            Value = GUILayout.Toggle(Value, Name);
+            GUILayout.EndHorizontal();
+        }
     }
     
     public class AgentVariableEnum<T> : AgentVariable<T> where T : Enum {
         
         public AgentVariableEnum(string name, T value, string? description = null) : base(name, value, description) { }
-        
+
+        public override void OnGui() {
+            GUILayout.BeginHorizontal();
+            Value = (T) EditorGUILayout.EnumPopup(Name, Value);
+            GUILayout.EndHorizontal();
+        }
     }
 
     // public abstract class AgentVariables {

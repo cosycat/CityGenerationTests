@@ -227,7 +227,7 @@ namespace AgentSystem {
         public void AddNewAgent(IAgent agent) {
             lock (stopRequestLock) {
                 agents.Add((agent, agent.WorkFrequency)); // set to frame rate to make sure it is run in the next frame
-                Debug.Log($"Added agent {agent.GetType().Name} with frequency {agent.WorkFrequency}");
+                Debug.Log($"Added agent {agent.GetType().Name} with frequency {agent.WorkFrequency.Value}");
                 newlyAddedAgents.Add(agent);
                 if (agents.Count == 1) HandleNextAgent(); // If there was no agent before, start now.
             }
