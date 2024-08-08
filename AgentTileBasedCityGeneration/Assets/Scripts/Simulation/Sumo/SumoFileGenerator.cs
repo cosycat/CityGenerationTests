@@ -130,8 +130,8 @@ namespace Simulation.Sumo {
             var edgesTypesDoc = new XDocument(new XElement("types"));
 
             foreach (var roadType in Enum.GetValues(typeof(RoadType)).Cast<RoadType>()) {
-                var edgeType = SimulationOptions.RoadTypeToEdgeType.TryGetValue(roadType, out var e)
-                    ? e
+                var edgeType = SimulationOptions.RoadTypeToEdgeType.TryGetValue(roadType, out var foundEdgeType)
+                    ? foundEdgeType
                     : SumoEdgeTypes.DefaultSumoEdgeType;
                 var type = new XElement("type",
                     new XAttribute("id", edgeType.Id),

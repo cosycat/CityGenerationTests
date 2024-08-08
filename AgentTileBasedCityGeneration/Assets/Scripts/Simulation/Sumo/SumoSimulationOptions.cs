@@ -22,7 +22,7 @@ namespace Simulation.Sumo {
             { RoadType.Primary, new SumoEdgeTypes("primary", 22.22f, 1, 3) },
             { RoadType.Secondary, new SumoEdgeTypes("secondary", 13.89f, 1, 2) },
             { RoadType.Tertiary, new SumoEdgeTypes("tertiary", 8.33f, 1, 1) },
-            { RoadType.Highway, new SumoEdgeTypes("highway", 41.67f, 1, 5) }
+            { RoadType.CountryRoad, new SumoEdgeTypes("countryRoad", 41.67f, 1, 5) }
         };
 
         public Vehicle GetVehiclePrefab(string vehicleType) {

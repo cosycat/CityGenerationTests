@@ -44,3 +44,43 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b0965d0dd8e09124baafa8b9dab1c6db, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  parameters:
+    moveMaskK: 4
+    maxRoadElevation: 60
+    heightPenaltyMultiplier: 0.5
+    heuristicMultiplier: 1
+    roadDistanceCostMultiplier1: 2.9
+    roadDistanceCostMultiplier2: 1
+    roadDistanceCostMultiplier3: 1.1
+    SnapFactorEdge: 1
+    SnapFactorNode: 1.5
+    slopeCostMaxGrade: 0.12
+    slopeCostMultiplier: 30
+    roadType: 3
+  sdaParameters:
+  - time: -1
+    <GrowRoadType>k__BackingField: 2
+    <ConnectRoadType>k__BackingField: 2
+    <GrowRadiusAddition>k__BackingField: 2
+    <MaxSlope>k__BackingField: 0.2
+  - time: -1
+    <GrowRoadType>k__BackingField: 2
+    <ConnectRoadType>k__BackingField: 2
+    <GrowRadiusAddition>k__BackingField: 2
+    <MaxSlope>k__BackingField: 0.2
+  - time: -1
+    <GrowRoadType>k__BackingField: 2
+    <ConnectRoadType>k__BackingField: 2
+    <GrowRadiusAddition>k__BackingField: 2
+    <MaxSlope>k__BackingField: 0.2
+  - time: -1
+    <GrowRoadType>k__BackingField: 2
+    <ConnectRoadType>k__BackingField: 2
+    <GrowRadiusAddition>k__BackingField: 2
+    <MaxSlope>k__BackingField: 0.2
+  - time: -1
+    <GrowRoadType>k__BackingField: 2
+    <ConnectRoadType>k__BackingField: 2
+    <GrowRadiusAddition>k__BackingField: 2
+    <MaxSlope>k__BackingField: 0.2
+  PlaceSettlementDeveloper: 1

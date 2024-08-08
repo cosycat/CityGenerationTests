@@ -9,6 +9,6 @@ namespace Graph {
         Primary,
         Secondary,
         Tertiary,
-        Highway
+        CountryRoad
     }
 }

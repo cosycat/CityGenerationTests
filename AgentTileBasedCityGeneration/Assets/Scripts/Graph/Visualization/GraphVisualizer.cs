@@ -23,7 +23,7 @@ namespace Graph.Visualization {
             { RoadType.Primary, Color.red },
             { RoadType.Secondary, Color.blue },
             { RoadType.Tertiary, Color.green },
-            { RoadType.Highway, Color.black }
+            { RoadType.CountryRoad, Color.black }
         };
 
         private ITerrainGenerator terrainGenerator = null!;

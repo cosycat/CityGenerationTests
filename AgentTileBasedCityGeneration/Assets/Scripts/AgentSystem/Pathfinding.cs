@@ -519,7 +519,7 @@ namespace AgentSystem {
             /// <summary>
             ///     The type of roads which will be built.
             /// </summary>
-            public RoadType roadType = RoadType.Highway;
+            public RoadType roadType = RoadType.CountryRoad;
 
             public static Parameters GetRoadPathSearchParameters() {
                 var p = new Parameters();

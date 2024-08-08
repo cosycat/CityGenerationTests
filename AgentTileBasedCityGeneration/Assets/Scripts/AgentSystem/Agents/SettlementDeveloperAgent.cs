@@ -15,7 +15,7 @@ namespace AgentSystem.Agents {
         
         public AgentVariableInt WorkFrequency { get; } = new("Work Frequency", 1, 1, 100);
 
-        public List<IAgentVariable> AgentVariables => GetCurrentParamaterSet().AllVariables;
+        public List<IAgentVariable> AgentVariables => GetCurrentParameterSet().AllVariables;
         
         private readonly List<SdaParameters> allParameters;
         private int currentParameterSetIndex = 0;
@@ -32,7 +32,7 @@ namespace AgentSystem.Agents {
                 // copy each SdaParameters to avoid changing the original list
                 ? parameters.Select(p => new SdaParameters(p)).ToList()
                 : new List<SdaParameters> { new() };
-            CreateStartNode(world, GetCurrentParamaterSet());
+            CreateStartNode(world, GetCurrentParameterSet());
         }
 
 
@@ -41,11 +41,11 @@ namespace AgentSystem.Agents {
             if (nodes.Count == 0) {
                 Debug.LogWarning(
                     "PoIDeveloperAgent: No nodes found for the point of interest. Creating a new one at the center. PS: This should not happen because this agent is always placed after building a road.");
-                var newNode = CreateStartNode(world, GetCurrentParamaterSet());
+                var newNode = CreateStartNode(world, GetCurrentParameterSet());
                 nodes = new[] { newNode };
             }
 
-            var currentParameterSet = GetCurrentParamaterSet();
+            var currentParameterSet = GetCurrentParameterSet();
             var roadNetworkGrown = GrowRoadNetwork(world, nodes, context.Random, currentParameterSet);
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -81,7 +81,7 @@ namespace AgentSystem.Agents {
             }
         }
 
-        private SdaParameters GetCurrentParamaterSet() {
+        private SdaParameters GetCurrentParameterSet() {
             return allParameters[currentParameterSetIndex];
         }
 
