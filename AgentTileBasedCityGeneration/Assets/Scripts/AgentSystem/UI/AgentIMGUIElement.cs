@@ -1,5 +1,3 @@
-using System;
-using AgentSystem.Agents;
 using UnityEditor;
 using UnityEngine;
 
@@ -17,7 +15,7 @@ namespace AgentSystem.UI {
         }
         
         public void AgentEntryGUI() {
-            isFoldout = GUILayout.Toggle(isFoldout, agent.GetType().Name);
+            isFoldout = GUILayout.Toggle(isFoldout, agent.GetType().Name, EditorStyles.foldout);
 
             if (!isFoldout) return;
             
