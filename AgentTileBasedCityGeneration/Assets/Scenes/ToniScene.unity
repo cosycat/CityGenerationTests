@@ -518,6 +518,14 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 6043035267771906901, guid: 4ffc8cbbd177a460682dfa1118a499ec, type: 3}
+      propertyPath: parameters.roadDistanceCostMultiplier1
+      value: 10.02
+      objectReference: {fileID: 0}
+    - target: {fileID: 6043035267771906901, guid: 4ffc8cbbd177a460682dfa1118a499ec, type: 3}
+      propertyPath: parameters.roadDistanceCostMultiplier3
+      value: 4.1
+      objectReference: {fileID: 0}
     - target: {fileID: 7174694716258758637, guid: 4ffc8cbbd177a460682dfa1118a499ec, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
