@@ -42,7 +42,7 @@ namespace AgentSystem.Agents {
                 var passedPOISet = new HashSet<IPointOfInterest>();
                 foreach (var wp in waypoints) {
                     Debug.Assert(wp.GraphNode != null);
-                    Debug.Log(wp);
+                    // Debug.Log(wp);
                     if (world.PointsOfInterest.GetPointOfInterestFromNode(wp.GraphNode, out var poi) &&
                         !passedPOISet.Contains(poi))
                         if (poi is BudgetPointOfInterest budgetPoi) { //eww...
