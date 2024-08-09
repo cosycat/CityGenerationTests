@@ -71,9 +71,9 @@ namespace AgentSystem.Agents {
         private void SelectParameterSet(bool didChange) {
             if(!didChange
             || currentParameterSetIndex == allParameters.Count - 1 //we are in last timeline
-            || allParameters[currentParameterSetIndex].time == -1) return;
+            || allParameters[currentParameterSetIndex].Time == -1) return;
             age++;
-            if(age > allParameters[currentParameterSetIndex].time) {
+            if(age > allParameters[currentParameterSetIndex].Time) {
                 currentParameterSetIndex++;
                 age = 0;
                 Debug.Log("Settlement developer: switched to a new timeline!");
@@ -267,7 +267,7 @@ namespace AgentSystem.Agents {
                 ConnectAll
             }
             
-            [field: SerializeField] public int time = -1;
+            [field: SerializeField] public AgentVariableInt Time { get; private set; } = new("Time", 10, -1, 1000);
             [field: SerializeField] public AgentVariableFloat MinStreetLength { get; private set; } = new("Min Street Length", 2f, 0.5f, 20f);
             [field: SerializeField] public AgentVariableFloat MaxStreetLength { get; private set; } = new("Max Street Length", 5f, 1, 50f);
             [Tooltip("Minimum distance a new node has to have to an edge.")]
@@ -320,7 +320,7 @@ namespace AgentSystem.Agents {
 
             protected override IAgentVariable[] GetVariables() {
                 return new IAgentVariable[] {
-                    WorkFrequency, MinStreetLength, MaxStreetLength, MinNodeEdgeDistance, AngleOffset, AngleRandomMax,
+                    WorkFrequency, Time, MinStreetLength, MaxStreetLength, MinNodeEdgeDistance, AngleOffset, AngleRandomMax,
                     MaxConnectionDistance, ConnectCulDeSacs, ConnectCulDeSacWithNonCulDeSac, AngleInBothDirections,
                     GrowRoadType, ConnectRoadType, GrowRadiusAddition, MaxSlope,
                     // IncreaseBudget
@@ -360,7 +360,8 @@ namespace AgentSystem.Agents {
                                  RoadType growRoadType = RoadType.Tertiary,
                                  RoadType connectRoadType = RoadType.Tertiary,
                                  float growRadiusAddition = 2f,
-                                 float maxSlope = 0.2f) 
+                                 float maxSlope = 0.2f,
+                                 int time = 10) 
                 : base(initialWorkFrequency){
                 MinStreetLength.Value = minStreetLength;
                 MaxStreetLength.Value = maxStreetLength;
@@ -375,6 +376,7 @@ namespace AgentSystem.Agents {
                 ConnectRoadType.Value = connectRoadType;
                 GrowRadiusAddition.Value = growRadiusAddition;
                 MaxSlope.Value = maxSlope;
+                Time.Value = time;
             }
             
         }

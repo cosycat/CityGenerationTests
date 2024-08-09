@@ -141,14 +141,15 @@ namespace AgentSystem.Agents {
             [field:SerializeField] public Pathfinding.Parameters PathfindingParameters { get; private set; } = new();
 
             [SerializeField] public List<SettlementDeveloperAgent.SdaParameters> sdaParameters = new() {
-                new SettlementDeveloperAgent.SdaParameters(angleOffset: Mathf.Deg2Rad * 20),
+                new SettlementDeveloperAgent.SdaParameters(angleOffset: Mathf.Deg2Rad * 20, angleRandomMax: Mathf.Deg2Rad * 30, time: 25),
                 new SettlementDeveloperAgent.SdaParameters()
             };
 
             protected override IAgentVariable[] GetVariables() {
-
-                return new IAgentVariable[] {WorkFrequency, PlaceSettlementDeveloper}.Concat(PathfindingParameters.AllVariables).ToArray();
-
+                return new IAgentVariable[] {WorkFrequency, PlaceSettlementDeveloper}
+                    .Concat(PathfindingParameters.AllVariables)
+                    // .Concat(sdaParameters.SelectMany(p => p.AllVariables)) // too chaotic if these are included. A multi-level system would be necessary.
+                    .ToArray();
             }
 
             public POIConnectorParameters(int initialWorkFrequency) : base(initialWorkFrequency) { }
