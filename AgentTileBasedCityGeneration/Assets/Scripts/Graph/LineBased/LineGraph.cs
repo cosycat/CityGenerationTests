@@ -42,6 +42,7 @@ namespace Graph.LineBased {
             var numNodesBefore = nodes.Count();
 
             IStreetEdge? lastIntersectionEdge = null;
+            float lastParameterT = float.MaxValue;
             //check for intersections
             foreach (var e in edges) {
                 //skip node we are coming from to prevent finding intersection with edge we are connected to
@@ -50,12 +51,13 @@ namespace Graph.LineBased {
                 var aDirection = to - aPosition;
                 var bPosition = e.NodeA.Position;
                 var bDirection = e.NodeB.Position - bPosition;
-                var intersects = Intersection(aPosition, aDirection, bPosition, bDirection, out var crossPoint, out _,
+                var intersects = Intersection(aPosition, aDirection, bPosition, bDirection, out var crossPoint, out var t,
                     out _);
 
-                if (intersects) {
+                if (intersects && t < lastParameterT) {
                     to = crossPoint;
                     lastIntersectionEdge = e;
+                    lastParameterT = t;
                 }
             }
 
@@ -214,8 +216,8 @@ namespace Graph.LineBased {
         /// <param name="bPosition"> The position of the second line. </param>
         /// <param name="bLineVector"> The direction and length of the second line. </param>
         /// <param name="intersectionPoint"> The intersection point of the two lines. </param>
-        /// <param name="t">TODO</param>
-        /// <param name="s">TODO</param>
+        /// <param name="t">Parameter where intersection lies on first line (between 0 and 1)</param>
+        /// <param name="s">Parameter where intersection lies on second line (between 0 and 1)</param>
         /// <param name="eps"> The epsilon value for the intersection check. </param>
         /// <returns> True if the lines intersect, false otherwise. </returns>
         private static bool Intersection(Vector3 aPosition, Vector3 aLineVector, Vector3 bPosition, Vector3 bLineVector,
