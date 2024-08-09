@@ -10,18 +10,12 @@ using UnityEngine;
 
 namespace AgentSystem.Agents {
     public class POIConnectorAgent : MonoBehaviour, IAgent {
-        [SerializeField] public Pathfinding.Parameters parameters = new();
 
-        [SerializeField] public List<SettlementDeveloperAgent.SdaParameters> sdaParameters = new() {
-            new SettlementDeveloperAgent.SdaParameters(), new SettlementDeveloperAgent.SdaParameters(),
-            new SettlementDeveloperAgent.SdaParameters(), new SettlementDeveloperAgent.SdaParameters(),
-            new SettlementDeveloperAgent.SdaParameters()
-        };
+        
 
-        public AgentVariableInt WorkFrequency { get; } = new("Work Frequency", 100, 1, 1000);
-        public List<IAgentVariable> AgentVariables => new() { WorkFrequency }; // TODO: add parameters
+        [SerializeField] private POIConnectorParameters parameters = new(100);
+        public AgentParameters Parameters => parameters;
 
-        [SerializeField] public bool PlaceSettlementDeveloper = true;
 
         private readonly HashSet<IPointOfInterest> connectedPOIs = new();
 
@@ -37,7 +31,63 @@ namespace AgentSystem.Agents {
         private Vector3 currentTarget;
 
         private int frameCounter;
+
         private Pathfinding? pathfinding;
+
+
+        public void DoWork(CancellationToken cancellationToken, IWorld world, AgentManager.Context context) {
+            var worldPOIs = world.PointsOfInterest.PointsOfInterest;
+            if (connectedPOIs.Count == 0 && worldPOIs.Count >= 1) {
+                //initial condition: first POI in world does not need to be connected
+                connectedPOIs.Add(worldPOIs[0]);
+                if (parameters.PlaceSettlementDeveloper)
+                    context.Manager.AddNewAgent(new SettlementDeveloperAgent((BudgetPointOfInterest)worldPOIs[0], world,
+                        parameters.sdaParameters));
+                return;
+            }
+
+
+            var unconnectedPoi = worldPOIs.FirstOrDefault(poi => !connectedPOIs.Contains(poi));
+            if (unconnectedPoi == null) return;
+
+            var closestPoi = connectedPOIs.ToList()
+                .MinBy(poi => Vector3.Distance(poi.Position, unconnectedPoi.Position));
+
+            Func<bool> isCancelled = () => cancellationToken.IsCancellationRequested;
+            lock (pathFindingLock) {
+                pathfinding = new Pathfinding(world.StreetGraph, world, parameters.PathfindingParameters);
+            }
+
+            var path = pathfinding.AStar(unconnectedPoi.Position, closestPoi.Position, isCancelled);
+
+            if (path != null) {
+                if (Pathfinding.BuildPath2(path, world.StreetGraph, world, parameters.PathfindingParameters)) {
+                    connectedPOIs.Add(unconnectedPoi);
+                    if (parameters.PlaceSettlementDeveloper)
+                        context.Manager.AddNewAgent(new SettlementDeveloperAgent((BudgetPointOfInterest)unconnectedPoi,
+                            world, parameters.sdaParameters));
+                    Debug.Assert(world.StreetGraph.TryFindClosestNode(unconnectedPoi.Position, out var node));
+                    world.PointsOfInterest.AddNodeRelationToPointOfInterest(node, unconnectedPoi);
+                }
+                else {
+                    //path could not be built for some reason (angles, too many connections...)
+                    worldPOIs.Remove(unconnectedPoi);
+                }
+            }
+            else if (!isCancelled()) {
+                //isCancelled == false => AStar couldn't find a path, there is no need to test it again next time
+                //isCancelled == true => AStar couldn't finish and thus returned null (but could find a path still)
+
+
+                if (!isCancelled())
+                    //path could not be found. POI can never be connected
+                    worldPOIs.Remove(unconnectedPoi);
+            }
+
+            lock (pathFindingLock) {
+                pathfinding = null; //TODO
+            }
+        }
 
         private void OnDrawGizmos() {
             if (frameCounter == 0)
@@ -82,60 +132,27 @@ namespace AgentSystem.Agents {
                     new Vector3(flagSize, flagSize, 0));
             }
         }
-        
 
-        public void DoWork(CancellationToken cancellationToken, IWorld world, AgentManager.Context context) {
-            var worldPOIs = world.PointsOfInterest.PointsOfInterest;
-            if (connectedPOIs.Count == 0 && worldPOIs.Count >= 1) {
-                //initial condition: first POI in world does not need to be connected
-                connectedPOIs.Add(worldPOIs[0]);
-                if (PlaceSettlementDeveloper)
-                    context.Manager.AddNewAgent(new SettlementDeveloperAgent((BudgetPointOfInterest)worldPOIs[0], world,
-                        sdaParameters));
-                return;
+        [Serializable]
+        public class POIConnectorParameters : AgentParameters {
+            
+            [field:SerializeField] public AgentVariableBool PlaceSettlementDeveloper { get; private set; } = new("Place Settlement Developer", true);
+            
+            [field:SerializeField] public Pathfinding.Parameters PathfindingParameters { get; private set; } = new();
+
+            [SerializeField] public List<SettlementDeveloperAgent.SdaParameters> sdaParameters = new() {
+                new SettlementDeveloperAgent.SdaParameters(angleOffset: Mathf.Deg2Rad * 20, angleRandomMax: Mathf.Deg2Rad * 30, time: 25),
+                new SettlementDeveloperAgent.SdaParameters()
+            };
+
+            protected override IAgentVariable[] GetVariables() {
+                return new IAgentVariable[] {WorkFrequency, PlaceSettlementDeveloper}
+                    .Concat(PathfindingParameters.AllVariables)
+                    // .Concat(sdaParameters.SelectMany(p => p.AllVariables)) // too chaotic if these are included. A multi-level system would be necessary.
+                    .ToArray();
             }
 
-
-            var unconnectedPoi = worldPOIs.FirstOrDefault(poi => !connectedPOIs.Contains(poi));
-            if (unconnectedPoi == null) return;
-
-            var closestPoi = connectedPOIs.ToList()
-                .MinBy(poi => Vector3.Distance(poi.Position, unconnectedPoi.Position));
-
-            Func<bool> isCancelled = () => cancellationToken.IsCancellationRequested;
-            lock (pathFindingLock) {
-                pathfinding = new Pathfinding(world.StreetGraph, world, parameters);
-            }
-
-            var path = pathfinding.AStar(unconnectedPoi.Position, closestPoi.Position, isCancelled);
-
-            if (path != null) {
-                if (Pathfinding.BuildPath2(path, world.StreetGraph, world, parameters)) {
-                    connectedPOIs.Add(unconnectedPoi);
-                    if (PlaceSettlementDeveloper)
-                        context.Manager.AddNewAgent(new SettlementDeveloperAgent((BudgetPointOfInterest)unconnectedPoi,
-                            world, sdaParameters));
-                    Debug.Assert(world.StreetGraph.TryFindClosestNode(unconnectedPoi.Position, out var node));
-                    world.PointsOfInterest.AddNodeRelationToPointOfInterest(node, unconnectedPoi);
-                }
-                else {
-                    //path could not be built for some reason (angles, too many connections...)
-                    worldPOIs.Remove(unconnectedPoi);
-                }
-            }
-            else if (!isCancelled()) {
-                //isCancelled == false => AStar couldn't find a path, there is no need to test it again next time
-                //isCancelled == true => AStar couldn't finish and thus returned null (but could find a path still)
-
-
-                if (!isCancelled())
-                    //path could not be found. POI can never be connected
-                    worldPOIs.Remove(unconnectedPoi);
-            }
-
-            lock (pathFindingLock) {
-                pathfinding = null; //TODO
-            }
+            public POIConnectorParameters(int initialWorkFrequency) : base(initialWorkFrequency) { }
         }
     }
 }

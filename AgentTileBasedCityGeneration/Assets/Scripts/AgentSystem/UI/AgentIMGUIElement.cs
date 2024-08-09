@@ -1,6 +1,6 @@
-using System;
-using AgentSystem.Agents;
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 using UnityEngine;
 
 namespace AgentSystem.UI {
@@ -15,14 +15,20 @@ namespace AgentSystem.UI {
         public AgentIMGUIElement(IAgent agent) {
             this.agent = agent;
         }
-        
+
         public void AgentEntryGUI() {
-            isFoldout = GUILayout.Toggle(isFoldout, agent.GetType().Name);
+            GUIStyle style;
+#if UNITY_EDITOR
+            style = EditorStyles.foldout;
+#else
+            style = new GUIStyle();
+#endif
+            isFoldout = GUILayout.Toggle(isFoldout, agent.GetType().Name, style);
 
             if (!isFoldout) return;
             
             GUILayout.BeginVertical();
-            foreach (var variable in agent.AgentVariables) {
+            foreach (var variable in agent.Parameters.AllVariables) {
                 variable.OnGui();
             }
             GUILayout.Label("--------------------");

@@ -360,6 +360,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 2271270673316427511, guid: 15c700f30c1be413db7fbfd50c01e1a6, type: 3}
+      propertyPath: imguiSettings.width
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 2271270673316427511, guid: 15c700f30c1be413db7fbfd50c01e1a6, type: 3}
       propertyPath: imguiSettings.fontSize
       value: 12
       objectReference: {fileID: 0}

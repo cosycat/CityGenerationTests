@@ -7,7 +7,7 @@ using DebugUtils;
 using Graph;
 using Graph.World;
 using UnityEngine;
-using Utils;
+using UnityEngine.Serialization;
 using Utils.DataStructures;
 using Debug = UnityEngine.Debug;
 
@@ -246,13 +246,13 @@ namespace AgentSystem {
                 cost += 0.1f; //make short segments more costly to force fewer nodes
             }*/
 
-            var costPenaltyForRoad = p.roadDistanceCostMultiplier1;
+            var costPenaltyForRoad = p.newRoadDistanceCostMultiplier;
             float slopeCost = 0;
             if (next.DidUseRoad)
                 //we are walking over an existing road. make it cheap
-                costPenaltyForRoad = p.roadDistanceCostMultiplier2;
+                costPenaltyForRoad = p.existingRoadDistanceCostMultiplier;
             else if (next.GraphEdge != null || next.GraphNode != null)
-                costPenaltyForRoad = p.roadDistanceCostMultiplier3;
+                costPenaltyForRoad = p.moveTowardsExistingRoadDistanceCostMultiplier;
             cost *= costPenaltyForRoad;
 
             var heightStart = world.GetHeightAt(current.Pos.x, current.Pos.y);
@@ -442,90 +442,113 @@ namespace AgentSystem {
         }
 
         [Serializable]
-        public class Parameters {
+        public class Parameters : AgentVariableCollection {
             /// <summary>
             ///     Describes how big the "moving mask" is when moving to neighboring
             ///     positions in the world. Setting this parameter to 0 will prevent pathfinding
             ///     from moving freely in the world; thus this can be used to do pathfinding
             ///     through only the existing network.
             /// </summary>
-            public int moveMaskK = 4;
+            public AgentVariableInt moveMaskK = new("Move mask k", 4, 0, 10);
 
             /// <summary>
             ///     Describes the maximum elevation where a road can be placed. If a road is
             ///     placed above this value, the cost will be set to infinity.
             /// </summary>
-            public float maxRoadElevation = 50f;
+            public AgentVariableFloat maxRoadElevation = new("Max road elevation", 50f, 0f, 1000f);
 
             /// <summary>
-            ///     Higher roads can be penalised more by setting this parameter to > 0.
+            ///     Higher roads can be penalized more by setting this parameter to > 0.
             /// </summary>
-            public float heightPenaltyMultiplier = 0.5f;
+            public AgentVariableFloat heightPenaltyMultiplier = new("Height penalty multiplier", 0.5f, 0f, 10f);
 
             /// <summary>
-            ///     Heuristic is severly underestimating the actual cost. This parameter
-            ///     can be used to raise the heuristic artificially and thus speeding up the pathfiding.
+            ///     Heuristic is severally underestimating the actual cost. This parameter
+            ///     can be used to raise the heuristic artificially and thus speeding up the pathfinding.
             ///     Note that if this is overestimating(i.e. it is not admissible) the cost,
             ///     a non-optimal path may be found.
             ///     Setting this to 0 will cause the pathfinding to behave like Dijkstra.
             /// </summary>
-            public float heuristicMultiplier = 1f;
+            public AgentVariableFloat heuristicMultiplier = new("Heuristic multiplier", 1f, 0f, 10f);
 
 
             /// <summary>
             ///     Cost of new road segment (distance) will be multiplied by this value.
             ///     Will be used when placing a new road segment, which is not touching existing roads(either edge or node).
             /// </summary>
-            public float roadDistanceCostMultiplier1 = 2.9f;
+            [FormerlySerializedAs("roadDistanceCostMultiplier1")] public AgentVariableFloat newRoadDistanceCostMultiplier = new("New Road Distance Cost Multiplier", 2.9f, 0f, 10f);
 
             /// <summary>
             ///     Cost of road segment (distance) will be multiplied by this value.
-            ///     Will be used when moving over existing road. In this case, no new road segment is build, rather the
+            ///     Will be used when moving over an existing road. In this case, no new road segment is built, rather the
             ///     pathfinding is simply moving over existing edges. Making this value lower than
-            ///     <see cref="roadDistanceCostMultiplier1" />
+            ///     <see cref="newRoadDistanceCostMultiplier" />
             ///     will motivate the pathfinding to reuse existing roads instead of building new ones.
             /// </summary>
-            public float roadDistanceCostMultiplier2 = 1.0f;
+            [FormerlySerializedAs("roadDistanceCostMultiplier2")] public AgentVariableFloat existingRoadDistanceCostMultiplier = new("Existing Road Distance Cost Multiplier", 1.0f, 0f, 10f);
 
             /// <summary>
             ///     Cost of new road segment (distance) will be multiplied by this value.
             ///     This value will be used when the new road segment does touch an existing road. Making this lower than
-            ///     <see cref="roadDistanceCostMultiplier1" /> will motivate the pathfinding to build towards existing roads and
+            ///     <see cref="newRoadDistanceCostMultiplier" /> will motivate the pathfinding to build towards existing roads and
             ///     make a connection to them.
             /// </summary>
-            public float roadDistanceCostMultiplier3 = 1.1f;
+            [FormerlySerializedAs("roadDistanceCostMultiplier3")] public AgentVariableFloat moveTowardsExistingRoadDistanceCostMultiplier = new("Move Towards Existing Road Distance Cost Multiplier", 1.1f, 0f, 10f);
+            // public float roadDistanceCostMultiplier3 = 1.1f;
 
             /// <summary>
             ///     Distance (in world units) for a waypoint to be snapped to an edge.
             /// </summary>
-            public float SnapFactorEdge = 1.0f;
+            public AgentVariableFloat SnapFactorEdge = new("Snap Factor Edge", 1.0f, 0f, 10f);
 
             /// <summary>
-            ///     Distance (in world units) for a waypoint to be snapped to an node.
+            ///     Distance (in world units) for a waypoint to be snapped to a node.
             /// </summary>
-            public float SnapFactorNode = 1.5f;
+            public AgentVariableFloat SnapFactorNode = new("Snap Factor Node", 1.5f, 0f, 10f);
+            ///public float SnapFactorNode = 1.5f;
 
             /// <summary>
-            ///     Maximum slope allowed for building a road. If the slope exceed this value, the cost of the road will
-            ///     be inifinity. A value of 0.12f means 12%. Thus a value of 1f means 100% (=45 degrees).
+            ///     Maximum slope allowed for building a road. If the slope exceeds this value, the cost of the road will
+            ///     be infinity. A value of 0.12f means 12%. Thus, a value of 1f means 100% (=45 degrees).
             /// </summary>
-            public float slopeCostMaxGrade = 0.12f;
+            public AgentVariableFloat slopeCostMaxGrade = new("Slope Cost Max Grade", 0.12f, 0f, 3f);
 
             /// <summary>
-            ///     Cost of slope will be multiplied by this value.
+            ///     This value will multiply the cost of the slope.
             /// </summary>
-            public float slopeCostMultiplier = 30f;
+            public AgentVariableFloat slopeCostMultiplier = new("Slope Cost Multiplier", 30f, 0f, 100f);
 
             /// <summary>
             ///     The type of roads which will be built.
             /// </summary>
-            public RoadType roadType = RoadType.CountryRoad;
+            public AgentVariableEnum<RoadType> roadType = new("Road Type", RoadType.CountryRoad);
 
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
             public static Parameters GetRoadPathSearchParameters() {
                 var p = new Parameters();
-                p.maxRoadElevation = float.MaxValue;
-                p.slopeCostMaxGrade = float.MaxValue;
+                p.maxRoadElevation.Value = float.MaxValue;
+                p.slopeCostMaxGrade.Value = float.MaxValue;
                 return p;
+            }
+
+            protected override IAgentVariable[] GetVariables() {
+                return new IAgentVariable[] {
+                    moveMaskK,
+                    maxRoadElevation,
+                    heightPenaltyMultiplier,
+                    heuristicMultiplier,
+                    newRoadDistanceCostMultiplier,
+                    existingRoadDistanceCostMultiplier,
+                    moveTowardsExistingRoadDistanceCostMultiplier,
+                    SnapFactorEdge,
+                    SnapFactorNode,
+                    slopeCostMaxGrade,
+                    slopeCostMultiplier,
+                    roadType
+                };
             }
         }
 

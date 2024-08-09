@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace Simulation {
@@ -13,6 +14,10 @@ namespace Simulation {
 
         private MeshRenderer meshRenderer = null!;
         private float timeSinceLastBlink;
+
+        private void Awake() {
+            meshRenderer = GetComponent<MeshRenderer>();
+        }
 
         private void Start() {
             meshRenderer = GetComponent<MeshRenderer>();

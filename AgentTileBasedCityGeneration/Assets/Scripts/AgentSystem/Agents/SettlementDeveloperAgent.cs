@@ -13,11 +13,10 @@ using Random = System.Random;
 namespace AgentSystem.Agents {
     public class SettlementDeveloperAgent : IAgent {
         
-        public AgentVariableInt WorkFrequency { get; } = new("Work Frequency", 1, 1, 100);
-
-        public List<IAgentVariable> AgentVariables => GetCurrentParameterSet().AllVariables;
-        
         private readonly List<SdaParameters> allParameters;
+        public AgentParameters Parameters => GetCurrentParameterSet();
+        // public List<IAgentVariable> AgentVariables => GetCurrentParameterSet().AllVariables;
+        
         private int currentParameterSetIndex = 0;
 
         private readonly BudgetPointOfInterest pointOfInterest;
@@ -72,9 +71,9 @@ namespace AgentSystem.Agents {
         private void SelectParameterSet(bool didChange) {
             if(!didChange
             || currentParameterSetIndex == allParameters.Count - 1 //we are in last timeline
-            || allParameters[currentParameterSetIndex].time == -1) return;
+            || allParameters[currentParameterSetIndex].Time == -1) return;
             age++;
-            if(age > allParameters[currentParameterSetIndex].time) {
+            if(age > allParameters[currentParameterSetIndex].Time) {
                 currentParameterSetIndex++;
                 age = 0;
                 Debug.Log("Settlement developer: switched to a new timeline!");
@@ -261,63 +260,74 @@ namespace AgentSystem.Agents {
         }
 
         [Serializable]
-        public class SdaParameters {
+        public class SdaParameters : AgentParameters {
             public enum ConnectionHandling {
                 ConnectNone,
                 ConnectSlowly,
                 ConnectAll
             }
-
-            [field: SerializeField] public int time = -1;
-            [field: SerializeField] public AgentVariableFloat MinStreetLength { get; } = new("Min Street Length", 2f, 0.5f, 20f);
-            [field: SerializeField] public AgentVariableFloat MaxStreetLength { get; } = new("Max Street Length", 5f, 1, 50f);
+            
+            [field: SerializeField] public AgentVariableInt Time { get; private set; } = new("Time", 10, -1, 1000);
+            [field: SerializeField] public AgentVariableFloat MinStreetLength { get; private set; } = new("Min Street Length", 2f, 0.5f, 20f);
+            [field: SerializeField] public AgentVariableFloat MaxStreetLength { get; private set; } = new("Max Street Length", 5f, 1, 50f);
             [Tooltip("Minimum distance a new node has to have to an edge.")]
-            [field: SerializeField] public AgentVariableFloat MinNodeEdgeDistance { get; } = new("Min Distance Node Edge", 0.7f, 0.1f, 10f);
-            [field: SerializeField] public AgentVariableFloat AngleOffset { get; } = new("Angle Offset", Mathf.Deg2Rad * 90f, -(Mathf.Deg2Rad * 180f), Mathf.Deg2Rad * 180f);
-            [field: SerializeField] public AgentVariableFloat AngleRandomMax { get; } = new("Ange Randomness", Mathf.Deg2Rad * 0f, 0, Mathf.Deg2Rad * 180f);
+            [field: SerializeField] public AgentVariableFloat MinNodeEdgeDistance { get; private set; } = new("Min Distance Node Edge", 0.7f, 0.1f, 10f);
+            [field: SerializeField] public AgentVariableFloat AngleOffset { get; private set; } = new("Angle Offset", Mathf.Deg2Rad * 90f, -(Mathf.Deg2Rad * 180f), Mathf.Deg2Rad * 180f);
+            [field: SerializeField] public AgentVariableFloat AngleRandomMax { get; private set; } = new("Angle Randomness", Mathf.Deg2Rad * 0f, 0, Mathf.Deg2Rad * 180f);
             [Tooltip("Maximum connection distance for cul-de-sacs to be connected.")]
-            [field: SerializeField] public AgentVariableFloat MaxConnectionDistance { get; } = new("Max Connection Distance", 3.5f, 0.5f, 20f);
-            [field: SerializeField] public AgentVariableEnum<ConnectionHandling> ConnectCulDeSacs { get; } = new("Cul de Sacs Connection Version", ConnectionHandling.ConnectSlowly);
-            [field: SerializeField] public AgentVariableBool ConnectCulDeSacWithNonCulDeSac { get; } = new("Connect Cul de Sacs with non-Cul de sacs", true);
-            [field: SerializeField] public AgentVariableBool AngleInBothDirections { get; } = new("Angle in Both Directions", true);
+            [field: SerializeField] public AgentVariableFloat MaxConnectionDistance { get; private set; } = new("Max Connection Distance", 3.5f, 0.5f, 20f);
+            [field: SerializeField] public AgentVariableEnum<ConnectionHandling> ConnectCulDeSacs { get; private set; } = new("Cul de Sacs Connection Version", ConnectionHandling.ConnectSlowly);
+            [field: SerializeField] public AgentVariableBool ConnectCulDeSacWithNonCulDeSac { get; private set; } = new("Connect Cul de Sacs with non-Cul de sacs", true);
+            [field: SerializeField] public AgentVariableBool AngleInBothDirections { get; private set; } = new("Angle in Both Directions", true);
             
-            public List<IAgentVariable> AllVariables => new() {
-                MinStreetLength, MaxStreetLength, MinNodeEdgeDistance, AngleOffset, AngleRandomMax, MaxConnectionDistance, ConnectCulDeSacs, ConnectCulDeSacWithNonCulDeSac, AngleInBothDirections
-            };
-            
+            // public AgentVariableButton IncreaseBudget { get; private set; } = new("Increase Budget", () => {
+            //     Debug.Log("Increase Budget TODO");
+            // });
+
             /// <summary>
             ///     The type of roads for new roads.
             /// </summary>
             [field: SerializeField]
-            public RoadType GrowRoadType { get; set; } = RoadType.Tertiary;
+            public AgentVariableEnum<RoadType> GrowRoadType { get; private set; } = new("Grow Road Type", RoadType.Tertiary);
 
             /// <summary>
             ///     The type of road to connect cul-de-sacs with.
             /// </summary>
             [field: SerializeField]
-            public RoadType ConnectRoadType { get; set; } = RoadType.Tertiary;
+            public AgentVariableEnum<RoadType> ConnectRoadType { get; private set; } = new("Connect Road Type", RoadType.Tertiary);
 
             /// <summary>
             ///     Each POI has a radius which is needed to sample nodes from. While the POI grows,
             ///     the radius will so too, but the radius needs to be a bit bigger than the real dimension of the POI.
-            ///     If the radius would be exactly as the farthest point (this parameter = 0), growing outwards
+            ///     If the radius were exactly as the farthest point (this parameter = 0), growing outwards
             ///     might come to a halt, because the new points lie outside the radius.
             /// </summary>
             [field: SerializeField]
-            public float GrowRadiusAddition { get; set; } = 2f;
+            public AgentVariableFloat GrowRadiusAddition { get; private set; } = new("Grow Radius Addition", 2f, 0.5f, 10f);
 
             /// <summary>
             ///     Maximum slope allowed for building a road. If the slope exceed this value, the cost of the road will
-            ///     be inifinity. A value of 0.12f means 12%. Thus a value of 1f means 100% (=45 degrees).
+            ///     be infinity. A value of 0.12f means 12%. Thus a value of 1f means 100% (=45 degrees).
             /// </summary>
             [field: SerializeField]
-            public float MaxSlope { get; set; } = 0.2f;
+            public AgentVariableFloat MaxSlope { get; private set; } = new("Max Slope", 0.2f, 0.01f, 1f);
 
+            // public List<IAgentVariable> AllVariables => new() {
+            //     MinStreetLength, MaxStreetLength, MinNodeEdgeDistance, AngleOffset, AngleRandomMax,
+            //     MaxConnectionDistance, ConnectCulDeSacs, ConnectCulDeSacWithNonCulDeSac, AngleInBothDirections,
+            //     GrowRoadType, ConnectRoadType, GrowRadiusAddition, MaxSlope
+            // };
 
+            protected override IAgentVariable[] GetVariables() {
+                return new IAgentVariable[] {
+                    WorkFrequency, Time, MinStreetLength, MaxStreetLength, MinNodeEdgeDistance, AngleOffset, AngleRandomMax,
+                    MaxConnectionDistance, ConnectCulDeSacs, ConnectCulDeSacWithNonCulDeSac, AngleInBothDirections,
+                    GrowRoadType, ConnectRoadType, GrowRadiusAddition, MaxSlope,
+                    // IncreaseBudget
+                };
+            }
 
-            public SdaParameters() { }
-
-            public SdaParameters(SdaParameters? other) {
+            public SdaParameters(SdaParameters? other) : base(other?.WorkFrequency?.Value ?? 1) {
                 if (other == null) {
                     return;
                 }
@@ -330,13 +340,29 @@ namespace AgentSystem.Agents {
                 ConnectCulDeSacs.Value = other.ConnectCulDeSacs;
                 ConnectCulDeSacWithNonCulDeSac.Value = other.ConnectCulDeSacWithNonCulDeSac;
                 AngleInBothDirections.Value = other.AngleInBothDirections;
-                GrowRoadType = other.GrowRoadType;
-                ConnectRoadType = other.ConnectRoadType;
-                GrowRadiusAddition = other.GrowRadiusAddition;
-                MaxSlope = other.MaxSlope;
+                GrowRoadType.Value = other.GrowRoadType;
+                ConnectRoadType.Value = other.ConnectRoadType;
+                GrowRadiusAddition.Value = other.GrowRadiusAddition;
+                MaxSlope.Value = other.MaxSlope;
             }
 
-            public SdaParameters(float minStreetLength, float maxStreetLength, float minNodeEdgeDistance, float angleOffset, float angleRandomMax, float maxConnectionDistance, bool snapToGrid, ConnectionHandling connectCulDeSacs, bool connectCulDeSacWithNonCulDeSac, bool angleInBothDirections, RoadType growRoadType, RoadType connectRoadType, float growRadiusAddition, float maxSlope) {
+            public SdaParameters(int initialWorkFrequency = 1,
+                                 float minStreetLength = 2f, 
+                                 float maxStreetLength = 5f, 
+                                 float minNodeEdgeDistance = 1f, 
+                                 float angleOffset = Mathf.Deg2Rad * 90f,
+                                 float angleRandomMax = Mathf.Deg2Rad * 0f,
+                                 float maxConnectionDistance = 3.5f,
+                                 bool snapToGrid = true,
+                                 ConnectionHandling connectCulDeSacs = ConnectionHandling.ConnectSlowly,
+                                 bool connectCulDeSacWithNonCulDeSac = true,
+                                 bool angleInBothDirections = true,
+                                 RoadType growRoadType = RoadType.Tertiary,
+                                 RoadType connectRoadType = RoadType.Tertiary,
+                                 float growRadiusAddition = 2f,
+                                 float maxSlope = 0.2f,
+                                 int time = 10) 
+                : base(initialWorkFrequency){
                 MinStreetLength.Value = minStreetLength;
                 MaxStreetLength.Value = maxStreetLength;
                 MinNodeEdgeDistance.Value = minNodeEdgeDistance;
@@ -346,11 +372,13 @@ namespace AgentSystem.Agents {
                 ConnectCulDeSacs.Value = connectCulDeSacs;
                 ConnectCulDeSacWithNonCulDeSac.Value = connectCulDeSacWithNonCulDeSac;
                 AngleInBothDirections.Value = angleInBothDirections;
-                GrowRoadType = growRoadType;
-                ConnectRoadType = connectRoadType;
-                GrowRadiusAddition = growRadiusAddition;
-                MaxSlope = maxSlope;
+                GrowRoadType.Value = growRoadType;
+                ConnectRoadType.Value = connectRoadType;
+                GrowRadiusAddition.Value = growRadiusAddition;
+                MaxSlope.Value = maxSlope;
+                Time.Value = time;
             }
+            
         }
         
     }

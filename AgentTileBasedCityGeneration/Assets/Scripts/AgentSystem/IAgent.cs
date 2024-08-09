@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Threading;
 using Graph.World;
 
@@ -8,9 +7,9 @@ namespace AgentSystem {
         ///     The agent will be called every <see cref="WorkFrequency" /> frame by the <see cref="AgentManager" />.
         ///     Values smaller 1 are considered 1.
         /// </summary>
-        AgentVariableInt WorkFrequency { get; }
+        AgentVariableInt WorkFrequency => Parameters.WorkFrequency;
         
-        List<IAgentVariable> AgentVariables { get; }
+        AgentParameters Parameters { get; }
         
         /// <summary>
         ///     A work package for an agent, that is run on a thread in the background.
