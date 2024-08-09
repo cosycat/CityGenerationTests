@@ -9,22 +9,20 @@ using UnityEngine;
 
 namespace AgentSystem.Agents {
     public class PointOfInterestAgent : MonoBehaviour, IAgent {
-        
-        public AgentVariableInt WorkFrequency { get; set; } = new("Work Frequency", 100, 1, 1000);
-        
-        public List<IAgentVariable> AgentVariables => new() { WorkFrequency }; // TODO: add parameters
-        
-        [Tooltip("The parameters for the POI agent."), SerializeField] private POIAgentParameters agentParameters = new();
+        [Tooltip("The parameters for the POI agent."), SerializeField] private POIAgentParameters agentParameters = new(100);
+        public AgentParameters Parameters => agentParameters;
+
 
         [Tooltip("The parameters for used for the next generated settlement and its settlement developer agent."),
          SerializeField] private SettlementDeveloperAgent.SdaParameters sdaParameters = new();
-        
+
         private IStreetGraph streetGraph;
-        
+
+
         private void Start() {
             streetGraph = FindObjectOfType<StreetGraphGameObject>();
         }
-        
+
         public void DoWork(CancellationToken cancellationToken, IWorld world, AgentManager.Context context) {
             if (streetGraph == null) return;
 
@@ -124,37 +122,51 @@ namespace AgentSystem.Agents {
                 }
             }
 
-            if (currentCost == float.MaxValue) return v;
+            if (Mathf.Approximately(currentCost, float.MaxValue)) return v;
             return currentTargetPos;
         }
 
         [Serializable]
-        public class POIAgentParameters {
-            /// <summary>
-            ///     Maximum number of POIs in world. If this threshold is reached, no new POIs are generated.
-            /// </summary>
-            [Min(0)] public int DesiredNumberOfPoints = 35;
+        public class POIAgentParameters : AgentParameters {
 
             /// <summary>
-            ///     Factor which influences cost function of POI generation. Specifically, it influences the cost
+            ///     Maximum number of POIs in the world. If this threshold is reached, no new POIs are generated.
+            /// </summary>
+            [Min(0)] public AgentVariableInt DesiredNumberOfPoints = new("Desired Number of Points", 35, 0, 100);
+
+            /// <summary>
+            ///     Factor which influences the cost function of POI generation. Specifically, it influences the cost
             ///     of the distance to the nearest existing POI. This part of the cost function is calculated as
             ///     DistanceCostFactor * 1 / (distanceToNearestPOI + 1). Increasing this factor will make the POI be farther apart
             /// </summary>
-            [SerializeField] public float DistanceCostFactor = 35;
-
+            [Min(0)] public AgentVariableInt DistanceCostFactor = new("Distance Cost Factor", 35, 0, 500);
+            
             /// <summary>
             ///     Minimum distance to a road that needs to exist to build a POI
             /// </summary>
-            [Min(0)] public int MinDistanceToRoad = 20;
+            [Min(0)] public AgentVariableInt MinDistanceToRoad = new("Min Distance to Road", 20, 0, 100);
 
             /// <summary>
             ///     Radius which is used for selection of new POI. An initial position for a new POI is based
             ///     on a random POI's position + radius. The final POI might be outside of the radius due to the cost function.
             /// </summary>
-            [Min(0)] public int RadiusGeneration = 100;
+            [Min(0)] public AgentVariableInt RadiusGeneration = new("Radius Generation", 100, 0, 500);            
+            
+            
+            [Min(0)] public AgentVariableInt InitialBudgetForPOI = new("Initial Budget for POI", 500, 0, 10000);
+            
+            protected override IAgentVariable[] GetVariables() {
+                return new IAgentVariable[] {
+                    WorkFrequency,
+                    DesiredNumberOfPoints,
+                    DistanceCostFactor,
+                    MinDistanceToRoad,
+                    RadiusGeneration,
+                    InitialBudgetForPOI
+                };
+            }
 
-
-            [Min(0)] public int InitialBudgetForPOI = 500;
+            public POIAgentParameters(int initialWorkFrequency) : base(initialWorkFrequency) { }
         }
     }
 }

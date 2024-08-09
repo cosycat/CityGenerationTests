@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -7,12 +8,9 @@ using UnityEngine;
 
 namespace AgentSystem.Agents {
     public class SimulateTrafficAgent : MonoBehaviour, IAgent {
-        [SerializeField] public int numCarsToSimulate = 10;
+        [SerializeField] private SimulateTrafficParameters parameters = new(100);
 
-        public AgentVariableInt WorkFrequency { get; set; } = new("Work Frequency", 100, 1, 1000);
-        
-        public List<IAgentVariable> AgentVariables { get; } = new();
-        [SerializeField] public float budgetIncreasePerPass = 1;
+        public AgentParameters Parameters => parameters;
 
         public void DoWork(CancellationToken cancellationToken, IWorld world, AgentManager.Context context) {
             var random = context.Random;
@@ -21,7 +19,7 @@ namespace AgentSystem.Agents {
             //delay sim because?
             if (world.StreetGraph.NodeCount < 50) return;
 
-            for (var i = 0; i < numCarsToSimulate; i++) {
+            for (var i = 0; i < parameters.NumCarsToSimulate; i++) {
                 var startIndex = random.Next(world.StreetGraph.NodeCount);
                 var endIndex = startIndex;
                 while (startIndex == endIndex) endIndex = random.Next(world.StreetGraph.NodeCount);
@@ -48,11 +46,28 @@ namespace AgentSystem.Agents {
                     if (world.PointsOfInterest.GetPointOfInterestFromNode(wp.GraphNode, out var poi) &&
                         !passedPOISet.Contains(poi))
                         if (poi is BudgetPointOfInterest budgetPoi) { //eww...
-                            budgetPoi.Budget += budgetIncreasePerPass;
+                            budgetPoi.Budget += parameters.BudgetIncreasePerPass;
                             passedPOISet.Add(budgetPoi);
                         }
                 }
             }
+        }
+
+        [Serializable]
+        private class SimulateTrafficParameters : AgentParameters {
+            
+            [field:SerializeField] public AgentVariableInt NumCarsToSimulate = new("Number of cars to simulate", 10, 1, 100);
+            [field:SerializeField] public AgentVariableFloat BudgetIncreasePerPass = new("Budget increase per pass", 10, 1, 1000);
+            
+            protected override IAgentVariable[] GetVariables() {
+                return new IAgentVariable[] {
+                    WorkFrequency,
+                    NumCarsToSimulate,
+                    BudgetIncreasePerPass
+                };
+            }
+
+            public SimulateTrafficParameters(int initialWorkFrequency) : base(initialWorkFrequency) { }
         }
     }
 }

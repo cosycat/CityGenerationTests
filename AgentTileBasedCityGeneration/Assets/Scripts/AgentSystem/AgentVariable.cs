@@ -37,6 +37,7 @@ namespace AgentSystem {
         }
     }
     
+    [Serializable]
     public abstract class AgentVariableRange<T> : AgentVariable<T> where T : IComparable<T> {
         
         public override T Value {
@@ -62,13 +63,18 @@ namespace AgentSystem {
         
     }
     
+    [Serializable]
     public class AgentVariableInt : AgentVariableRange<int> {
         
         public AgentVariableInt(string name, int value, int min, int max, string? description = null) : base(name, value, min, max, description) { }
 
         public override void OnGui() {
             GUILayout.BeginHorizontal();
-            GUILayout.Label(Name);
+            if (Description != null) {
+                GUILayout.Label(new GUIContent(Name, Description));
+            } else {
+                GUILayout.Label(Name);
+            }
             GUILayout.BeginVertical();
             var newValueSlider = Mathf.RoundToInt(GUILayout.HorizontalSlider(Value, Min, Max));
             var newValueField = int.TryParse(GUILayout.TextField(Value.ToString()), out var newValue) ? newValue : Value;
@@ -78,13 +84,19 @@ namespace AgentSystem {
         }
     }
     
+    [Serializable]
     public class AgentVariableFloat : AgentVariableRange<float> {
         
         public AgentVariableFloat(string name, float value, float min, float max, string? description = null) : base(name, value, min, max, description) { }
 
         public override void OnGui() {
             GUILayout.BeginHorizontal();
-            GUILayout.Label(Name);
+            if (Description != null) {
+                GUILayout.Label(new GUIContent(Name, Description));
+            } else {
+                GUILayout.Label(Name);
+            }
+            // GUILayout.Label(Name);
             GUILayout.BeginVertical();
             var newValueSlider = GUILayout.HorizontalSlider(Value, Min, Max);
             var newValueField = float.TryParse(GUILayout.TextField(Value.ToString()), out var newValue) ? newValue : Value;
@@ -94,32 +106,104 @@ namespace AgentSystem {
         }
     }
     
+    [Serializable]
     public class AgentVariableBool : AgentVariable<bool> {
         
         public AgentVariableBool(string name, bool value, string? description = null) : base(name, value, description) { }
 
         public override void OnGui() {
             GUILayout.BeginHorizontal();
-            Value = GUILayout.Toggle(Value, Name);
+            Value = Description != null ? GUILayout.Toggle(Value, new GUIContent(Name, Description)) : GUILayout.Toggle(Value, Name);
             GUILayout.EndHorizontal();
         }
     }
     
+    [Serializable]
     public class AgentVariableEnum<T> : AgentVariable<T> where T : Enum {
         
         public AgentVariableEnum(string name, T value, string? description = null) : base(name, value, description) { }
 
         public override void OnGui() {
-            GUILayout.BeginVertical();
+            GUILayout.BeginHorizontal();
+            if (Description != null) {
+                GUILayout.Label(new GUIContent(Name, Description));
+            } else {
+                GUILayout.Label(Name);
+            }
             var selectionIndex = GUILayout.Toolbar((int) (object) Value, Enum.GetNames(typeof(T)));
             Value = (T) (object) selectionIndex;
-            GUILayout.EndVertical();
+            GUILayout.EndHorizontal();
         }
     }
 
-    // public abstract class AgentVariables {
-    //     
-    //     public AgentVariableInt WorkFrequency { get; set; }
-    //     
-    // }
+    public abstract class AgentVariableCollection {
+        
+        private IAgentVariable[]? variables;
+
+        /// <summary>
+        /// Returns all variables of type IAgentVariable.
+        ///
+        /// Uses lazy initialization.
+        /// </summary>
+        public IAgentVariable[] AllVariables {
+            get { return variables ??= GetVariables(); }
+        }
+        
+        /// <summary>
+        /// Returns all IAgentVariable variables of the agent,
+        /// including all variables of type IAgentVariable in subclasses of AgentVariableCollection.
+        /// </summary>
+        /// <returns> All variables of type IAgentVariable </returns>
+        protected abstract IAgentVariable[] GetVariables();
+        
+        // /// <summary>
+        // /// Returns all IAgentVariable variables of the agent,
+        // /// including all variables of type IAgentVariable in subclasses of AgentVariableCollection.
+        // ///
+        // /// Uses reflection to find all fields of type IAgentVariable.
+        // /// Override this method to provide custom variables.
+        // /// </summary>
+        // /// <returns> All variables of type IAgentVariable </returns>
+        // protected virtual IAgentVariable[] GetVariables() {
+        //     var variableList = new List<IAgentVariable>();
+        //     var fields = GetType().GetFields();
+        //     foreach (var field in fields) {
+        //         if (field.FieldType.IsSubclassOf(typeof(IAgentVariable))) {
+        //             try {
+        //                 variableList.Add((IAgentVariable)field.GetValue(this)!);
+        //             }
+        //             catch (InvalidCastException) { }
+        //         }
+        //         if (field.FieldType.IsArray) {
+        //             try {
+        //                 var array = (IAgentVariable[])field.GetValue(this)!;
+        //                 variableList.AddRange(array);
+        //             }
+        //             catch (InvalidCastException) { }
+        //         }
+        //         if (field.FieldType.IsSubclassOf(typeof(AgentVariableCollection))) {
+        //             try {
+        //                 var collection = (AgentVariableCollection)field.GetValue(this)!;
+        //                 variableList.AddRange(collection.AllVariables);
+        //             }
+        //             catch (InvalidCastException) { }
+        //         }
+        //     }
+        //     Debug.Assert(variableList.Count > 0, "No variables found in AgentVariableCollection");
+        //     return variableList.ToArray();
+        // }
+    }
+
+    public abstract class AgentParameters : AgentVariableCollection {
+        
+        public AgentParameters(int initialWorkFrequency) {
+            WorkFrequency.Value = initialWorkFrequency;
+            
+        }
+
+        public AgentVariableInt WorkFrequency { get; protected set; } = new("Work Frequency", 1, 1, 100);
+        
+    }
+    
+    
 }

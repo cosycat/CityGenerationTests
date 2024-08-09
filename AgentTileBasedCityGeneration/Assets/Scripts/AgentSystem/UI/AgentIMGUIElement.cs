@@ -22,7 +22,7 @@ namespace AgentSystem.UI {
             if (!isFoldout) return;
             
             GUILayout.BeginVertical();
-            foreach (var variable in agent.AgentVariables) {
+            foreach (var variable in agent.Parameters.AllVariables) {
                 variable.OnGui();
             }
             GUILayout.Label("--------------------");
