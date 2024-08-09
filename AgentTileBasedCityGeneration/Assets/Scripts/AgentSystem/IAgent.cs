@@ -10,7 +10,6 @@ namespace AgentSystem {
         AgentVariableInt WorkFrequency => Parameters.WorkFrequency;
         
         AgentParameters Parameters { get; }
-        // List<IAgentVariable> AgentVariables { get; }
         
         /// <summary>
         ///     A work package for an agent, that is run on a thread in the background.

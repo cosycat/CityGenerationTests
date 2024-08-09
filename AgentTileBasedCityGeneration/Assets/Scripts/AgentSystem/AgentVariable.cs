@@ -139,6 +139,31 @@ namespace AgentSystem {
             GUILayout.EndHorizontal();
         }
     }
+    
+    public class AgentVariableButton : IAgentVariable {
+        
+        public string Name { get; }
+        public string? Description { get; }
+        private readonly Action onClick;
+
+        public AgentVariableButton(string name, Action onClick, string? description = null) {
+            Name = name;
+            this.onClick = onClick;
+            Description = description;
+        }
+
+        public void OnGui() {
+            if (Description != null) {
+                if (GUILayout.Button(new GUIContent(Name, Description))) {
+                    onClick();
+                }
+            } else {
+                if (GUILayout.Button(Name)) {
+                    onClick();
+                }
+            }
+        }
+    }
 
     public abstract class AgentVariableCollection {
         
@@ -162,42 +187,6 @@ namespace AgentSystem {
         /// <returns> All variables of type IAgentVariable </returns>
         protected abstract IAgentVariable[] GetVariables();
         
-        // /// <summary>
-        // /// Returns all IAgentVariable variables of the agent,
-        // /// including all variables of type IAgentVariable in subclasses of AgentVariableCollection.
-        // ///
-        // /// Uses reflection to find all fields of type IAgentVariable.
-        // /// Override this method to provide custom variables.
-        // /// </summary>
-        // /// <returns> All variables of type IAgentVariable </returns>
-        // protected virtual IAgentVariable[] GetVariables() {
-        //     var variableList = new List<IAgentVariable>();
-        //     var fields = GetType().GetFields();
-        //     foreach (var field in fields) {
-        //         if (field.FieldType.IsSubclassOf(typeof(IAgentVariable))) {
-        //             try {
-        //                 variableList.Add((IAgentVariable)field.GetValue(this)!);
-        //             }
-        //             catch (InvalidCastException) { }
-        //         }
-        //         if (field.FieldType.IsArray) {
-        //             try {
-        //                 var array = (IAgentVariable[])field.GetValue(this)!;
-        //                 variableList.AddRange(array);
-        //             }
-        //             catch (InvalidCastException) { }
-        //         }
-        //         if (field.FieldType.IsSubclassOf(typeof(AgentVariableCollection))) {
-        //             try {
-        //                 var collection = (AgentVariableCollection)field.GetValue(this)!;
-        //                 variableList.AddRange(collection.AllVariables);
-        //             }
-        //             catch (InvalidCastException) { }
-        //         }
-        //     }
-        //     Debug.Assert(variableList.Count > 0, "No variables found in AgentVariableCollection");
-        //     return variableList.ToArray();
-        // }
     }
 
     public abstract class AgentParameters : AgentVariableCollection {

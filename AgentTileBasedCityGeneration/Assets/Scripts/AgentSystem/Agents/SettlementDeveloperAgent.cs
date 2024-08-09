@@ -279,6 +279,10 @@ namespace AgentSystem.Agents {
             [field: SerializeField] public AgentVariableEnum<ConnectionHandling> ConnectCulDeSacs { get; private set; } = new("Cul de Sacs Connection Version", ConnectionHandling.ConnectSlowly);
             [field: SerializeField] public AgentVariableBool ConnectCulDeSacWithNonCulDeSac { get; private set; } = new("Connect Cul de Sacs with non-Cul de sacs", true);
             [field: SerializeField] public AgentVariableBool AngleInBothDirections { get; private set; } = new("Angle in Both Directions", true);
+            
+            // public AgentVariableButton IncreaseBudget { get; private set; } = new("Increase Budget", () => {
+            //     Debug.Log("Increase Budget TODO");
+            // });
 
             /// <summary>
             ///     The type of roads for new roads.
@@ -318,7 +322,8 @@ namespace AgentSystem.Agents {
                 return new IAgentVariable[] {
                     WorkFrequency, MinStreetLength, MaxStreetLength, MinNodeEdgeDistance, AngleOffset, AngleRandomMax,
                     MaxConnectionDistance, ConnectCulDeSacs, ConnectCulDeSacWithNonCulDeSac, AngleInBothDirections,
-                    GrowRoadType, ConnectRoadType, GrowRadiusAddition, MaxSlope
+                    GrowRoadType, ConnectRoadType, GrowRadiusAddition, MaxSlope,
+                    // IncreaseBudget
                 };
             }
 
