@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using CodingConnected.TraCI.NET;
 using CodingConnected.TraCI.NET.Types;
+using Graph;
+using Graph.World;
 using UnityEngine;
 
 namespace Simulation.Sumo {
@@ -44,6 +46,18 @@ namespace Simulation.Sumo {
 
         private void OnDestroy() {
             Cleanup();
+        }
+
+        private void OnApplicationQuit() {
+            if (step == 0) return;
+            Debug.Log($"Average simulation time per step: {AverageSimulationTime}.\n" +
+                      $"Average Vehicles present: {AverageVehiclesPresent}\n" +
+                      $"Max Vehicles present: {maxVehiclesPresent}\n" +
+                      $"Number of steps: {step}\n" +
+                      $"Number of edges: {FindObjectOfType<StreetGraphGameObject>().EdgeCount}\n" +
+                      $"Number of nodes: {FindObjectOfType<StreetGraphGameObject>().NodeCount}\n" +
+                      $"Total simulation time: {totalSimulationTime}\n" +
+                      $"Time/step: {totalSimulationTime / step}");
         }
 
         public void StartClient(SimulationManager correspondingSimulationManager) {
@@ -111,6 +125,13 @@ namespace Simulation.Sumo {
                 updatedVehicleInfoList.Add(vehicleInfo);
             }
         }
+        
+        private float? lastSimulationTimeMeasure = null;
+        private float totalSimulationTimeMeasure = 0;
+        private float AverageSimulationTime => totalSimulationTimeMeasure / step;
+        private int totalVehiclesPresent = 0;
+        private int maxVehiclesPresent = 0;
+        private float AverageVehiclesPresent => 1.0f * totalVehiclesPresent / step;
 
         private void UpdateTraCI() {
             // TODO maybe call this in a coroutine instead of Update
@@ -132,7 +153,16 @@ namespace Simulation.Sumo {
 
             totalSimulationTime += Time.deltaTime;
             timeSinceLastUpdate += Time.deltaTime;
+            
+            if (lastSimulationTimeMeasure == null) lastSimulationTimeMeasure = timeSinceLastUpdate;
+            
             if (timeSinceLastUpdate < TIME_STEP_SECONDS) return;
+            
+            var vehicleCount = simulationManager.VehicleCount;
+            totalVehiclesPresent += vehicleCount;
+            maxVehiclesPresent = Mathf.Max(maxVehiclesPresent, vehicleCount);
+            totalSimulationTimeMeasure += lastSimulationTimeMeasure ?? timeSinceLastUpdate;
+            lastSimulationTimeMeasure = null;
 
             // forwards the simulation by one step
             var stepsAdvanced = 0;

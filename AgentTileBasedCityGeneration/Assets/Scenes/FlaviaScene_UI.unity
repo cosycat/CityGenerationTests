@@ -249,6 +249,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: SumoManager
       objectReference: {fileID: 0}
+    - target: {fileID: 638975536412610055, guid: ff5a2fb049189417cb2c167220e497f9, type: 3}
+      propertyPath: <SimulationOptions>k__BackingField.<RandomFlowCount>k__BackingField
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 638975536412610055, guid: ff5a2fb049189417cb2c167220e497f9, type: 3}
+      propertyPath: <SimulationOptions>k__BackingField.<RandomTripCount>k__BackingField
+      value: 5000
+      objectReference: {fileID: 0}
     - target: {fileID: 1731860193232760171, guid: ff5a2fb049189417cb2c167220e497f9, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0

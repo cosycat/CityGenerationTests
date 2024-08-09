@@ -13,6 +13,8 @@ namespace Simulation {
         // Lock to prevent multiple updates interfering with each other.
         private readonly object sumoStepLock = new();
         private readonly Dictionary<string, Vehicle> vehicles = new();
+        
+        public int VehicleCount => vehicles.Count;
 
         // Eventually this could be moved to a general options object, but for now, they just share the options.
         private SumoSimulationOptions? simulationOptions;

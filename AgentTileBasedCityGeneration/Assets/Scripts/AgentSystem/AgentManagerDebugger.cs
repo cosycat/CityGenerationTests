@@ -3,7 +3,7 @@ using UnityEngine;
 namespace AgentSystem {
     public class AgentManagerDebugger : MonoBehaviour {
         [SerializeField] private int minTargetFPS = 1;
-        [SerializeField] private int maxTargetFPS = 60;
+        [SerializeField] private int maxTargetFPS = 120;
 
         private AgentManager agentManager;
 
