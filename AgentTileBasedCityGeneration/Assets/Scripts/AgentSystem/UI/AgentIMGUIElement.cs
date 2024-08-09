@@ -1,4 +1,6 @@
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 using UnityEngine;
 
 namespace AgentSystem.UI {
@@ -13,9 +15,15 @@ namespace AgentSystem.UI {
         public AgentIMGUIElement(IAgent agent) {
             this.agent = agent;
         }
-        
+
         public void AgentEntryGUI() {
-            isFoldout = GUILayout.Toggle(isFoldout, agent.GetType().Name, EditorStyles.foldout);
+            GUIStyle style;
+#if UNITY_EDITOR
+            style = EditorStyles.foldout;
+#else
+            style = new GUIStyle();
+#endif
+            isFoldout = GUILayout.Toggle(isFoldout, agent.GetType().Name, style);
 
             if (!isFoldout) return;
             

@@ -1,5 +1,9 @@
 #nullable enable
 using System;
+using System.Linq;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 using UnityEngine;
 
 namespace AgentSystem {
@@ -152,6 +156,8 @@ namespace AgentSystem {
         /// <summary>
         /// Returns all IAgentVariable variables of the agent,
         /// including all variables of type IAgentVariable in subclasses of AgentVariableCollection.
+        ///
+        /// Could maybe be used with reflection, but that would probably be slower and this is more explicit.
         /// </summary>
         /// <returns> All variables of type IAgentVariable </returns>
         protected abstract IAgentVariable[] GetVariables();
