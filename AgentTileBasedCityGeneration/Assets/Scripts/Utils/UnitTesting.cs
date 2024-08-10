@@ -9,22 +9,20 @@ using UnityEngine.SceneManagement;
 
 namespace Utils {
     public class UnitTesting : MonoBehaviour {
-        
         [MenuItem("UnitTesting/Test Everything")]
-        
         [ContextMenu("Test Everything")]
         private static void TestEverything() {
             var newScene = CreateNewScene(out var previousScene);
-            
+
             if (!newScene.IsValid()) {
                 Debug.LogError("Failed to create new scene for testing.");
                 return;
             }
-            
+
             RunAllTests(out var results);
 
             LogResults(results);
-            
+
             RestorePreviousScene(previousScene);
         }
 
@@ -34,7 +32,8 @@ namespace Utils {
                 foreach (var testResult in testResults) {
                     if (testResult.Result) {
                         Debug.Log($"  {testResult.Name}: OK");
-                    } else {
+                    }
+                    else {
                         Debug.LogError($"  {testResult.Name}: FAIL - {testResult.ErrorMessage}");
                     }
                 }
@@ -74,14 +73,13 @@ namespace Utils {
             EditorSceneManager.OpenScene(previousScenePath);
             Debug.Log($"Restored previous scene: {previousScenePath}");
         }
-        
     }
 
     public struct TestResult {
         public bool Result;
         public string Name;
         public string? ErrorMessage;
-        
+
         public static TestResult BuildResult(string name, params (bool result, string errorMessage)[] results) {
             var result = true;
             var errorMessage = "";
@@ -102,22 +100,25 @@ namespace Utils {
 
     public interface ITestable {
         string Name { get; }
+
         TestResult[] TestAll() {
-            var testResults = GetType().GetMethods().Where(m => m.ReturnType == typeof(TestResult)).Select(m => (TestResult)m.Invoke(this, null)).ToArray();
+            var testResults = GetType().GetMethods()
+                .Where(m => m.ReturnType == typeof(TestResult))
+                .Where(m => m.GetParameters().Length == 0)
+                .Select(m => (TestResult)m.Invoke(this, null)).ToArray();
             return testResults;
         }
     }
-    
+
     public class TestSystemTest : ITestable {
         public string Name => "Test System Test";
-        
+
         public TestResult TestTestSystem() {
             return new TestResult {
                 Result = true,
                 Name = "Initial Test",
-                ErrorMessage = null
+                ErrorMessage = "Failed to test the test system."
             };
         }
     }
-    
 }
