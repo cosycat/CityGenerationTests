@@ -39,6 +39,49 @@ namespace Graph.LineBased {
             
             return result;
         }
+
+        public TestResult TestAddingTwoEdgesWithAnIntersection() {
+            var graph = new GameObject("TestAddingTwoEdgesWithAnIntersection").AddComponent<LineGraph>();
+
+            var result = TestResult.BuildResult("Adding Two Edges with an Intersection",
+                (graph.CreateUnconnectedNode(new Vector3(-1, 0, 0), out var nodeLeft), "Node Left should be created."),
+                (graph.CreateEdge(nodeLeft, new Vector3(1, 0, 0), out var edgeLeftRight, out var nodeRight, out var isNodeRightNew, out var isEdgeLeftRightNew),
+                    "Edge Left-Right and Node Right should be created."),
+                (isNodeRightNew, "Node Right should be new."),
+                (isEdgeLeftRightNew, "Edge Left-Right should be new."),
+
+                (graph.CreateEdge(nodeLeft, new Vector3(0, 1, 0), out var edgeLeftTop, out var nodeTop, out var isNodeTopNew, out var isEdgeLeftTopNew),
+                    "Edge Left-Top and Node Top should be created."),
+                (isNodeTopNew, "Node Top should be new."),
+                (isEdgeLeftTopNew, "Edge Left-Top should be new."),
+
+                (graph.CreateEdge(nodeTop, new Vector3(0, -1, 0), out var edgeTopDown, out var nodeDown, out var isNodeDownNew, out var isEdgeTopDownNew, false),
+                    "Edge Top-Down and Node Down should be created."),
+                (isNodeDownNew, "Node Down should be new."),
+                (isEdgeTopDownNew, "Edge Top-Down should be new."),
+                (graph.Nodes.Contains(nodeDown), "Node Down should be added to the graph."),
+                (nodeDown.Position == new Vector3(0, 0, 0), "Node Down should be at position (0, 0, 0)."),
+                (nodeDown.ConnectedEdgesCount == 3, "Node Down should be connected to 3 edges."),
+                (graph.Edges.Contains(edgeTopDown), "Edge Top-Down should be added to the graph."),
+
+                (graph.NodeCount == 4, $"Line graph should have 4 nodes but has {graph.NodeCount}."),
+                (graph.EdgeCount == 4, $"Line graph should have 4 edges but has {graph.EdgeCount}."),
+                (!graph.Edges.Contains(edgeLeftRight), "Edge Left-Right should not be in the graph anymore."),
+                (graph.Edges.Contains(edgeLeftTop), "Edge Left-Top should still be in the graph."),
+                (graph.Edges.Contains(edgeTopDown), "Edge Top-Down should still be in the graph."),
+                (nodeLeft.Edges.Contains(edgeLeftTop), "Node Left should have Edge Left-Top."),
+                (!nodeLeft.Edges.Contains(edgeLeftRight), "Node Left should not have Edge Left-Right anymore."),
+                (nodeTop.Edges.Contains(edgeLeftTop), "Node Top should have Edge Left-Top."),
+                (nodeTop.Edges.Contains(edgeTopDown), "Node Top should have Edge Top-Down."))
+                
+                .AppendErrorMessageIfFalse($"Nodes: {string.Join(", ", graph.Nodes.Select(n => n.ToString()).ToArray())}")
+                .AppendErrorMessageIfFalse($"Edges: {string.Join(", ", graph.Edges.Select(e => e.ToString()).ToArray())}");
+
+            
+            Object.DestroyImmediate(graph.gameObject);
+            
+            return result;
+        }
         
         
     }
