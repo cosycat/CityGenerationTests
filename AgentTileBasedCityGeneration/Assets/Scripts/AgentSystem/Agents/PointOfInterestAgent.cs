@@ -132,28 +132,28 @@ namespace AgentSystem.Agents {
             /// <summary>
             ///     Maximum number of POIs in the world. If this threshold is reached, no new POIs are generated.
             /// </summary>
-            [Min(0)] public AgentVariableInt DesiredNumberOfPoints = new("Desired Number of Points", 35, 0, 100);
+            public AgentVariableInt DesiredNumberOfPoints = new("Desired Number of Points", 35, 0, 100);
 
             /// <summary>
             ///     Factor which influences the cost function of POI generation. Specifically, it influences the cost
             ///     of the distance to the nearest existing POI. This part of the cost function is calculated as
             ///     DistanceCostFactor * 1 / (distanceToNearestPOI + 1). Increasing this factor will make the POI be farther apart
             /// </summary>
-            [Min(0)] public AgentVariableInt DistanceCostFactor = new("Distance Cost Factor", 35, 0, 500);
+            public AgentVariableInt DistanceCostFactor = new("Distance Cost Factor", 35, 0, 500);
             
             /// <summary>
             ///     Minimum distance to a road that needs to exist to build a POI
             /// </summary>
-            [Min(0)] public AgentVariableInt MinDistanceToRoad = new("Min Distance to Road", 20, 0, 100);
+            public AgentVariableInt MinDistanceToRoad = new("Min Distance to Road", 20, 0, 100);
 
             /// <summary>
             ///     Radius which is used for selection of new POI. An initial position for a new POI is based
             ///     on a random POI's position + radius. The final POI might be outside of the radius due to the cost function.
             /// </summary>
-            [Min(0)] public AgentVariableInt RadiusGeneration = new("Radius Generation", 100, 0, 500);            
+            public AgentVariableInt RadiusGeneration = new("Radius Generation", 100, 0, 500);            
             
             
-            [Min(0)] public AgentVariableInt InitialBudgetForPOI = new("Initial Budget for POI", 500, 0, 10000);
+            public AgentVariableInt InitialBudgetForPOI = new("Initial Budget for POI", 500, 0, 10000);
             
             protected override IAgentVariable[] GetVariables() {
                 return new IAgentVariable[] {
