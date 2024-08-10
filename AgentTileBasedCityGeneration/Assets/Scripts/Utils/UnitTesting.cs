@@ -2,27 +2,21 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 namespace Utils {
     public class UnitTesting : MonoBehaviour {
         
+        [MenuItem("UnitTesting/Test Everything")]
+        
         [ContextMenu("Test Everything")]
-        private void TestEverything() {
-            List<ITestable> testClasses = new();
-            // this loop from https://stackoverflow.com/a/12602220/12581784
-            foreach (var mytype in System.Reflection.Assembly.GetExecutingAssembly().GetTypes()
-                         .Where(mytype => mytype .GetInterfaces().Contains(typeof(ITestable)))) {
-                if (mytype.IsAbstract) continue;
-                if (mytype.IsInterface) continue;
-                if (mytype.IsGenericType) continue;
-                if (mytype.GetConstructors().All(c => c.GetParameters().Length > 0)) continue;
-                var testable = (ITestable)Activator.CreateInstance(mytype);
-                testClasses.Add(testable);
-            }
-
+        private static void TestEverything() {
+            CreateNewScene();
+            
             var results = new List<(string testGroupName, TestResult[] results)>();
-            foreach (var testable in testClasses) {
+            foreach (var testable in GetAllTestClasses()) {
                 var result = testable.TestAll();
                 results.Add((testable.Name, result));
                 
@@ -38,8 +32,28 @@ namespace Utils {
                     }
                 }
             }
+            
+            
         }
-        
+
+        private static IEnumerable<ITestable> GetAllTestClasses() {
+            // main parts of loop from https://stackoverflow.com/a/12602220/12581784
+            return (from mytype in System.Reflection.Assembly.GetExecutingAssembly()
+                    .GetTypes()
+                    .Where(mytype => mytype.GetInterfaces().Contains(typeof(ITestable)))
+                where !mytype.IsAbstract
+                where !mytype.IsInterface
+                where !mytype.IsGenericType
+                where !mytype.GetConstructors().All(c => c.GetParameters().Length > 0)
+                select (ITestable)Activator.CreateInstance(mytype)).ToList();
+        }
+
+        private static void CreateNewScene() {
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            if (!scene.IsValid()) {
+                Debug.LogError("Failed to create new scene for testing.");
+            }
+        }
     }
 
     public struct TestResult {
