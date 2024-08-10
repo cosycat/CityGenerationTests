@@ -78,6 +78,7 @@ namespace Graph.World.Helpers {
                 var roundedX = Mathf.Round(mousePointerWorldPos.x);
                 var roundedY = Mathf.Round(mousePointerWorldPos.y);
 
+#if UNITY_EDITOR
                 if (roundedX >= 0 && roundedX < world.Width && roundedY >= 0 && roundedY < world.Height) {
                     var height = world.GetHeightAt(roundedX, roundedY);
                     Handles.Label(mousePointerWorldPos, $"{height * Constants.METERS_PER_UNIT} meters");
@@ -88,6 +89,8 @@ namespace Graph.World.Helpers {
                     new GUIStyle { fontSize = 30 });
                 Handles.Label(lowestPoint, $"Lowest point: {minHeight * Constants.METERS_PER_UNIT}",
                     new GUIStyle { fontSize = 30 });
+#endif
+
             }
         }
 

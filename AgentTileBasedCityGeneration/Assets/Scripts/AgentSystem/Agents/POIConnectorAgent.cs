@@ -66,7 +66,8 @@ namespace AgentSystem.Agents {
                     if (parameters.PlaceSettlementDeveloper)
                         context.Manager.AddNewAgent(new SettlementDeveloperAgent((BudgetPointOfInterest)unconnectedPoi,
                             world, parameters.sdaParameters));
-                    Debug.Assert(world.StreetGraph.TryFindClosestNode(unconnectedPoi.Position, out var node));
+                    var foundClosestNode = world.StreetGraph.TryFindClosestNode(unconnectedPoi.Position, out var node);
+                    Debug.Assert(foundClosestNode);
                     world.PointsOfInterest.AddNodeRelationToPointOfInterest(node, unconnectedPoi);
                 }
                 else {

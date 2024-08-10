@@ -95,6 +95,7 @@ namespace Graph {
                         Gizmos.DrawRay(new Vector3(0, i), Vector3.right * world.Width);
                 }
 
+#if UNITY_EDITOR
                 if (drawLabelsEdges)
                     // UnityEditor.Handles.color = Color.yellow;
                     foreach (var edge in edges)
@@ -103,6 +104,7 @@ namespace Graph {
                 if (drawLabelsNodes)
                     // UnityEditor.Handles.color = Color.white;
                     DrawLabelNode(nodes.ToArray());
+#endif
 
                 if (drawMouseLabel) {
                     Gizmos.DrawWireSphere(mouseWorldPosition, mouseNodeDistanceThreshold);
@@ -111,8 +113,10 @@ namespace Graph {
                     DrawLabelNode(nodesWithinRange);
                     var foundANode = streetGraph.TryFindClosestNode(mouseWorldPosition, out var closestNode,
                         mouseNodeDistanceThreshold);
+#if UNITY_EDITOR
                     Handles.Label(mouseWorldPosition,
                         $"{mouseWorldPosition}{(foundANode ? $" {closestNode}" : "")}");
+#endif
                 }
             }
             catch (InvalidOperationException) { }
@@ -181,10 +185,12 @@ namespace Graph {
         }
 
         private static void DrawLabelNode(IStreetNode[] nodes) {
+#if UNITY_EDITOR
             for (var i = 0; i < nodes.Length; i++) {
                 var node = nodes[i];
                 Handles.Label(node.Position, $"(Idx: {i}) {node.DebugString()}");
             }
+#endif
         }
     }
 }
