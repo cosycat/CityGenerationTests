@@ -5,6 +5,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Utils {
     public class UnitTesting : MonoBehaviour {
@@ -13,13 +14,12 @@ namespace Utils {
         
         [ContextMenu("Test Everything")]
         private static void TestEverything() {
-            CreateNewScene();
+            CreateNewScene(out var previousScene);
             
             var results = new List<(string testGroupName, TestResult[] results)>();
             foreach (var testable in GetAllTestClasses()) {
                 var result = testable.TestAll();
                 results.Add((testable.Name, result));
-                
             }
             
             foreach (var (testGroupName, testResults) in results) {
@@ -33,7 +33,7 @@ namespace Utils {
                 }
             }
             
-            
+            RestorePreviousScene(previousScene);
         }
 
         private static IEnumerable<ITestable> GetAllTestClasses() {
@@ -48,12 +48,23 @@ namespace Utils {
                 select (ITestable)Activator.CreateInstance(mytype)).ToList();
         }
 
-        private static void CreateNewScene() {
+        private static Scene CreateNewScene(out string previousScenePath) {
+            var previousScene = SceneManager.GetActiveScene();
+            Debug.Log($"Previous scene: {previousScene.name}: {previousScene.path}");
+            previousScenePath = previousScene.path;
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             if (!scene.IsValid()) {
                 Debug.LogError("Failed to create new scene for testing.");
             }
+
+            return scene;
         }
+
+        private static void RestorePreviousScene(string previousScenePath) {
+            Debug.Log($"Restoring previous scene: {previousScenePath}");
+            EditorSceneManager.OpenScene(previousScenePath);
+        }
+        
     }
 
     public struct TestResult {
