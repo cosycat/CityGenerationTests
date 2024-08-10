@@ -58,7 +58,7 @@ namespace Graph {
         /// <param name="roadType"></param>
         /// <returns> True if the edge was created, false otherwise. </returns>
         public bool CreateEdge(Vector3 from, Vector3 to, out IStreetEdge newEdge, out IStreetNode fromNode,
-            out IStreetNode toNode, out bool isFromNodeNew, out bool isToNodeNew, RoadType roadType) {
+            out IStreetNode toNode, out bool isFromNodeNew, out bool isToNodeNew, RoadType roadType = RoadType.Primary) {
             if (!GetOrCreateNode(from, SnapToExistingNodeThreshold, out fromNode, out isFromNodeNew)) {
                 newEdge = null!;
                 toNode = null!;
@@ -75,10 +75,10 @@ namespace Graph {
         }
 
         public bool CreateEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode,
-            out bool isToNodeNew, out bool isEdgeNew, RoadType roadType, bool failIfIntersection = false);
+            out bool isToNodeNew, out bool isEdgeNew, RoadType roadType = RoadType.Primary, bool failIfIntersection = false);
 
         public bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge, out bool isEdgeNew,
-            RoadType roadType);
+            RoadType roadType = RoadType.Primary);
 
         /// <summary>
         ///    Removes the given node from the street graph.
