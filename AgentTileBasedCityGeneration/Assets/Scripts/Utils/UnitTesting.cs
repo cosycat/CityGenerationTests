@@ -76,9 +76,15 @@ namespace Utils {
     }
 
     public struct TestResult {
-        public bool Result;
-        public string Name;
-        public string? ErrorMessage;
+        public TestResult(bool result, string name, string? errorMessage) {
+            Result = result;
+            Name = name;
+            ErrorMessage = errorMessage;
+        }
+
+        public bool Result { get; private set; }
+        public string Name { get; private set; }
+        public string? ErrorMessage { get; private set; }
 
         public static TestResult BuildResult(string name, params (bool result, string errorMessage)[] results) {
             var result = true;
@@ -96,8 +102,15 @@ namespace Utils {
                 ErrorMessage = errorMessage
             };
         }
+
+        public TestResult AppendErrorMessageIfFalse(string errorMessage, bool newline = true) {
+            if (Result) return this;
+            ErrorMessage += (newline ? "\n" : "") + errorMessage;
+            return this;
+        }
     }
 
+    
     public interface ITestable {
         string Name { get; }
 
@@ -114,11 +127,15 @@ namespace Utils {
         public string Name => "Test System Test";
 
         public TestResult TestTestSystem() {
-            return new TestResult {
-                Result = true,
-                Name = "Initial Test",
-                ErrorMessage = "Failed to test the test system."
-            };
+            return new TestResult(result: true, name: "Initial Test", errorMessage: "Failed to test the test system.");
+        }
+        
+        public TestResult TestCombiningMultipleResults() {
+            return TestResult.BuildResult("Combining Multiple Results",
+                (true, "This should pass."),
+                (false, "This should fail."),
+                (true, "This should pass too."),
+                (false, "This should fail too."));
         }
     }
 }
