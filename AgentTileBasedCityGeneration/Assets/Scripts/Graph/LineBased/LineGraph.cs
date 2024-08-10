@@ -335,7 +335,7 @@ namespace Graph.LineBased {
 
         private void AddNode(LineNode n) {
             nodes.Add(n);
-            nodeDatastructure.Insert(n);
+            nodeDatastructure?.Insert(n);
             OnNodeAdded(n);
         }
     }
