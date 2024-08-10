@@ -3,11 +3,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using DebugUtils;
 using Graph;
 using Graph.World;
 using Graph.World.PoI;
 using UnityEngine;
+using Utils;
 using Random = System.Random;
 
 namespace AgentSystem.Agents {

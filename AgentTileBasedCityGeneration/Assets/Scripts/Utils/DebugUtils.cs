@@ -4,7 +4,7 @@ using Graph;
 using Graph.World;
 using UnityEngine;
 
-namespace DebugUtils {
+namespace Utils {
     public class GraphDebugUtils {
         public static bool AssertStreetGraphConnectivity(IWorld world, string msg = "", bool fail = true) {
             var nodes = world.StreetGraph.Nodes;

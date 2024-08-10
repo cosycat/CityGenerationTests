@@ -562,6 +562,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: AgentManagerStartStop
       objectReference: {fileID: 0}
+    - target: {fileID: 7685810169078461720, guid: e87f31d4faaab46c69c46cdba82278b3, type: 3}
+      propertyPath: maxTargetFPS
+      value: 180
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1003,6 +1007,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: StreetGraphTest
       objectReference: {fileID: 0}
+    - target: {fileID: 3326123069678904497, guid: 31e60a457e0b042b886e31068d0301d2, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4858805909957988875, guid: 31e60a457e0b042b886e31068d0301d2, type: 3}
+      propertyPath: allowMouseCreation
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6470163641390300857, guid: 31e60a457e0b042b886e31068d0301d2, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -1140,6 +1152,10 @@ PrefabInstance:
     - target: {fileID: 814742543712103620, guid: e77a622ae003447748ba18d541cd5e3d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2413731996329675132, guid: e77a622ae003447748ba18d541cd5e3d, type: 3}
+      propertyPath: <TargetFramesPerSecond>k__BackingField
+      value: 120
       objectReference: {fileID: 0}
     - target: {fileID: 6324588498074828355, guid: e77a622ae003447748ba18d541cd5e3d, type: 3}
       propertyPath: m_Name

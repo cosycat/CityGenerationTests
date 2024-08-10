@@ -3,11 +3,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using DebugUtils;
 using Graph;
 using Graph.World;
 using UnityEngine;
 using UnityEngine.Serialization;
+using Utils;
 using Utils.DataStructures;
 using Debug = UnityEngine.Debug;
 
