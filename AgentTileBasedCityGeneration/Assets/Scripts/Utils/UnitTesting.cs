@@ -14,14 +14,21 @@ namespace Utils {
         
         [ContextMenu("Test Everything")]
         private static void TestEverything() {
-            CreateNewScene(out var previousScene);
+            var newScene = CreateNewScene(out var previousScene);
             
-            var results = new List<(string testGroupName, TestResult[] results)>();
-            foreach (var testable in GetAllTestClasses()) {
-                var result = testable.TestAll();
-                results.Add((testable.Name, result));
+            if (!newScene.IsValid()) {
+                Debug.LogError("Failed to create new scene for testing.");
+                return;
             }
             
+            RunAllTests(out var results);
+
+            LogResults(results);
+            
+            RestorePreviousScene(previousScene);
+        }
+
+        private static void LogResults(IEnumerable<(string testGroupName, TestResult[] results)> results) {
             foreach (var (testGroupName, testResults) in results) {
                 Debug.Log($"Test group {testGroupName}:");
                 foreach (var testResult in testResults) {
@@ -32,8 +39,14 @@ namespace Utils {
                     }
                 }
             }
-            
-            RestorePreviousScene(previousScene);
+        }
+
+        private static void RunAllTests(out List<(string testGroupName, TestResult[] results)> results) {
+            results = new List<(string testGroupName, TestResult[] results)>();
+            foreach (var testable in GetAllTestClasses()) {
+                var result = testable.TestAll();
+                results.Add((testable.Name, result));
+            }
         }
 
         private static IEnumerable<ITestable> GetAllTestClasses() {
@@ -53,16 +66,13 @@ namespace Utils {
             Debug.Log($"Previous scene: {previousScene.name}: {previousScene.path}");
             previousScenePath = previousScene.path;
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            if (!scene.IsValid()) {
-                Debug.LogError("Failed to create new scene for testing.");
-            }
 
             return scene;
         }
 
         private static void RestorePreviousScene(string previousScenePath) {
-            Debug.Log($"Restoring previous scene: {previousScenePath}");
             EditorSceneManager.OpenScene(previousScenePath);
+            Debug.Log($"Restored previous scene: {previousScenePath}");
         }
         
     }
