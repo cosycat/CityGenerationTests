@@ -21,7 +21,7 @@ namespace Graph {
         public virtual void Init(IWorld world) { }
 
         public virtual bool CreateEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode,
-            out bool isToNodeNew, out bool isEdgeNew, bool failIfIntersection = false) {
+            out bool isToNodeNew, out bool isEdgeNew, RoadType roadType, bool failIfIntersection = false) {
             if (!GetOrCreateNode(to, SnapToExistingNodeThreshold, out toNode, out isToNodeNew)) {
                 Debug.Log("IStreetGraph::CreateEdge - Failed to create node at to position");
                 newEdge = null!;
@@ -30,7 +30,7 @@ namespace Graph {
             }
 
             // try to create the edge
-            var success = CreateEdge(from, toNode, out newEdge, out isEdgeNew);
+            var success = CreateEdge(from, toNode, out newEdge, out isEdgeNew, roadType);
             if (success) return true;
 
             // if the edge creation failed, remove the node if it was newly created
@@ -39,7 +39,8 @@ namespace Graph {
             return false;
         }
 
-        public abstract bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge, out bool isEdgeNew);
+        public abstract bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge, out bool isEdgeNew,
+            RoadType roadType);
         public abstract bool TryRemoveNode(IStreetNode node);
         public abstract bool RemoveEdge(IStreetEdge edge);
 

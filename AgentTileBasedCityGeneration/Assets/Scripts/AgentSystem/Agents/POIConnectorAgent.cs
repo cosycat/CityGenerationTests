@@ -10,9 +10,7 @@ using UnityEngine;
 
 namespace AgentSystem.Agents {
     public class POIConnectorAgent : MonoBehaviour, IAgent {
-
         
-
         [SerializeField] private POIConnectorParameters parameters = new(100);
         public AgentParameters Parameters => parameters;
 

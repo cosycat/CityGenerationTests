@@ -36,7 +36,7 @@ namespace Graph.LineBased {
         }
 
         public override bool CreateEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode,
-            out bool isToNodeNew, out bool isEdgeNew, bool failIfIntersection = false) {
+            out bool isToNodeNew, out bool isEdgeNew, RoadType roadType, bool failIfIntersection = false) {
             // Debug.Assert(from != null, $"CreateEdge: From node is null, to position: {to}");
             var numEdgesBefore = edges.Count();
             var numNodesBefore = nodes.Count();
@@ -93,7 +93,7 @@ namespace Graph.LineBased {
                         RemoveEdge(rightEdge);
                         TryRemoveNode(nodeUsed);
                         CreateEdge(lastIntersectionEdge.NodeA, lastIntersectionEdge.NodeB, out var restoredEdge,
-                            out var isNewEdge);
+                            out var isNewEdge, roadType);
                         Debug.Assert(isNewEdge);
                     };
                 }
@@ -111,7 +111,7 @@ namespace Graph.LineBased {
                 }
             }
 
-            var result = CreateEdge(from, toNode, out newEdge, out isEdgeNew);
+            var result = CreateEdge(from, toNode, out newEdge, out isEdgeNew, roadType);
             //edge building might still fail due to bad angles for example. Newly created nodes/edges have then to be removed again otherwise they are dangling
             if (!result) {
                 undo();
@@ -124,7 +124,7 @@ namespace Graph.LineBased {
             return result;
         }
 
-        public override bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge, out bool isEdgeNew) {
+        public override bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge, out bool isEdgeNew, RoadType roadType) {
             if (from is not LineNode fromLineNode || to is not LineNode toLineNode) { // is checks for null as well
                 newEdge = null!;
                 isEdgeNew = false;
@@ -148,7 +148,7 @@ namespace Graph.LineBased {
 
             // TODO check intersections here
 
-            var edge = new LineEdge(fromLineNode, toLineNode, edgeWidthMeters);
+            var edge = new LineEdge(fromLineNode, toLineNode, edgeWidthMeters, roadType);
             fromLineNode.AddEdge(edge);
             toLineNode.AddEdge(edge);
             AddEdge(edge);
@@ -255,9 +255,9 @@ namespace Graph.LineBased {
             var n = new LineNode(positionOnEdge, MinAngleBetweenNewEdgesRad);
             AddNode(n);
 
-            var lEdge = new LineEdge(foundEdge.NodeA, n, prevStreetWidth);
+            var lEdge = new LineEdge(foundEdge.NodeA, n, prevStreetWidth, foundEdge.Type);
             AddEdge(lEdge);
-            var rEdge = new LineEdge(n, foundEdge.NodeB, prevStreetWidth);
+            var rEdge = new LineEdge(n, foundEdge.NodeB, prevStreetWidth, foundEdge.Type);
             AddEdge(rEdge);
 
             //if this fails, we would have an edge with length 0, which is weird and should not happen

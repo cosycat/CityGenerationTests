@@ -22,7 +22,7 @@ namespace Graph.LineBased {
             
             var result = TestResult.BuildResult("Adding Two Nodes and an Edge",
                 (graph.CreateUnconnectedNode(Vector3.zero, out var node1), "Node 1 should be created."),
-                (graph.CreateEdge(node1, new Vector3(1, 0, 0), out var edge1, out var node2, out var isToNodeNew, out var isEdgeNew), "Edge 1 and Node 2 should be created."),
+                (graph.CreateEdge(node1, new Vector3(1, 0, 0), out var edge1, out var node2, out var isToNodeNew, out var isEdgeNew, RoadType.Primary), "Edge 1 and Node 2 should be created."),
                 (isToNodeNew, "Node 2 should be new."),
                 (isEdgeNew, "Edge 1 should be new."),
                 (graph.NodeCount == 2, "Line graph should have 2 nodes."),
@@ -45,17 +45,17 @@ namespace Graph.LineBased {
 
             var result = TestResult.BuildResult("Adding Two Edges with an Intersection",
                 (graph.CreateUnconnectedNode(new Vector3(-1, 0, 0), out var nodeLeft), "Node Left should be created."),
-                (graph.CreateEdge(nodeLeft, new Vector3(1, 0, 0), out var edgeLeftRight, out var nodeRight, out var isNodeRightNew, out var isEdgeLeftRightNew),
+                (graph.CreateEdge(nodeLeft, new Vector3(1, 0, 0), out var edgeLeftRight, out var nodeRight, out var isNodeRightNew, out var isEdgeLeftRightNew, RoadType.Primary),
                     "Edge Left-Right and Node Right should be created."),
                 (isNodeRightNew, "Node Right should be new."),
                 (isEdgeLeftRightNew, "Edge Left-Right should be new."),
 
-                (graph.CreateEdge(nodeLeft, new Vector3(0, 1, 0), out var edgeLeftTop, out var nodeTop, out var isNodeTopNew, out var isEdgeLeftTopNew),
+                (graph.CreateEdge(nodeLeft, new Vector3(0, 1, 0), out var edgeLeftTop, out var nodeTop, out var isNodeTopNew, out var isEdgeLeftTopNew, RoadType.Primary),
                     "Edge Left-Top and Node Top should be created."),
                 (isNodeTopNew, "Node Top should be new."),
                 (isEdgeLeftTopNew, "Edge Left-Top should be new."),
 
-                (graph.CreateEdge(nodeTop, new Vector3(0, -1, 0), out var edgeTopDown, out var nodeDown, out var isNodeDownNew, out var isEdgeTopDownNew, false),
+                (graph.CreateEdge(nodeTop, new Vector3(0, -1, 0), out var edgeTopDown, out var nodeDown, out var isNodeDownNew, out var isEdgeTopDownNew, RoadType.Primary, false),
                     "Edge Top-Down and Node Down should be created."),
                 (isNodeDownNew, "Node Down should be new."),
                 (isEdgeTopDownNew, "Edge Top-Down should be new."),

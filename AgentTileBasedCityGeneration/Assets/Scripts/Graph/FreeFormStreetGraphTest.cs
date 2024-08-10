@@ -133,7 +133,7 @@ namespace Graph {
             }
             else if (Input.GetMouseButtonUp(0)) {
                 if (dragStartNode == null) return;
-                if (!streetGraph.CreateEdge(dragStartNode, mousePositionWorld, out _, out _, out _, out _))
+                if (!streetGraph.CreateEdge(dragStartNode, mousePositionWorld, out _, out _, out _, out _, RoadType.Secondary))
                     Debug.LogWarning("FreeFormStreetGraphTest - Failed to create new edge.");
 
                 dragStartNode = null;

@@ -44,7 +44,8 @@ namespace FreeFormGraph.SplineBased {
             GenerateNewUnconnectedNode(Vector3.zero, out _, true, out var _, out var _);
         }
 
-        public override bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge, out bool isEdgeNew) {
+        public override bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge, out bool isEdgeNew,
+            RoadType roadType) {
             var res = AddNewSegment((SplineStreetNode)from, (SplineStreetNode)to, out var newSegment);
             newEdge = newSegment;
             isEdgeNew = res;

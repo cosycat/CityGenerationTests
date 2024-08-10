@@ -209,9 +209,8 @@ namespace AgentSystem {
 
                 Debug.Assert(lastNode != null /*, "Last node is null"*/);
                 var edgeCreated = streetGraph.CreateEdge(lastNode!, wp.Pos, out var newEdge, out lastNode,
-                    out var isToNodeNew, out var isEdgeNew);
-                if (edgeCreated) newEdge.Type = p.roadType;
-                //edge creation might fail because the road angle is to small or there are too many connections to a node already...
+                    out var isToNodeNew, out var isEdgeNew, p.roadType);
+                //edge creation might fail because the road angle is too small or there are too many connections to a node already...
                 //the easiest way to handle these issues is to just remove the road altogether.
                 if (isToNodeNew) removeNodes.Add(lastNode);
                 if (isEdgeNew) removeEdges.Add(newEdge);

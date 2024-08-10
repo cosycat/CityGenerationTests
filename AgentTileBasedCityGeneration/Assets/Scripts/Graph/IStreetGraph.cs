@@ -55,9 +55,10 @@ namespace Graph {
         /// <param name="toNode"> The node that the edge was connected to. </param>
         /// <param name="isFromNodeNew"> Whether the from node was newly created or not. </param>
         /// <param name="isToNodeNew"> Whether the to node was newly created or not. </param>
+        /// <param name="roadType"></param>
         /// <returns> True if the edge was created, false otherwise. </returns>
         public bool CreateEdge(Vector3 from, Vector3 to, out IStreetEdge newEdge, out IStreetNode fromNode,
-            out IStreetNode toNode, out bool isFromNodeNew, out bool isToNodeNew) {
+            out IStreetNode toNode, out bool isFromNodeNew, out bool isToNodeNew, RoadType roadType) {
             if (!GetOrCreateNode(from, SnapToExistingNodeThreshold, out fromNode, out isFromNodeNew)) {
                 newEdge = null!;
                 toNode = null!;
@@ -66,7 +67,7 @@ namespace Graph {
             }
 
             // try to create the edge
-            var success = CreateEdge(fromNode, to, out newEdge, out toNode, out isToNodeNew, out _);
+            var success = CreateEdge(fromNode, to, out newEdge, out toNode, out isToNodeNew, out _, roadType);
             if (success) return true;
             // if the edge creation failed, remove the node if it was newly created
             if (isFromNodeNew) TryRemoveNode(fromNode);
@@ -74,9 +75,10 @@ namespace Graph {
         }
 
         public bool CreateEdge(IStreetNode from, Vector3 to, out IStreetEdge newEdge, out IStreetNode toNode,
-            out bool isToNodeNew, out bool isEdgeNew, bool failIfIntersection = false);
+            out bool isToNodeNew, out bool isEdgeNew, RoadType roadType, bool failIfIntersection = false);
 
-        public bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge, out bool isEdgeNew);
+        public bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge, out bool isEdgeNew,
+            RoadType roadType);
 
         /// <summary>
         ///    Removes the given node from the street graph.

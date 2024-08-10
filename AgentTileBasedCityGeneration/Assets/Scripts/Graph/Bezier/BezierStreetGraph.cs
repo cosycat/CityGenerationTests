@@ -18,7 +18,8 @@ namespace Graph.Bezier {
             CreateUnconnectedNode(Vector3.zero, out _);
         }
 
-        public override bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge, out bool isEdgeNew) {
+        public override bool CreateEdge(IStreetNode from, IStreetNode to, out IStreetEdge newEdge, out bool isEdgeNew,
+            RoadType roadType) {
             Debug.Assert(from is BezierStreetNode && to is BezierStreetNode,
                 $"Expected BezierStreetNodes, got fromNode {from.GetType()} and toNode {to.GetType()}");
             var fromNode = (BezierStreetNode)from;

@@ -5,10 +5,11 @@ using UnityEngine.Splines;
 
 namespace Graph.LineBased {
     public class LineEdge : IStreetEdge {
-        public LineEdge(IStreetNode nodeA, IStreetNode nodeB, float streetWidth) {
+        public LineEdge(IStreetNode nodeA, IStreetNode nodeB, float streetWidth, RoadType roadType) {
             NodeA = nodeA;
             NodeB = nodeB;
             StreetWidth = streetWidth;
+            Type = roadType;
         }
 
         public Vector3 Position => PositionNodeA + (PositionNodeB - PositionNodeA) / 2.0f;
@@ -20,7 +21,7 @@ namespace Graph.LineBased {
         public IStreetNode NodeB { get; }
         public float StreetWidth { get; set; }
 
-        public virtual RoadType Type { get; set; } = RoadType.Primary;
+        public RoadType Type { get; set; } = RoadType.Primary;
 
         public Vector3[] SplitIntoEvenlySpacedPoints(out Vector3[] tangents, float stepSize = 0.1f) {
             var points = new List<Vector3>();

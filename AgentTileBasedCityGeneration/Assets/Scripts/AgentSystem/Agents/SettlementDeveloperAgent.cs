@@ -126,14 +126,12 @@ namespace AgentSystem.Agents {
                 return false;
             }
 
-            if (!world.StreetGraph.CreateEdge(node, newPoint, out var newEdge, out var newNode, out _, out _,
+            if (!world.StreetGraph.CreateEdge(node, newPoint, out var newEdge, out var newNode, out _, out _, parameters.GrowRoadType,
                     failIfIntersection: true)) {
                 // Debug.LogWarning($"Could not create a new node for the PoIDeveloperAgent at {newPoint} from {node.Position} {newNode.Position} edge: ({newEdge == null}).");
                 return false;
             }
-
-            newEdge.Type = parameters.GrowRoadType;
-
+            
             GraphDebugUtils.AssertStreetGraphConnectivity(world);
             DecreasePOIBudget(world, node.Position, newPoint, parameters);
             world.PointsOfInterest.AddNodeRelationToPointOfInterest(newNode, pointOfInterest);
@@ -226,10 +224,9 @@ namespace AgentSystem.Agents {
             if (!IsRoadWithinBudget(world, nodeA.Position, nodeB.Position, parameters)) return false;
 
             if (!world.StreetGraph.CreateEdge(nodeA, nodeB.Position, out var newEdge, out var toNode,
-                    out var isToNodeNew, out var isEdgeNew, true))
+                    out var isToNodeNew, out var isEdgeNew, parameters.ConnectRoadType, true))
                 // Debug.Log("Could not connect the cul-de-sacs.");
                 return false;
-            newEdge.Type = parameters.ConnectRoadType;
 
             GraphDebugUtils.AssertStreetGraphConnectivity(world);
             DecreasePOIBudget(world, nodeA.Position, nodeB.Position, parameters);
