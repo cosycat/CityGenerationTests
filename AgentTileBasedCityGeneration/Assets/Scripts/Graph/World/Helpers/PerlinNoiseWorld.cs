@@ -3,7 +3,7 @@ using Graph.World.PoI;
 using UnityEngine;
 
 namespace Graph.World.Helpers {
-    public class TestWorld : WorldGameObject {
+    public class PerlinNoiseWorld: WorldGameObject {
         [SerializeField] private int width = 100;
         [SerializeField] private int height = 100;
         [SerializeField] private float maxHeight = 200;
