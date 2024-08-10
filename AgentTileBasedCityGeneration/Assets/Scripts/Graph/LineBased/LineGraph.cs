@@ -300,17 +300,13 @@ namespace Graph.LineBased {
             if (radius == 0) return new List<IStreetEdge>().ToArray();
             var closeEdges = new List<IStreetEdge>();
             Debug.Assert(nodeDatastructure != null, "nodeDatastructure == null");
-            var bvhHits = nodeDatastructure!.FindRegion(
+            var nodesInRegion = nodeDatastructure!.FindRegion(
                 new Vector2(position.x - radius, position.y - radius),
                 new Vector2(position.x + radius, position.y + radius)
             );
 
-            foreach (var g in bvhHits) {
-                foreach (var edge in g.Edges) {
-                    if (closeEdges.Contains(edge)) continue;
-                    var distance = edge.GetDistanceEdgeToPosition(position, out _);
-                    if (distance < radius) closeEdges.Add(edge);
-                }
+            foreach (var g in nodesInRegion) {
+                closeEdges.AddRange(g.Edges);
             }
 
             return closeEdges.ToArray();
