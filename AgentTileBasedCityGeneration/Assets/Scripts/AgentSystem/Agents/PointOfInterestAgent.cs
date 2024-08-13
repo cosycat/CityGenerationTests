@@ -13,8 +13,8 @@ namespace AgentSystem.Agents {
         public AgentParameters Parameters => agentParameters;
 
 
-        [Tooltip("The parameters for used for the next generated settlement and its settlement developer agent."),
-         SerializeField] private SettlementDeveloperAgent.SdaParameters sdaParameters = new();
+        // [Tooltip("The parameters for used for the next generated settlement and its settlement developer agent."),
+         // SerializeField] private SettlementDeveloperAgent.SdaParameters sdaParameters = new();
 
         private IStreetGraph streetGraph;
 
