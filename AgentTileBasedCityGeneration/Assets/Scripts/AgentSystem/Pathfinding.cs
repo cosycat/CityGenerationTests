@@ -26,7 +26,7 @@ namespace AgentSystem {
 
         //only for statistics
         private int getNeighborsCalled;
-        private readonly ISet<Waypoint> visited = new HashSet<Waypoint>();
+        private readonly ISet<Waypoint> dbg_visited = new HashSet<Waypoint>();
 
         public Pathfinding(IStreetGraph streetGraph, IWorld world, Parameters parameters) {
             Debug.Assert(streetGraph != null);
@@ -85,18 +85,14 @@ namespace AgentSystem {
 
                 var Current = q.Dequeue();
                 this.Current = Current;
+                dbg_visited.Add(Current);
                 nodesChecked++;
                 if (Current.Pos == target) {
                     targetWaypoint = Current;
                     break;
                 }
 
-                if (visited.Contains(Current)) continue;
-                visited.Add(Current);
-                if (float.IsPositiveInfinity(costSoFar[Current])) continue;
-
-                foreach (var i in getNeighbors(Current)) {
-                    var nextWaypoint = i;
+                foreach (var nextWaypoint in getNeighbors(Current)) {
                     //TODO do this in GetWaypoint()
                     if (nextWaypoint.Pos.x < 0
                         || nextWaypoint.Pos.x >= worldWidth
@@ -106,17 +102,14 @@ namespace AgentSystem {
 
                     Debug.Assert(nextWaypoint.Pos != Current.Pos);
 
-                    var next = nextWaypoint;
-
-
-                    var newCost = costSoFar[Current] + Cost(Current, next, parameters);
+                    var newCost = costSoFar[Current] + Cost(Current, nextWaypoint, parameters);
                     if (float.IsPositiveInfinity(newCost)) continue;
-                    Debug.Assert(Cost(Current, next, parameters) >= Heuristic(Current.Pos, next.Pos, parameters));
-                    if (!costSoFar.ContainsKey(next) || newCost < costSoFar[next]) {
-                        costSoFar[next] = newCost;
-                        var prio = newCost + Heuristic(target, next.Pos, parameters);
-                        q.Enqueue(next, prio);
-                        cameFrom[next] = Current;
+                    Debug.Assert(Cost(Current, nextWaypoint, parameters) >= Heuristic(Current.Pos, nextWaypoint.Pos, parameters));
+                    if (!costSoFar.ContainsKey(nextWaypoint) || newCost < costSoFar[nextWaypoint]) {
+                        costSoFar[nextWaypoint] = newCost;
+                        var prio = newCost + Heuristic(target, nextWaypoint.Pos, parameters);
+                        q.Enqueue(nextWaypoint, prio);
+                        cameFrom[nextWaypoint] = Current;
                     }
                 }
             }
@@ -133,7 +126,7 @@ namespace AgentSystem {
                           $"World edges count: {streetGraph.Edges.ToList().Count}; " +
                           $"Queue size: {q.Count}; " +
                           $"Get neighbors calls: {getNeighborsCalled}; " +
-                          $"Visited count: {visited.Count}; " +
+                          $"Visited count: {dbg_visited.Count}; " +
                           $"Cost ratio: {actualCost / heuristicCost}");
             }
 
