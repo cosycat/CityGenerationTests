@@ -14,8 +14,8 @@ namespace AgentSystem.Agents {
     public class SettlementDeveloperAgent : IAgent {
         
         private readonly List<SdaParameters> allParameters;
-        public AgentParameters Parameters => GetCurrentParameterSet();
-        // public List<IAgentVariable> AgentVariables => GetCurrentParameterSet().AllVariables;
+        public AgentParameters Parameters => allParameters[currentParameterSetIndex];
+        private SdaParameters CurrentSdaParameters => allParameters[currentParameterSetIndex];
         
         private int currentParameterSetIndex = 0;
 
@@ -31,7 +31,7 @@ namespace AgentSystem.Agents {
                 // copy each SdaParameters to avoid changing the original list
                 ? parameters.Select(p => new SdaParameters(p)).ToList()
                 : new List<SdaParameters> { new() };
-            CreateStartNode(world, GetCurrentParameterSet());
+            CreateStartNode(world, CurrentSdaParameters);
         }
 
 
@@ -40,16 +40,15 @@ namespace AgentSystem.Agents {
             if (nodes.Count == 0) {
                 Debug.LogWarning(
                     "PoIDeveloperAgent: No nodes found for the point of interest. Creating a new one at the center. PS: This should not happen because this agent is always placed after building a road.");
-                var newNode = CreateStartNode(world, GetCurrentParameterSet());
+                var newNode = CreateStartNode(world, CurrentSdaParameters);
                 nodes = new[] { newNode };
             }
 
-            var currentParameterSet = GetCurrentParameterSet();
+            var currentParameterSet = CurrentSdaParameters;
             var roadNetworkGrown = GrowRoadNetwork(world, nodes, context.Random, currentParameterSet);
             cancellationToken.ThrowIfCancellationRequested();
 
-            var newConnections =
-                ConnectRoadNetwork(world, nodes, cancellationToken, context.Random, currentParameterSet);
+            var newConnections = ConnectRoadNetwork(world, nodes, cancellationToken, context.Random, currentParameterSet);
             var didChange = roadNetworkGrown || newConnections > 0;
             SelectParameterSet(didChange);
         }
@@ -80,12 +79,7 @@ namespace AgentSystem.Agents {
             }
         }
 
-        private SdaParameters GetCurrentParameterSet() {
-            return allParameters[currentParameterSetIndex];
-        }
-
-        private bool GrowRoadNetwork(IWorld world, IReadOnlyList<IStreetNode> nodes, Random random,
-            SdaParameters parameters) {
+        private bool GrowRoadNetwork(IWorld world, IReadOnlyList<IStreetNode> nodes, Random random, SdaParameters parameters) {
             var node = GetRandomNode(nodes, random);
             // Debug.Assert(node != null, $"PoIDeveloperAgent: Node is null.");
             // var averageInPosition = GetAverageInPosition(node); // TODO take a random incoming edge as direction
@@ -94,13 +88,16 @@ namespace AgentSystem.Agents {
             var direction = node.Position - randomInPosition;
             var inStreetAngle = Mathf.Atan2(direction.y, direction.x);
             // var angleRandom = (float)random.NextDouble() * 2f * parameters.AngleRandomMax - parameters.AngleRandomMax; //UnityEngine.Random.Range(-angleRandomMax, angleRandomMax);
+            
             var angleRandom = (float)random.NextDouble() * (parameters.AngleRandomMax - parameters.AngleRandomMin) + parameters.AngleRandomMin
                 * (random.NextDouble() > 0.5 ? -1 : 1);
+            var useRandomness = random.NextDouble() < parameters.AngleRandomnessAddedProbability;
             
             var angleOffset = parameters.AngleInBothDirections
-                ? random.Next(2) == 1 ? parameters.AngleOffset : -parameters.AngleOffset
+                ? (random.Next(2) == 1 
+                    ? parameters.AngleOffset 
+                    : -parameters.AngleOffset)
                 : parameters.AngleOffset;
-            var useRandomness = random.NextDouble() < parameters.AngleRandomnessAddedProbability;
             var combinedAngle = inStreetAngle + angleOffset + (useRandomness ? angleRandom : 0);
             var length = (float)random.NextDouble() * (parameters.MaxStreetLength - parameters.MinStreetLength) +
                          parameters.MinStreetLength; //UnityEngine.Random.Range(minStreetLength, maxStreetLength);
@@ -225,7 +222,7 @@ namespace AgentSystem.Agents {
             if (!IsRoadWithinBudget(world, nodeA.Position, nodeB.Position, parameters)) return false;
 
             if (!world.StreetGraph.CreateEdge(nodeA, nodeB.Position, out var newEdge, out var toNode,
-                    out var isToNodeNew, out var isEdgeNew, parameters.ConnectRoadType, true))
+                    out var isToNodeNew, out var isEdgeNew, parameters.ConnectRoadType, failIfIntersection: true))
                 // Debug.Log("Could not connect the cul-de-sacs.");
                 return false;
 

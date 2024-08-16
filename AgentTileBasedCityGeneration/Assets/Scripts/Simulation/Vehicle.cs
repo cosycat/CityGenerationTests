@@ -27,7 +27,7 @@ namespace Simulation {
             }
         }
 
-        public bool IsPlayerVehicle { get; private set; }
+        // public bool IsPlayerVehicle { get; private set; }
 
         public SelectableCamera[] VehicleCameras { get; private set; } = Array.Empty<SelectableCamera>();
 
@@ -66,8 +66,8 @@ namespace Simulation {
         public void SetPlayerVehicle(bool isPlayerVehicle) {
             // if (IsPlayerVehicle == isPlayerVehicle) return;
             UpdateSignals(false, false, false);
-
-            IsPlayerVehicle = isPlayerVehicle;
+        
+            // IsPlayerVehicle = isPlayerVehicle;
         }
     }
 }
