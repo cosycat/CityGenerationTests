@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEditor;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Graph.World.PoI.TestScripts {
     public class PointOfInterestDebugVisualizer : MonoBehaviour {
@@ -33,12 +35,14 @@ namespace Graph.World.PoI.TestScripts {
 
             foreach (var pointOfInterest in POIs) {
                 if (showBoundaries) pointOfInterest.DebugVisualize(world);
-
+                
+#if UNITY_EDITOR
                 if (showLabel) {
                     Handles.Label(pointOfInterest.Position, $"{pointOfInterest}");
                     Handles.Label(new Vector3(pointOfInterest.Position.x,
                             world.GetHeightAt(pointOfInterest.Position.x, pointOfInterest.Position.y) + 10f,
                             pointOfInterest.Position.y), $"{pointOfInterest}");
+#endif
                 }
             }
         }
