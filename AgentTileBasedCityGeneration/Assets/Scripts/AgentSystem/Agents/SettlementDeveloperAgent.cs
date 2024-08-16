@@ -70,7 +70,7 @@ namespace AgentSystem.Agents {
         private void SelectParameterSet(bool didChange) {
             if(!didChange
             || currentParameterSetIndex == allParameters.Count - 1 //we are in last timeline
-            || allParameters[currentParameterSetIndex].Time == -1) return;
+            || allParameters[currentParameterSetIndex].Time < 0) return;
             currentAge++;
             if(currentAge > allParameters[currentParameterSetIndex].Time) {
                 currentParameterSetIndex++;
