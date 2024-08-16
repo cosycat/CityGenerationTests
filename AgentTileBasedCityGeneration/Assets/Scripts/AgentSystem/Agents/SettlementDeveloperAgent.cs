@@ -1,0 +1,399 @@
+#nullable enable
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using Graph;
+using Graph.World;
+using Graph.World.PoI;
+using UnityEngine;
+using Utils;
+using Random = System.Random;
+
+namespace AgentSystem.Agents {
+    public class SettlementDeveloperAgent : IAgent {
+        
+        private readonly List<SdaParameters> allParameters;
+        public AgentParameters Parameters => allParameters[currentParameterSetIndex];
+        private SdaParameters CurrentSdaParameters => allParameters[currentParameterSetIndex];
+        
+        private int currentParameterSetIndex = 0;
+
+        private readonly BudgetPointOfInterest pointOfInterest;
+
+        private int currentAge;
+
+        public SettlementDeveloperAgent(BudgetPointOfInterest pointOfInterest, IWorld world,
+            List<SdaParameters> parameters) {
+            Debug.Assert(pointOfInterest != null);
+            this.pointOfInterest = pointOfInterest!;
+            this.allParameters = parameters is { Count: > 0 }
+                // copy each SdaParameters to avoid changing the original list
+                ? parameters.Select(p => new SdaParameters(p)).ToList()
+                : new List<SdaParameters> { new() };
+            CreateStartNode(world, CurrentSdaParameters);
+        }
+
+
+        public void DoWork(CancellationToken cancellationToken, IWorld world, AgentManager.Context context) {
+            var nodes = world.PointsOfInterest.GetNodesFromPointOfInterest(pointOfInterest);
+            if (nodes.Count == 0) {
+                Debug.LogWarning(
+                    "PoIDeveloperAgent: No nodes found for the point of interest. Creating a new one at the center. PS: This should not happen because this agent is always placed after building a road.");
+                var newNode = CreateStartNode(world, CurrentSdaParameters);
+                nodes = new[] { newNode };
+            }
+
+            var currentParameterSet = CurrentSdaParameters;
+            var roadNetworkGrown = GrowRoadNetwork(world, nodes, context.Random, currentParameterSet);
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var newConnections = ConnectRoadNetwork(world, nodes, cancellationToken, context.Random, currentParameterSet);
+            var didChange = roadNetworkGrown || newConnections > 0;
+            SelectParameterSet(didChange);
+        }
+
+        private IStreetNode CreateStartNode(IWorld world, SdaParameters parameters) {
+            Debug.Assert(world != null);
+            Debug.Assert(world!.StreetGraph != null);
+            if (world!.StreetGraph!.TryFindClosestNode(pointOfInterest.Position, out var closestNode,
+                    parameters.MinStreetLength))
+                return closestNode;
+            if (world.StreetGraph.CreateUnconnectedNode(pointOfInterest.Position, out var createdNode)) {
+                world.PointsOfInterest.AddNodeRelationToPointOfInterest(createdNode, pointOfInterest);
+                return createdNode;
+            }
+
+            throw new Exception("Could not find or create a node for the point of interest.");
+        }
+
+        private void SelectParameterSet(bool didChange) {
+            if(!didChange
+            || currentParameterSetIndex == allParameters.Count - 1 //we are in last timeline
+            || allParameters[currentParameterSetIndex].Time < 0) return;
+            currentAge++;
+            if(currentAge > allParameters[currentParameterSetIndex].Time) {
+                currentParameterSetIndex++;
+                currentAge = 0;
+                Debug.Log("Settlement developer: switched to a new timeline!");
+            }
+        }
+
+        private bool GrowRoadNetwork(IWorld world, IReadOnlyList<IStreetNode> nodes, Random random, SdaParameters parameters) {
+            var node = GetRandomNode(nodes, random);
+            // Debug.Assert(node != null, $"PoIDeveloperAgent: Node is null.");
+            // var averageInPosition = GetAverageInPosition(node); // TODO take a random incoming edge as direction
+            var randomInPosition = GetRandomConnectedNodePosition(node, random);
+            Debug.Assert(node.Position != randomInPosition);
+            var direction = node.Position - randomInPosition;
+            var inStreetAngle = Mathf.Atan2(direction.y, direction.x);
+            // var angleRandom = (float)random.NextDouble() * 2f * parameters.AngleRandomMax - parameters.AngleRandomMax; //UnityEngine.Random.Range(-angleRandomMax, angleRandomMax);
+            
+            var angleRandom = (float)random.NextDouble() * (parameters.AngleRandomMax - parameters.AngleRandomMin) + parameters.AngleRandomMin
+                * (random.NextDouble() > 0.5 ? -1 : 1);
+            var useRandomness = random.NextDouble() < parameters.AngleRandomnessAddedProbability;
+            
+            var angleOffset = parameters.AngleInBothDirections
+                ? (random.Next(2) == 1 
+                    ? parameters.AngleOffset 
+                    : -parameters.AngleOffset)
+                : parameters.AngleOffset;
+            var combinedAngle = inStreetAngle + angleOffset + (useRandomness ? angleRandom : 0);
+            var length = (float)random.NextDouble() * (parameters.MaxStreetLength - parameters.MinStreetLength) +
+                         parameters.MinStreetLength; //UnityEngine.Random.Range(minStreetLength, maxStreetLength);
+            var newPointPosition = new Vector2(node.Position.x + Mathf.Cos(combinedAngle) * length,
+                node.Position.y + Mathf.Sin(combinedAngle) * length);
+
+            // TODO check for steepness with parameter
+            // TODO check if the new angle is in a legal range for every edge
+            if (node.IsMaxConnectedEdgesReached) {
+                //Debug.Log($"PoIDeveloperAgent: Node {node.Position} has too many connected edges.");
+                return false;
+            }
+            if(!IsRoadWithinBudget(world, node.Position, newPointPosition, parameters)) {
+                // Debug.Log($"PoIDeveloperAgent: New point {newPoint} is too expensive.");
+                return false;
+            }
+            if(world.StreetGraph.TryFindClosestNode(newPointPosition, out _, length)) {
+                // Debug.Log($"PoIDeveloperAgent: New point {newPoint} is too close to an existing node: ");
+                // Debug.Log($"MinStreetLength: {parameters.MinStreetLength.Value}, MaxStreetLength: {parameters.MaxStreetLength.Value}, MinNodeEdgeDistance: {parameters.MinNodeEdgeDistance.Value}, AngleOffset: {parameters.AngleOffset.Value}, AngleRandomMax: {parameters.AngleRandomMax.Value}, MaxConnectionDistance: {parameters.MaxConnectionDistance.Value}, ConnectCulDeSacs: {parameters.ConnectCulDeSacs.Value}, ConnectCulDeSacWithNonCulDeSac: {parameters.ConnectCulDeSacWithNonCulDeSac.Value}, AngleInBothDirections: {parameters.AngleInBothDirections.Value}, GrowRoadType: {parameters.GrowRoadType}, ConnectRoadType: {parameters.ConnectRoadType}, GrowRadiusAddition: {parameters.GrowRadiusAddition}, MaxSlope: {parameters.MaxSlope}");
+                return false;
+            }
+            if (world.StreetGraph.TryFindClosestEdge(newPointPosition, out _, out _, parameters.MinNodeEdgeDistance)) {
+                // Debug.Log($"PoIDeveloperAgent: New point {newPoint} is too close to an existing edge: ");
+                return false;
+            }
+
+            if (!world.StreetGraph.CreateEdge(node, newPointPosition, out var newEdge, out var newNode, out _, out _, parameters.GrowRoadType,
+                    failIfIntersection: true)) {
+                // Debug.LogWarning($"Could not create a new node for the PoIDeveloperAgent at {newPoint} from {node.Position} {newNode.Position} edge: ({newEdge == null}).");
+                return false;
+            }
+            
+            GraphDebugUtils.AssertStreetGraphConnectivity(world);
+            DecreasePOIBudget(world, node.Position, newPointPosition, parameters);
+            world.PointsOfInterest.AddNodeRelationToPointOfInterest(newNode, pointOfInterest);
+
+            return true;
+        }
+
+        private void DecreasePOIBudget(IWorld world,
+            Vector2 start,
+            Vector2 end,
+            SdaParameters parameters) {
+            pointOfInterest.Budget -= CostForRoad(world, start, end, parameters);
+            Debug.Assert(pointOfInterest.Budget >= 0);
+        }
+
+        private bool IsRoadWithinBudget(
+            IWorld world,
+            Vector2 startPosition,
+            Vector2 endPosition,
+            SdaParameters parameters) {
+            return pointOfInterest.Budget >= CostForRoad(world, startPosition, endPosition, parameters);
+        }
+
+        private float CostForRoad(IWorld world, 
+                Vector2 startPos, 
+                Vector2 endPos, 
+                SdaParameters parameters) {
+            Debug.Assert(startPos != endPos, "PoIDeveloperAgent::CostForRoad - Start and end position are the same.");
+            var poiDistanceCost = Vector2.Distance(pointOfInterest.Position, endPos);
+            var roadLength = Vector2.Distance(startPos, endPos);
+            var elevationStart = world.GetHeightAt(startPos.x, startPos.y);
+            var elevationEnd = world.GetHeightAt(endPos.x, endPos.y);
+            var slope = Mathf.Abs(elevationStart - elevationEnd) / roadLength;
+            if (slope > parameters.MaxSlope) return float.PositiveInfinity;
+            return poiDistanceCost + roadLength;
+        }
+
+        private int ConnectRoadNetwork(IWorld world,
+            IReadOnlyList<IStreetNode> nodes,
+            CancellationToken cancellationToken,
+            Random random,
+            SdaParameters parameters) {
+            if (nodes.Count < 2) return 0;
+            switch (parameters.ConnectCulDeSacs.Value) {
+                case SdaParameters.ConnectionHandling.ConnectNone:
+                    return 0;
+
+                case SdaParameters.ConnectionHandling.ConnectSlowly: {
+                    var nodeA = GetRandomNode(nodes, random);
+                    var nodeB = GetRandomNode(nodes, random);
+                    while (nodeA == nodeB) {
+                        nodeB = GetRandomNode(nodes, random);
+                        if (nodes.Count < 2) {
+                            // sanity check and in case some parallel code modifies the nodes list (which it shouldn't)
+                            Debug.LogError(
+                                "PoIDeveloperAgent: Not enough nodes to connect. Nodes modified during connection.");
+                            return 0;
+                        }
+                    }
+
+                    if (!ConnectCulDeSacs(nodeA, nodeB, world, parameters)) return 0;
+                    return 1;
+                }
+
+                case SdaParameters.ConnectionHandling.ConnectAll: {
+                    var connections = 0;
+                    foreach (var nodeA in nodes) {
+                        foreach (var nodeB in nodes) {
+                            if (cancellationToken.IsCancellationRequested) return connections;
+                            if (nodeA != nodeB && ConnectCulDeSacs(nodeA, nodeB, world, parameters)) connections++;
+                        }
+                    }
+
+                    return connections;
+                }
+
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        private bool ConnectCulDeSacs(IStreetNode nodeA, IStreetNode nodeB, IWorld world, SdaParameters parameters) {
+            Debug.Assert(nodeA != nodeB);
+            if (Vector3.Distance(nodeA.Position, nodeB.Position) > parameters.MaxConnectionDistance) return false;
+            if ((parameters.ConnectCulDeSacWithNonCulDeSac && nodeA.Edges.Count() > 1 && nodeB.Edges.Count() > 1)
+                || (!parameters.ConnectCulDeSacWithNonCulDeSac && (nodeA.Edges.Count() > 1 || nodeB.Edges.Count() > 1)))
+                return false; // Too many nodes are not cul-de-sacs
+            // TODO check if nodeA and nodeB are connected already.
+
+            if (!IsRoadWithinBudget(world, nodeA.Position, nodeB.Position, parameters)) return false;
+
+            if (!world.StreetGraph.CreateEdge(nodeA, nodeB.Position, out var newEdge, out var toNode,
+                    out var isToNodeNew, out var isEdgeNew, parameters.ConnectRoadType, failIfIntersection: true))
+                // Debug.Log("Could not connect the cul-de-sacs.");
+                return false;
+
+            GraphDebugUtils.AssertStreetGraphConnectivity(world);
+            DecreasePOIBudget(world, nodeA.Position, nodeB.Position, parameters);
+            Debug.Assert(!isToNodeNew, $"PoIDeveloperAgent: Cul-de-sac connection created a new node at {toNode}.");
+            // Debug.Log($"PoIDeveloperAgent: Connected cul-de-sacs {nodeA.Position} and {nodeB.Position}.");
+            return isEdgeNew;
+        }
+
+        private static Vector3 GetRandomConnectedNodePosition(IStreetNode node, Random random) {
+            if (node.ConnectedEdgesCount == 0) {
+                Debug.Log("PoIDeveloperAgent: Node has no connected edges.");
+                return node.Position + new Vector3(1, 0, 0);
+            } // TODO Random direction
+
+            return node.GetNeighbors()[random.Next(0, node.ConnectedEdgesCount)].Position;
+        }
+
+        private static Vector3 GetAverageInPosition(IStreetNode node) {
+            if (node.ConnectedEdgesCount == 0) return new Vector3(1, 0, 0); // TODO Random direction
+            var average = new Vector3(0, 0, 0);
+            foreach (var otherNode in node.GetNeighbors()) average += otherNode.Position;
+            return average / node.ConnectedEdgesCount;
+        }
+
+        private static IStreetNode GetRandomNode(IReadOnlyList<IStreetNode> nodes, Random random) {
+            Debug.Assert(nodes.Count > 0, "PoIDeveloperAgent: No nodes to choose from.");
+            return nodes[random.Next(0, nodes.Count)];
+        }
+
+        [Serializable]
+        public class SdaParameters : AgentParameters {
+            [field: SerializeField] public AgentVariableInt Time { get; private set; } = new("Time", 10, -1, 1000);
+
+            [field: SerializeField] public AgentVariableFloat MinStreetLength { get; private set; } = new("Min Street Length", 2f, 0.5f, 20f);
+
+            [field: SerializeField] public AgentVariableFloat MaxStreetLength { get; private set; } = new("Max Street Length", 5f, 1, 50f);
+
+            [field: SerializeField] public AgentVariableFloat MinNodeEdgeDistance { get; private set; } = new("Min Distance Node Edge", 0.7f, 0.1f, 10f, "Minimum distance a new node has to have to an edge.");
+
+            [field: SerializeField] public AgentVariableFloat AngleOffset { get; private set; } = new("Angle Offset", Mathf.Deg2Rad * 90f, -(Mathf.Deg2Rad * 180f), Mathf.Deg2Rad * 180f);
+
+            [field: SerializeField] public AgentVariableFloat AngleRandomMin { get; private set; } = new("Angle Randomness Min", Mathf.Deg2Rad * 0f, 0, Mathf.Deg2Rad * 180f);
+            [field: SerializeField] public AgentVariableFloat AngleRandomMax { get; private set; } = new("Angle Randomness", Mathf.Deg2Rad * 0f, 0, Mathf.Deg2Rad * 180f);
+            
+            [field: SerializeField] public AgentVariableFloat AngleRandomnessAddedProbability { get; private set; } = new("Angle Random Probability", 0.5f, 0, 1, "The probability, that the randomness is added to the outgoing angle");
+
+            [field: SerializeField] public AgentVariableFloat MaxConnectionDistance { get; private set; } = new("Max Connection Distance", 3.5f, 0.5f, 20f, "Maximum connection distance for cul-de-sacs to be connected.");
+
+            [field: SerializeField] public AgentVariableEnum<ConnectionHandling> ConnectCulDeSacs { get; private set; } = new("Cul de Sacs Connection Version", ConnectionHandling.ConnectSlowly);
+
+            [field: SerializeField] public AgentVariableBool ConnectCulDeSacWithNonCulDeSac { get; private set; } = new("Connect Cul de Sacs with non-Cul de sacs", true);
+
+            [field: SerializeField] public AgentVariableBool AngleInBothDirections { get; private set; } = new("Angle in Both Directions", true);
+
+
+            // public AgentVariableButton IncreaseBudget { get; private set; } = new("Increase Budget", () => {
+            //     Debug.Log("Increase Budget TODO");
+            // });
+
+            /// <summary>
+            ///     The type of roads for new roads.
+            /// </summary>
+            [field: SerializeField]
+            public AgentVariableEnum<RoadType> GrowRoadType { get; private set; } = new("Grow Road Type", RoadType.Tertiary, "The type of road to grow the network with.");
+
+            /// <summary>
+            ///     The type of road to connect cul-de-sacs with.
+            /// </summary>
+            [field: SerializeField]
+            public AgentVariableEnum<RoadType> ConnectRoadType { get; private set; } = new("Connect Road Type", RoadType.Tertiary, "The type of road to connect cul-de-sacs with.");
+
+            /// <summary>
+            ///     Each POI has a radius which is needed to sample nodes from. While the POI grows,
+            ///     the radius will so too, but the radius needs to be a bit bigger than the real dimension of the POI.
+            ///     If the radius were exactly as the farthest point (this parameter = 0), growing outwards
+            ///     might come to a halt, because the new points lie outside the radius.
+            /// </summary>
+            [field: SerializeField]
+            public AgentVariableFloat GrowRadiusAddition { get; private set; } = new("Grow Radius Addition", 2f, 0.5f, 10f);
+
+            /// <summary>
+            ///     Maximum slope allowed for building a road. If the slope exceed this value, the cost of the road will
+            ///     be infinity. A value of 0.12f means 12%. Thus a value of 1f means 100% (=45 degrees).
+            /// </summary>
+            [field: SerializeField]
+            public AgentVariableFloat MaxSlope { get; private set; } = new("Max Slope", 0.2f, 0.01f, 1f);
+
+
+            // public List<IAgentVariable> AllVariables => new() {
+            //     MinStreetLength, MaxStreetLength, MinNodeEdgeDistance, AngleOffset, AngleRandomMax,
+            //     MaxConnectionDistance, ConnectCulDeSacs, ConnectCulDeSacWithNonCulDeSac, AngleInBothDirections,
+            //     GrowRoadType, ConnectRoadType, GrowRadiusAddition, MaxSlope
+            // };
+
+            protected override IAgentVariable[] GetVariables() {
+                return new IAgentVariable[] {
+                    WorkFrequency, Time, MinStreetLength, MaxStreetLength, MinNodeEdgeDistance, AngleOffset, AngleRandomMin,
+                    AngleRandomMax, AngleRandomnessAddedProbability, MaxConnectionDistance, ConnectCulDeSacs,
+                    ConnectCulDeSacWithNonCulDeSac, AngleInBothDirections, GrowRoadType, ConnectRoadType,
+                    GrowRadiusAddition, MaxSlope,
+                    // IncreaseBudget
+                };
+            }
+
+            public SdaParameters(SdaParameters? other) : base(other?.WorkFrequency?.Value ?? 1) {
+                if (other == null) {
+                    return;
+                }
+                MinStreetLength.Value = other.MinStreetLength;
+                MaxStreetLength.Value = other.MaxStreetLength;
+                MinNodeEdgeDistance.Value = other.MinNodeEdgeDistance;
+                AngleOffset.Value = other.AngleOffset;
+                AngleRandomMin.Value = other.AngleRandomMin;
+                AngleRandomMax.Value = other.AngleRandomMax;
+                AngleRandomnessAddedProbability.Value = other.AngleRandomnessAddedProbability;
+                MaxConnectionDistance.Value = other.MaxConnectionDistance;
+                ConnectCulDeSacs.Value = other.ConnectCulDeSacs;
+                ConnectCulDeSacWithNonCulDeSac.Value = other.ConnectCulDeSacWithNonCulDeSac;
+                AngleInBothDirections.Value = other.AngleInBothDirections;
+                GrowRoadType.Value = other.GrowRoadType;
+                ConnectRoadType.Value = other.ConnectRoadType;
+                GrowRadiusAddition.Value = other.GrowRadiusAddition;
+                MaxSlope.Value = other.MaxSlope;
+                Time.Value = other.Time;
+            }
+
+            public SdaParameters(int initialWorkFrequency = 1,
+                                 float minStreetLength = 2f, 
+                                 float maxStreetLength = 5f, 
+                                 float minNodeEdgeDistance = 1f, 
+                                 float angleOffset = Mathf.Deg2Rad * 90f,
+                                 float angleRandomMin = Mathf.Deg2Rad * 0f,
+                                 float angleRandomMax = Mathf.Deg2Rad * 0f,
+                                 float maxConnectionDistance = 3.5f,
+                                 bool snapToGrid = true,
+                                 ConnectionHandling connectCulDeSacs = ConnectionHandling.ConnectSlowly,
+                                 bool connectCulDeSacWithNonCulDeSac = true,
+                                 bool angleInBothDirections = true,
+                                 RoadType growRoadType = RoadType.Tertiary,
+                                 RoadType connectRoadType = RoadType.Tertiary,
+                                 float growRadiusAddition = 2f,
+                                 float maxSlope = 0.2f,
+                                 int time = 10,
+                                 float angleRandomnessAddedProbability = 0.5f) 
+                : base(initialWorkFrequency){
+                MinStreetLength.Value = minStreetLength;
+                MaxStreetLength.Value = maxStreetLength;
+                MinNodeEdgeDistance.Value = minNodeEdgeDistance;
+                AngleOffset.Value = angleOffset;
+                AngleRandomMin.Value = angleRandomMin;
+                AngleRandomMax.Value = angleRandomMax;
+                MaxConnectionDistance.Value = maxConnectionDistance;
+                ConnectCulDeSacs.Value = connectCulDeSacs;
+                ConnectCulDeSacWithNonCulDeSac.Value = connectCulDeSacWithNonCulDeSac;
+                AngleInBothDirections.Value = angleInBothDirections;
+                GrowRoadType.Value = growRoadType;
+                ConnectRoadType.Value = connectRoadType;
+                GrowRadiusAddition.Value = growRadiusAddition;
+                MaxSlope.Value = maxSlope;
+                Time.Value = time;
+                AngleRandomnessAddedProbability.Value = angleRandomnessAddedProbability;
+            }
+
+            public enum ConnectionHandling {
+                ConnectNone,
+                ConnectSlowly,
+                ConnectAll
+            }
+        }
+        
+    }
+}

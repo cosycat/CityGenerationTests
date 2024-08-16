@@ -1,0 +1,47 @@
+# AP 1
+## General research
+
+file:///home/toni/Downloads/editor_in_chief,+EJERS_+2293.pdf
+
+## Curve smoothing
+
+Possible ways to smooth out roads:
+
+https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
+https://bost.ocks.org/mike/simplify/
+
+## Optimization
+
+BFS on 2d Array? (cellular automata? Optimized algorithm? Without queues?)
+
+One idea is to traverse around the edges of a defined box (bounds defined "radius" r.
+i.e. traverse from (startx-r, starty-r) to (startx+r, starty-r) to (startx+r, starty+r) to (startx-r, starty+r)
+and after the loop, increase r by two
+
+https://old.reddit.com/r/adventofcode/comments/1389362/2022_day_12_route_finding_using_cellular_automata/
+
+## Results of AP1
+
+The methods used paper (Lechner et al.) are not bad, but it leaves of important details for the implementation. Combined with the fact that the project is based on a prototype, a rewrite of some cores components is necessary. The favorite idea is to use road segments which are not based on 4-neighboorhood alone.
+
+# AP 2
+
+## Ideas
+
+- The world is still tile based (marking water, land, etc.)
+- The roads are "semi"-disconnected from the grid (not purely based on 4-neighboorhood)
+- Lechner et al. ideas are used again, maybe with some adaptations but without the property developers
+- For properties, maybe use method from Emilien et al.
+- Using a graph to represent the road network. The edges could have information like road type, speed limit, elevation
+
+## Challenges
+
+- What happens when there is an intersection? -> Split edges into new part and place a new point
+- How to find intersections?
+    - World tiles store attribute that a tile has a road (and stores the reference to the road?). When reaching such a tile, calculate the line intersection
+    - Sweep line algorithm
+- How to find lines which are nearby (or how to find the closest line from a given position)?
+    - Bounding boxes (optionally with some padding, to allow for some distance between roads)
+    - https://en.wikipedia.org/wiki/K-d_tree
+
+

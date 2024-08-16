@@ -1,0 +1,90 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &369847435512667189
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1731860193232760171}
+  - component: {fileID: 638975536412610055}
+  - component: {fileID: 3617010318408248544}
+  m_Layer: 0
+  m_Name: SumoManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1731860193232760171
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 369847435512667189}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &638975536412610055
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 369847435512667189}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a61fb116582a246e6a97831f966d9dd9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  <SimulationOptions>k__BackingField:
+    <SimulationStepLengthSeconds>k__BackingField: 0.03
+    <RandomTripCount>k__BackingField: 20
+    <RandomFlowCount>k__BackingField: 20
+    <FlowPeriod>k__BackingField: 30
+    <VehicleTypes>k__BackingField:
+    - <Id>k__BackingField: car
+      <MaxSpeed>k__BackingField: 30
+      <Length>k__BackingField: 5
+      <Accel>k__BackingField: 3
+      <Decel>k__BackingField: 2
+      <VehicleClass>k__BackingField: 0
+      prefab: {fileID: 7789293729836674695, guid: a1c24b84b201c4cadae9cdcd146a960b, type: 3}
+    - <Id>k__BackingField: speeder
+      <MaxSpeed>k__BackingField: 100
+      <Length>k__BackingField: 5
+      <Accel>k__BackingField: 20
+      <Decel>k__BackingField: 10
+      <VehicleClass>k__BackingField: 0
+      prefab: {fileID: 1161110174753672080, guid: e721f769df6e642ce8db16a5ddfad30f, type: 3}
+    - <Id>k__BackingField: truck
+      <MaxSpeed>k__BackingField: 15
+      <Length>k__BackingField: 5
+      <Accel>k__BackingField: 1
+      <Decel>k__BackingField: 1
+      <VehicleClass>k__BackingField: 2
+      prefab: {fileID: 1161110174753672080, guid: bca2de1f81eb0403dab34f9b684a2937, type: 3}
+    defaultVehiclePrefab: {fileID: 7789293729836674695, guid: a1c24b84b201c4cadae9cdcd146a960b, type: 3}
+--- !u!114 &3617010318408248544
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 369847435512667189}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8976563ee45de41738b3fcfa6e51b8fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  runSimulationAfterGeneration: 0
+  openFolderAfterGeneration: 1
+  openSumoGUIAfterGeneration: 0

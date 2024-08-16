@@ -1,0 +1,14 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1045 &1
+EditorBuildSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Scenes/FlatArea.unity
+    guid: 0f88f675219a94f1c9a114591d8d678e
+  - enabled: 1
+    path: Assets/Scenes/Valley.unity
+    guid: 13477a297f164d7188c55d35b7d8bf85
+  m_configObjects: {}
