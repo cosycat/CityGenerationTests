@@ -11,7 +11,8 @@ namespace Simulation.Sumo {
         [field: SerializeField]
         public string Id { get; private set; } = null!;
 
-        [field: SerializeField] public float MaxSpeed { get; private set; }
+        [field: Tooltip("The maximum speed of the vehicle in m/s."), 
+                SerializeField] public float MaxSpeed { get; private set; }
         [field: SerializeField] public float Length { get; private set; }
         [field: SerializeField] public float Accel { get; private set; }
         [field: SerializeField] public float Decel { get; private set; }
