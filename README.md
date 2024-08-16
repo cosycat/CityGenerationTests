@@ -1,6 +1,6 @@
 # 24fs_iit07_Prozedurale Welten und automatische Erzeugung von Content
 
-Bachelor Thesis project by Toni Lozancic and Flavia Brogle
+Bachelor thesis project by Toni Lozancic and Flavia Brogle
 
 ## Abstract
 
