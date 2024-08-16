@@ -1,4 +1,4 @@
-# 24fs_iit07_Prozedurale Welten und automatische Erzeugung von Content
+# 24fs_iit07_Procedural Generation and Simulation of Road Networks
 
 Bachelor thesis project by Toni Lozancic and Flavia Brogle
 
