@@ -23,6 +23,10 @@ namespace AgentSystem.Agents {
 
         private int currentAge;
 
+        public string GetName() {
+            return $"SettlementDeveloperAgent {pointOfInterest.Position}";
+        }
+
         public SettlementDeveloperAgent(BudgetPointOfInterest pointOfInterest, IWorld world,
             List<SdaParameters> parameters) {
             Debug.Assert(pointOfInterest != null);

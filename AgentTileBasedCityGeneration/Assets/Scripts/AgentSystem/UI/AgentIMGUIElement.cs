@@ -23,7 +23,7 @@ namespace AgentSystem.UI {
 #else
             style = new GUIStyle();
 #endif
-            isFoldout = GUILayout.Toggle(isFoldout, agent.GetType().Name, style);
+            isFoldout = GUILayout.Toggle(isFoldout, agent.GetName(), style);
 
             if (!isFoldout) return;
             

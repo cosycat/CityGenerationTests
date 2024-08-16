@@ -1,5 +1,6 @@
 using System.Threading;
 using Graph.World;
+using UnityEngine;
 
 namespace AgentSystem {
     public interface IAgent {
@@ -20,5 +21,7 @@ namespace AgentSystem {
         /// <param name="world"> The world the agent is working on. </param>
         /// <param name="context"> The context of the agent. </param>
         void DoWork(CancellationToken cancellationToken, IWorld world, AgentManager.Context context);
+
+        string GetName() => GetType().Name;
     }
 }
