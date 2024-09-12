@@ -10,13 +10,13 @@ using Random = UnityEngine.Random;
 
 namespace Simulation.Sumo {
     internal class SumoFileGenerator {
-        private const string EDGES_FILE_NAME = "edges.edg.xml";
-        private const string NODES_FILE_NAME = "nodes.nod.xml";
-        private const string CONNECTIONS_FILE_NAME = "connections.con.xml";
-        private const string ROUTES_FILE_NAME = "routes.rou.xml";
-        private const string OUTPUT_NET_FILE_NAME = "output.net.xml";
-        private const string CONFIGURATION_FILE_NAME = "configuration.sumocfg";
-        private const string EDGES_TYPES_FILE_NAME = "edges.typ.xml";
+        private const string EDGES_FILE_NAME         = "edges.edg.xml"         ;
+        private const string NODES_FILE_NAME         = "nodes.nod.xml"         ;
+        private const string CONNECTIONS_FILE_NAME   = "connections.con.xml"   ;
+        private const string ROUTES_FILE_NAME        = "routes.rou.xml"        ;
+        private const string OUTPUT_NET_FILE_NAME    = "output.net.xml"        ;
+        private const string CONFIGURATION_FILE_NAME = "configuration.sumocfg" ;
+        private const string EDGES_TYPES_FILE_NAME   = "edges.typ.xml"         ;
 
         private SumoFileGenerator(string sumoFilesPath, IStreetGraph graph, SumoSimulationOptions simulationOptions,
             IWorld world) {

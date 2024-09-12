@@ -13,13 +13,6 @@ namespace Simulation.Sumo {
     ///     Generates a SUMO network from a given graph.
     /// </summary>
     public class SumoNetworkConverter : MonoBehaviour {
-        private const string
-            NETCONVERT_PATH_HOMEBREW =
-                "/opt/homebrew/bin/netconvert"; // TODO Add more systems and installations. This only works on macOS with Homebrew installation of SUMO. alternatives: "/usr/local/bin/netconvert"
-
-        private const string SUMO_GUI_PATH_HOMEBREW = "/opt/homebrew/bin/sumo-gui";
-        private const string SUMO_EXECUTION_PATH_HOMEBREW = "/opt/homebrew/bin/sumo";
-        private const string PYTHON_PATH = "/opt/homebrew/bin/python3";
 
         private const string SUMO_PYTHON_SIMULATION_SCRIPT_PATH = "Resources/Sumo/traciConnector.py";
         private const string SUMO_FILES_TO_COPY_PATH = "Resources/Sumo";

@@ -24,7 +24,7 @@ namespace Utils.Cameras {
     shift : Makes camera accelerate
     space : Moves camera on X and Z axis only.  So camera doesn't gain any height*/
 
-        private bool MouseLookEnabled { get; set; } = true;
+        private bool MouseLookEnabled { get; set; } = false;
 
         public SelectableCamera Cam { get; private set; } = null!;
 
